@@ -22,7 +22,7 @@ String name = null;  // Can assign null to any reference
 
 ```javascript
 // JavaScript
-let name = null;  // null is a primitive value
+let name = null; // null is a primitive value
 ```
 
 ```scala
@@ -57,7 +57,6 @@ let name = null;  // ERROR: null doesn't exist!
 
 In Rust, to represent "no value," we use an enum called `Option`, which we'll implement ourselves as `MyOption`.
 
-
 ## Our Option Type
 
 ```rust
@@ -68,6 +67,7 @@ enum MyOption<T> {
 ```
 
 That's it. Two variants:
+
 - `Some(T)` - contains a value of type `T`
 - `None` - represents absence of a value
 
@@ -101,12 +101,12 @@ fn main() {
 
 Notice that `find_user` returns `MyOption<String>`, not `String`. This is the key difference:
 
-| With null (Java, etc.) | With Option (Rust) |
-|------------------------|-------------------|
-| `String find_user(...)` | `MyOption<String> find_user(...)` |
-| Return type lies - might be null | Return type is honest - might be None |
-| Compiler lets you ignore null | Compiler **forces** you to handle None |
-| Crash at runtime: `NullPointerException` | Error at compile time |
+| With null (Java, etc.)                   | With Option (Rust)                     |
+| ---------------------------------------- | -------------------------------------- |
+| `String find_user(...)`                  | `MyOption<String> find_user(...)`      |
+| Return type lies - might be null         | Return type is honest - might be None  |
+| Compiler lets you ignore null            | Compiler **forces** you to handle None |
+| Crash at runtime: `NullPointerException` | Error at compile time                  |
 
 ```java
 // Java: Compiler is happy, but this crashes at runtime
@@ -401,6 +401,7 @@ The key insight: **unwrap self first, then apply f**
 2. If `self` is `None`, just return `None` (no unwrapping needed)
 
 This is different from `map`:
+
 - `map(f)`: unwrap → apply f → **wrap result in Some**
 - `and_then(f)`: unwrap → apply f → **return result as-is** (f already returns Option)
 
@@ -598,7 +599,7 @@ trimmed_len  // Some(5)
 text  // Some("  hello  ") - original unchanged
 ```
 
-The key insight: `as_ref()` converts `&MyOption<T>` to `MyOption<&T>`. Now when `map` consumes the Option, it's consuming an Option of *references*, not the original data.
+The key insight: `as_ref()` converts `&MyOption<T>` to `MyOption<&T>`. Now when `map` consumes the Option, it's consuming an Option of _references_, not the original data.
 
 ### take - Extract and Replace with None
 

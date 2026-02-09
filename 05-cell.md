@@ -1,4 +1,4 @@
-# Chapter 4: Cell - Interior Mutability
+# Chapter 5: Cell - Interior Mutability
 
 ## Motivation: When You Need to Mutate Through Shared References
 
@@ -73,6 +73,7 @@ stats.access_count.get()  // 2
 ```
 
 We can't use `&mut self` for `get_value()` because:
+
 - Reading should be a non-mutating operation from the user's perspective
 - You couldn't call `get_value()` multiple times with shared references
 - The API would be awkward: `stats.get_value()` requires `&mut stats`
@@ -80,6 +81,7 @@ We can't use `&mut self` for `get_value()` because:
 **Key insight:** The struct is **mostly read-only** (`value` never changes), but a **minor field** (`access_count`) needs to change. Making the entire struct mutable just for this tracking would be too awkward and restrictive.
 
 This is **logical vs physical constness**:
+
 - **Logically const**: The meaningful data (`value`) doesn't change
 - **Physically mutable**: Internal bookkeeping (`access_count`) does change
 
@@ -129,19 +131,20 @@ fn clone_rc<T>(rc: &SimpleRc<T>) -> &SimpleRc<T> {
 ## What is Interior Mutability?
 
 **Interior mutability** lets you mutate data even when you only have a shared reference to it. It moves the borrow checking from compile-time to either:
+
 - **Runtime** - types like `RefCell`, `Mutex` check borrowing rules at runtime
 - **Unsafe code** - types like `Cell` use unsafe methods internally but provide safe APIs
 - **Hardware** - atomics rely on CPU guarantees
 
 All interior mutability types are wrappers around `UnsafeCell` (which we'll explore next). Rust provides safe wrappers that handle the unsafe operations for you. We'll implement these wrappers (`Cell`, `RefCell`) later in this chapter to understand how they work.
 
-| Type | Check | Best for |
-|------|-------|----------|
-| `Cell<T>` | None (Copy semantics) | Simple `Copy` types |
-| `RefCell<T>` | Runtime | Any type, single-threaded |
-| `Mutex<T>` | Runtime + blocking | Any type, multi-threaded |
-| `RwLock<T>` | Runtime + blocking | Read-heavy, multi-threaded |
-| `Atomic*` | Hardware | Primitive integers, multi-threaded |
+| Type         | Check                 | Best for                           |
+| ------------ | --------------------- | ---------------------------------- |
+| `Cell<T>`    | None (Copy semantics) | Simple `Copy` types                |
+| `RefCell<T>` | Runtime               | Any type, single-threaded          |
+| `Mutex<T>`   | Runtime + blocking    | Any type, multi-threaded           |
+| `RwLock<T>`  | Runtime + blocking    | Read-heavy, multi-threaded         |
+| `Atomic*`    | Hardware              | Primitive integers, multi-threaded |
 
 This chapter covers `Cell`. We'll cover `RefCell` in the next chapter.
 
@@ -162,6 +165,7 @@ unsafe {
 ```
 
 `UnsafeCell` is unsafe because:
+
 - It gives you a `*mut T` from an `&UnsafeCell<T>`
 - **You** are responsible for ensuring no data races or aliasing violations
 - The compiler can't help you
@@ -202,6 +206,7 @@ impl<T> UnsafeCell<T> {
 3. **Memory model implications** - Tells LLVM that mutations can happen through shared references
 
 If you tried this with a regular struct, the compiler might:
+
 - Optimize away your writes (assumes `&T` means immutable)
 - Reorder operations incorrectly
 - Generate incorrect code
@@ -239,7 +244,7 @@ No. In C/C++, `volatile` tells the compiler "don't optimize reads/writes to this
 - **`std::ptr::read_volatile` / `write_volatile`**: Unsafe functions for cases where you need volatile semantics (e.g., memory-mapped I/O, hardware registers)
 - **Atomics**: For thread-safe mutation with proper synchronization
 
-`UnsafeCell` is not the same as `volatile` - it just tells the compiler "this can be mutated through shared references," while volatile prevents *all* optimizations. Most Rust code uses `UnsafeCell` (via `Cell`, `RefCell`, etc.), not volatile operations.
+`UnsafeCell` is not the same as `volatile` - it just tells the compiler "this can be mutated through shared references," while volatile prevents _all_ optimizations. Most Rust code uses `UnsafeCell` (via `Cell`, `RefCell`, etc.), not volatile operations.
 
 **Bottom line:** You **must** use `std::cell::UnsafeCell`. It's the only sound way to implement interior mutability.
 
@@ -256,6 +261,7 @@ let value = cell.get(); // Get a COPY of the value
 ```
 
 Key insight: `Cell` never gives you a reference to the inner value. It only lets you:
+
 - **get**: Copy the value out
 - **set**: Replace the value entirely
 
@@ -264,6 +270,7 @@ This is safe because you can't have a reference to something that might change -
 **What happens when references escape?**
 
 If Cell gave you a reference, you'd have:
+
 1. Multiple `&Cell` (shared references to the Cell itself) ✓ Allowed
 2. A `&T` (reference to the inner value) ✓ Should be valid
 3. But Cell can mutate through `&self`! ✗ Breaks Rust's aliasing rules!
@@ -510,6 +517,7 @@ All these examples mutate state through `&self` (shared reference) - impossible 
 **Quick overview:**
 
 Rust has two special marker traits for thread safety:
+
 - **`Send`**: A type can be transferred between threads (moved to another thread)
 - **`Sync`**: A type can be shared between threads (multiple threads can have `&T`)
 
@@ -530,6 +538,7 @@ std::thread::spawn(|| {
 **Why is Cell not Sync?**
 
 If two threads could share `&Cell<T>`, they could both call `set()` simultaneously:
+
 1. Thread 1: `cell.set(10)`
 2. Thread 2: `cell.set(20)`
 3. **Data race!** Both write to the same memory without synchronization
@@ -566,6 +575,7 @@ println!("{}", counter.get());  // Undefined behavior!
 ```
 
 `Cell` provides no internal synchronization, so it's unsafe for concurrent access. For thread-safe interior mutability, use:
+
 - **`Mutex<T>`** or **`RwLock<T>`** - Provides locking
 - **Atomics** (`AtomicUsize`, `AtomicBool`, etc.) - Hardware-level synchronization
 
@@ -640,20 +650,22 @@ impl<T: Default> Default for MyCell<T> {
 
 ## Cell vs Other Interior Mutability Types
 
-| | Cell | RefCell |
-|--|------|---------|
-| Works with | `Copy` types (for `get`) | Any type |
-| Returns | Copy of value | Reference (`Ref<T>`) |
-| Overhead | None | Runtime borrow tracking |
-| Panic? | Never | Yes, on borrow violation |
-| Thread-safe? | No | No |
+|              | Cell                     | RefCell                  |
+| ------------ | ------------------------ | ------------------------ |
+| Works with   | `Copy` types (for `get`) | Any type                 |
+| Returns      | Copy of value            | Reference (`Ref<T>`)     |
+| Overhead     | None                     | Runtime borrow tracking  |
+| Panic?       | Never                    | Yes, on borrow violation |
+| Thread-safe? | No                       | No                       |
 
 Use `Cell` when:
+
 - Your type is `Copy` (integers, bools, small structs)
 - You just need to get/set the value
 - You want zero runtime overhead
 
 Use `RefCell` when:
+
 - Your type isn't `Copy`
 - You need references to the inner value
 - You're willing to pay for runtime borrow checking
@@ -669,16 +681,19 @@ Use `RefCell` when:
 ## Exercises
 
 1. Implement `swap` - swap values between two Cells:
+
    ```rust
    fn swap(a: &MyCell<T>, b: &MyCell<T>) where T: Copy
    ```
 
 2. Add `update` - apply a function to update the value:
+
    ```rust
    fn update<F: FnOnce(T) -> T>(&self, f: F) where T: Copy
    ```
 
 3. Implement `Debug` for `MyCell<T>`:
+
    ```rust
    impl<T: Copy + Debug> Debug for MyCell<T>
    ```

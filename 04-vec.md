@@ -13,7 +13,7 @@ What if we need a collection that can grow dynamically at runtime?
 
 ## Vec: A Growable Array
 
-`Vec<T>` is Rust's dynamically-sized array type. Unlike `Box<T>` which allocates a single value on the heap, `Vec<T>` allocates a *contiguous block* of memory that can grow or shrink.
+`Vec<T>` is Rust's dynamically-sized array type. Unlike `Box<T>` which allocates a single value on the heap, `Vec<T>` allocates a _contiguous block_ of memory that can grow or shrink.
 
 ## The Three Fields of Vec
 
@@ -37,12 +37,14 @@ Heap memory:
 
 ## Why Not Use Box?
 
-`Box<T>` allocates space for *exactly one* `T`. To grow, we'd need to:
+`Box<T>` allocates space for _exactly one_ `T`. To grow, we'd need to:
+
 1. Allocate a new `Box`
 2. Copy all elements
 3. Deallocate the old `Box`
 
 Instead, `Vec` uses the allocator APIs directly (`alloc`, `realloc`, `dealloc`) to:
+
 - Allocate more space than immediately needed (capacity > len)
 - Grow in-place when possible
 - Only reallocate when we run out of capacity
@@ -137,6 +139,7 @@ impl<T> MyVec<T> {
 ```
 
 **Growth strategy:** Start at 1, then double each time.
+
 ```
 Capacity progression: 0 → 1 → 2 → 4 → 8 → 16 → 32 → ...
 ```
@@ -202,6 +205,7 @@ vec[1]  // 99
 ### Drop Implementation
 
 Critical! We must:
+
 1. Drop all elements (call their destructors)
 2. Deallocate the memory
 
@@ -231,6 +235,7 @@ impl<T> Drop for MyVec<T> {
 **Important:** Unlike `Vec`, `Option`, `Result`, or `Box`, slices (`[T]` and `&[T]`) are a **language primitive** built into the Rust compiler. You cannot implement your own slice type with identical behavior.
 
 Why slices are special:
+
 - `[T]` is a **dynamically sized type (DST)** - no known size at compile time
 - The compiler has special knowledge of slices for:
   - Array to slice coercion: `&[1, 2, 3]` automatically becomes `&[i32]`
@@ -238,9 +243,9 @@ Why slices are special:
   - Pattern matching: `match slice { [first, rest @ ..] => ... }`
   - Indexing bounds checks are optimized by the compiler
 
-**Can we implement something slice-like?** Yes! We can create a struct with `(ptr, len)` that *behaves* like a slice, but it won't have the same compiler integration. We'll show this in the exercises.
+**Can we implement something slice-like?** Yes! We can create a struct with `(ptr, len)` that _behaves_ like a slice, but it won't have the same compiler integration. We'll show this in the exercises.
 
-A slice `&[T]` is a *view* into contiguous memory. It's a fat pointer:
+A slice `&[T]` is a _view_ into contiguous memory. It's a fat pointer:
 
 ```
 Slice structure:
@@ -424,8 +429,8 @@ Stack (vec):            Heap:
 └──│──┴─────┴─────┘         ^
    └────────────────────────┤
 Stack (slice):              │
-┌─────┬─────┐               │ 
-│ ptr │ len │               │ 
+┌─────┬─────┐               │
+│ ptr │ len │               │
 │  •  │  3  │               │
 └──│──┴─────┘               │
    └────────────────────────┘ (points to 2nd element)
@@ -504,27 +509,28 @@ impl<T> MyVec<T> {
 
 ## Key Differences: Box vs Vec
 
-| Feature | Box\<T\> | Vec\<T\> |
-|---------|---------|---------|
-| Size | Fixed (one T) | Dynamic |
-| Capacity | Always equals size | Can exceed size |
-| Growth | N/A | Doubles when full |
-| Use case | Single heap value | Collection of values |
-| Deref | To `T` | To `[T]` |
+| Feature  | Box\<T\>           | Vec\<T\>             |
+| -------- | ------------------ | -------------------- |
+| Size     | Fixed (one T)      | Dynamic              |
+| Capacity | Always equals size | Can exceed size      |
+| Growth   | N/A                | Doubles when full    |
+| Use case | Single heap value  | Collection of values |
+| Deref    | To `T`             | To `[T]`             |
 
 ## Performance Characteristics
 
-| Operation | Time Complexity | Notes |
-|-----------|----------------|-------|
-| `push` | O(1) amortized | O(n) on reallocation |
-| `pop` | O(1) | No reallocation |
-| `index` | O(1) | Direct memory access |
-| `insert(0, x)` | O(n) | Must shift all elements |
-| `remove(i)` | O(n) | Must shift elements |
+| Operation      | Time Complexity | Notes                   |
+| -------------- | --------------- | ----------------------- |
+| `push`         | O(1) amortized  | O(n) on reallocation    |
+| `pop`          | O(1)            | No reallocation         |
+| `index`        | O(1)            | Direct memory access    |
+| `insert(0, x)` | O(n)            | Must shift all elements |
+| `remove(i)`    | O(n)            | Must shift elements     |
 
 ## The Complete Implementation
 
 See `examples/04_vec.rs` for the full implementation with:
+
 - `push`, `pop`, `insert`, `remove`
 - `Index` and `IndexMut`
 - `Deref` to `[T]`
@@ -589,6 +595,7 @@ impl<'a, T> MySlice<'a, T> {
 **Why PhantomData?**
 
 Raw pointers (`*const T` and `*mut T`) don't carry lifetime information. Without `PhantomData`, the compiler wouldn't know that `MySlice<'a, T>` should:
+
 1. **Not outlive the data it points to** - The `'a` lifetime connects the slice to the vec
 2. **Act like it owns a `&'a T`** - For variance and drop check purposes
 
@@ -621,12 +628,14 @@ pub struct MySlice<'a, T> {
 But this defeats the purpose of the exercise - we want to see what we can build with just `(ptr, len)`!
 
 **What you can implement:**
+
 - Index access (`impl Index<usize>`)
 - `len()`, `is_empty()`
 - `first()`, `last()`
 - `iter()` returning an iterator
 
 **What you CANNOT implement:**
+
 - Slice syntax: `&my_slice[1..3]` (requires compiler support)
 - Pattern matching: `match my_slice { [first, rest @ ..] => ... }` (DST feature)
 - Automatic coercion from arrays: `&[1, 2, 3]` → `MySlice` (compiler magic)

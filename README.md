@@ -25,9 +25,10 @@ This guide emphasizes **memory layout** - pointers, stack, and heap. Understandi
 
 - **Rust has no null** - The language itself doesn't have null. `Option<T>` is just a regular enum we can implement ourselves.
 - **String is just a struct** - `String`, `Vec`, `Box`, `Rc` - they're all normal structs you can build yourself. Nothing magical.
-- **Rust doesn't know "threads"** - The language only knows about `Send` and `Sync` traits. Threads come from the OS.
-- **Heap vs Stack** - Creating a struct or array? That's on the stack. `Box`, `Vec`, and `Rc` are what put things on the heap.
+- **Rust doesn't know what "threads" or "tasks" are** - The language only knows `Send` and `Sync` traits. Thread safety comes from library functions (often called `spawn`) requiring these traits in their signatures. Threads and tasks? Just library constructs.
+- **Heap vs Stack** - Creating a struct or array? That's on the stack. Unsafe allocator calls (`alloc`/`dealloc`) put things on the heap. `Box`, `Vec`, and `Rc` are just safe wrappers.
 - **Cell doesn't allocate** - `Cell<T>` and `RefCell<T>` live wherever you put them - stack, heap, or inside other structs. They're just wrappers.
+- **PhantomData isn't scary** - Go to definition on stdlib types and you'll see it everywhere. What is it? Just a lifetimes marker. That's it. Nothing magical.
 - **Slices are special** - Unlike everything else here, `&[T]` is a language primitive. You can't fully replicate it in user code.
 - **String is literally Vec\<u8\>** - It's just a `Vec` with a UTF-8 guarantee. Same memory layout, same `ptr/len/capacity`.
 - **async is rewriting your code** - `async fn` desugars into a state machine. The compiler transforms your code completely.
@@ -99,6 +100,7 @@ This guide emphasizes **memory layout** - pointers, stack, and heap. Understandi
    - Why `Arc` is `Send + Sync`
 
 10. **[Closures](./10-closures.md)** - Function-like types
+
    - `Fn` - immutable capture
    - `FnMut` - mutable capture
    - `FnOnce` - consuming capture

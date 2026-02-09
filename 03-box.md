@@ -27,14 +27,17 @@ let arr = [0u8; 1000];  // 1000 bytes on the STACK, not heap!
 ## Heap Allocation Across Languages
 
 In many languages, heap allocation happens through keywords:
+
 - **Java/C#**: `new` is a keyword that allocates on the heap
 - **JavaScript**: Creating objects/arrays automatically uses the heap
 - **Python**: All objects live on the heap
 
 In **C**, heap allocation is a function call:
+
 - `malloc()`, `calloc()`, `free()` - explicit function calls
 
 In **Rust**, there's **no keyword** for heap allocation. Instead, it's wrapped in types:
+
 - `Box::new()` - allocate a single value
 - `Vec::new()` - allocate a growable array
 - `String::new()` - allocate a growable string
@@ -56,11 +59,13 @@ let p = Point::new(3, 2);  // 8 bytes on stack
 ```
 
 Stack allocation is fast but limited:
+
 - Size must be known at compile time
 - Data is dropped when the function returns
 - Stack space is limited (typically 1-8 MB)
 
 The **heap** is for dynamic allocation:
+
 - Size can be determined at runtime
 - Data lives until explicitly freed
 - Much larger (limited by RAM)
@@ -69,6 +74,7 @@ The **heap** is for dynamic allocation:
 ## What is Box?
 
 `Box<T>` is the simplest smart pointer. It:
+
 1. Allocates memory on the heap
 2. Stores a value there
 3. Keeps a pointer to that memory on the stack
@@ -117,7 +123,7 @@ struct Box<T> {
 
 The `T` in `Box<T>` is only a **generic parameter** - it tells the compiler what type the pointer points to, but `T` is never a field inside `Box`. The struct is always just a pointer (8 bytes).
 
-So `Box<List>` doesn't contain a `List`. It contains a *pointer* to a `List` somewhere. The size of `Box<List>` is always 8 bytes, regardless of what `List` is.
+So `Box<List>` doesn't contain a `List`. It contains a _pointer_ to a `List` somewhere. The size of `Box<List>` is always 8 bytes, regardless of what `List` is.
 
 **Memory layout without Box (infinite, this confuses the compiler!):**
 
@@ -250,11 +256,13 @@ animal.sound()  // "Woof!" - decided at runtime
 ```
 
 **Key takeaway:** Use `Box<dyn Trait>` when you need to:
+
 - Return different types from the same function
 - Store different types in the same collection
 - Decide which type to use at runtime (plugins, configuration, user input)
 
 Use generics (`<T: Trait>`) when you:
+
 - Know the type at compile time
 - Want maximum performance
 - Don't need to mix different types
@@ -344,12 +352,14 @@ let owned: String = *s;       // ❌ Asks for String (ownership), fails!
 ```
 
 When you write `let owned: String = *s;`:
+
 - `*s` gives `&String` (a reference)
 - You're asking for `String` (ownership, not a reference)
 - Compiler tries: "Can I move `String` out of `&String`?"
 - Answer: No! Moving from a reference is not allowed → **error!**
 
 The key insight:
+
 - **Copy types** (`i32`): `let c = *b;` copies the value from `&i32` → works!
 - **Non-Copy types, asking for reference** (`&String`): `let x = *s;` or `let x: &String = *s;` → works!
 - **Non-Copy types, asking for ownership** (`String`): `let x: String = *s;` → fails!
@@ -446,10 +456,12 @@ impl<T> MyBox<T> {
 **Why `mem::forget(self)`?**
 
 Without it, `Drop::drop` would run when `self` goes out of scope at the end of this function. But we already:
+
 1. Read the value with `ptr::read`
 2. Deallocated the memory with `dealloc`
 
 If `Drop` ran, it would:
+
 1. Try to drop the value that's no longer there (use-after-free!)
 2. Try to deallocate already-freed memory (double-free!)
 
@@ -477,11 +489,13 @@ struct String {
 ```
 
 After `into_inner()`:
+
 - The `String` **struct** (24 bytes: ptr + len + cap) is now on the stack
 - The actual string data `"hello"` is **still on the heap**
 - We freed the memory where `MyBox` stored the String struct, but not the string's data
 
 **Before `into_inner()`:**
+
 ```
         STACK         │      HEAP
                       │
@@ -500,6 +514,7 @@ After `into_inner()`:
 ```
 
 **After `into_inner()`:**
+
 ```
         STACK         │      HEAP
                       │
@@ -507,10 +522,10 @@ After `into_inner()`:
    ┌───────────────┐  │
    │ ptr: 0x3000 ──┼──┼──→┌───────────────────┐
    │ len: 5        │  │   │  "hello" (5 bytes)│
-   │ cap: 5        │  │   │  [h][e][l][l][o]  │ 
-   └───────────────┘  │   └───────────────────┘ 
-   24 bytes           │    
-                      │    
+   │ cap: 5        │  │   │  [h][e][l][l][o]  │
+   └───────────────┘  │   └───────────────────┘
+   24 bytes           │
+                      │
 ```
 
 The String still owns its heap-allocated data - we just moved the String struct itself from heap to stack!
@@ -541,6 +556,7 @@ let leaked: &'static mut i32 = boxed.leak();
 **Is this safe?**
 
 Yes! `leak()` is **safe** (not marked `unsafe`) because:
+
 - It doesn't cause undefined behavior
 - The returned reference has `'static` lifetime, valid for the entire program
 - The heap memory stays allocated and accessible through the reference
@@ -561,6 +577,7 @@ leak_and_lose();  // Function ends, local variable 'leaked' is gone
 ```
 
 This is still **safe** (no UB), but it's a **useless memory leak**:
+
 - The heap memory is leaked (never freed)
 - The local variable `leaked` (just a pointer on the stack) is destroyed
 - But we can't access the heap data because we lost the reference
@@ -602,6 +619,7 @@ let restored = unsafe { MyBox::from_raw(ptr) };  // Get it back
 ```
 
 **Warning:** `from_raw` is `unsafe` because:
+
 - The pointer must have come from `into_raw`
 - You must not use it after calling `from_raw` (double-free!)
 - The pointer must not be null
@@ -640,6 +658,7 @@ Deref coercion is a **special compiler feature** that only works with the `Deref
 5. Second deref: `&String` → calls `deref()` → `&str` ✅ Match!
 
 The compiler chains `Deref` implementations automatically. This **only works** with:
+
 - The `Deref` trait (for immutable references)
 - The `DerefMut` trait (for mutable references)
 
@@ -756,13 +775,14 @@ struct Box<T> {
 }
 ```
 
-| Type | Stack size | Heap data |
-|------|-----------|-----------|
-| `Box<T>` | 8 bytes (ptr) | `T` |
-| `Vec<T>` | 24 bytes (ptr + len + cap) | `[T; cap]` |
+| Type     | Stack size                 | Heap data   |
+| -------- | -------------------------- | ----------- |
+| `Box<T>` | 8 bytes (ptr)              | `T`         |
+| `Vec<T>` | 24 bytes (ptr + len + cap) | `[T; cap]`  |
 | `String` | 24 bytes (ptr + len + cap) | `[u8; cap]` |
 
 All three:
+
 - Allocate on the heap
 - Implement `Deref` for ergonomic access
 - Implement `Drop` to free memory automatically

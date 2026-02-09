@@ -23,6 +23,7 @@ enum MyResult<T, E> {
 ```
 
 Two variants:
+
 - `Ok(T)` - operation succeeded with value `T`
 - `Err(E)` - operation failed with error `E`
 
@@ -481,12 +482,12 @@ We can't implement `?` for our custom type (it requires the `Try` trait which is
 
 ## Result vs Option
 
-| Situation | Use |
-|-----------|-----|
-| Value might not exist | `Option<T>` |
-| Operation might fail | `Result<T, E>` |
-| Need to know why it failed | `Result<T, E>` |
-| Don't care about error details | `Option<T>` |
+| Situation                      | Use            |
+| ------------------------------ | -------------- |
+| Value might not exist          | `Option<T>`    |
+| Operation might fail           | `Result<T, E>` |
+| Need to know why it failed     | `Result<T, E>` |
+| Don't care about error details | `Option<T>`    |
 
 Converting between them:
 
