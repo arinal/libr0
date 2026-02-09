@@ -1,0 +1,23 @@
+[package]
+name = "rustlib"
+version = "0.1.0"
+edition = "2021"
+description = "Learning Rust by building standard library types from scratch"
+
+[dependencies]
+
+[[example]]
+name = "option"
+path = "examples/01_option.rs"
+
+[[example]]
+name = "result"
+path = "examples/02_result.rs"
+
+[[example]]
+name = "box"
+path = "examples/03_box.rs"
+
+[[example]]
+name = "cell"
+path = "examples/04_cell.rs"

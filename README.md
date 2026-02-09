@@ -1,6 +1,12 @@
-# Building Rust's Standard Library from Scratch
+# libr0
 
-A hands-on learning guide to understanding Rust's core types by implementing them ourselves.
+Building Rust's standard library from scratch - a hands-on learning guide to understanding Rust's core types by implementing them ourselves.
+
+## What's in the name?
+
+**libr0** = **lib** **r**ust from zer**0**
+
+We're building Rust's library (lib) from zero, one type at a time.
 
 ## Philosophy
 
@@ -11,6 +17,18 @@ Each chapter builds on the previous one, introducing new concepts gradually.
 This guide emphasizes memory layout - pointers, stack, and heap. Understanding process memory layout will help you see how these types actually work in memory. Understanding blocking vs non-blocking operations is also helpful when we implement the event loop using epoll.
 
 For these low-level concepts, refer to: https://github.com/arinal/under-the-hood
+
+**Things that will surprise you:**
+
+- **Rust has no null** - The language itself doesn't have null. `Option<T>` is just a regular enum we can implement ourselves.
+- **String is just a struct** - `String`, `Vec`, `Box`, `Rc` - they're all normal structs you can build yourself. Nothing magical.
+- **Rust doesn't know "threads"** - The language only knows about `Send` and `Sync` traits. Threads come from the OS.
+- **Heap vs Stack** - Creating a struct or array? That's on the stack. `Box`, `Vec`, and `Rc` are what put things on the heap.
+- **Cell doesn't allocate** - `Cell<T>` and `RefCell<T>` live wherever you put them - stack, heap, or inside other structs. They're just wrappers.
+- **Slices are special** - Unlike everything else here, `&[T]` is a language primitive. You can't fully replicate it in user code.
+- **String is literally Vec\<u8\>** - It's just a `Vec` with a UTF-8 guarantee. Same memory layout, same `ptr/len/capacity`.
+- **async is rewriting your code** - `async fn` desugars into a state machine. The compiler transforms your code completely.
+- **No async runtime included** - Rust only provides the `Future` trait. Tokio? That's just a library anyone can write.
 
 ## Table of Contents
 
