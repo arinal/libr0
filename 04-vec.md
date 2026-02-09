@@ -1,4 +1,4 @@
-# Chapter 3.5: Vec - Growable Arrays
+# Chapter 4: Vec - Growable Arrays
 
 ## The Problem: Fixed-Size Arrays
 
@@ -524,7 +524,7 @@ impl<T> MyVec<T> {
 
 ## The Complete Implementation
 
-See `examples/03_5_vec.rs` for the full implementation with:
+See `examples/04_vec.rs` for the full implementation with:
 - `push`, `pop`, `insert`, `remove`
 - `Index` and `IndexMut`
 - `Deref` to `[T]`
@@ -635,4 +635,4 @@ This demonstrates why slices are special - they need compiler integration for th
 
 ## Next Chapter
 
-[Cell](./04-cell.md) - Interior mutability for `Copy` types.
+[Cell](./05-cell.md) - Interior mutability for `Copy` types.

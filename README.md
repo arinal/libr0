@@ -14,9 +14,12 @@ The best way to understand how something works is to build it yourself. This gui
 
 Each chapter builds on the previous one, introducing new concepts gradually.
 
-This guide emphasizes memory layout - pointers, stack, and heap. Understanding process memory layout will help you see how these types actually work in memory. Understanding blocking vs non-blocking operations is also helpful when we implement the event loop using epoll.
+This guide emphasizes **memory layout** - pointers, stack, and heap. Understanding process memory layout will help you see how these types actually work in memory. Understanding blocking vs non-blocking operations is also helpful when we implement the event loop using epoll.
 
-For these low-level concepts, refer to: https://github.com/arinal/under-the-hood
+**Recommended resources:**
+
+- For Rust memory layout visualization: [cheats.rs/#memory-layout](https://cheats.rs/#memory-layout)
+- For low-level concepts (syscalls, process memory, epoll): [under-the-hood](https://github.com/arinal/under-the-hood)
 
 **Things that will surprise you:**
 
@@ -54,7 +57,7 @@ For these low-level concepts, refer to: https://github.com/arinal/under-the-hood
    - Why recursive types need `Box`
    - Trait objects basics
 
-3.5. **[Vec](./03.5-vec.md)** - Growable arrays
+4. **[Vec](./04-vec.md)** - Growable arrays
    - Heap allocation without `Box`
    - Direct use of allocator APIs (alloc/dealloc)
    - `ptr`, `len`, and `capacity`
@@ -62,32 +65,32 @@ For these low-level concepts, refer to: https://github.com/arinal/under-the-hood
    - `String` is just `Vec<u8>`
    - Slices: `&[T]` and `&str`
 
-4. **[Cell](./04-cell.md)** - Copy-based interior mutability
+5. **[Cell](./05-cell.md)** - Copy-based interior mutability
    - What is interior mutability?
    - `UnsafeCell` - the foundation
    - `get` and `set` operations
    - When to use `Cell`
 
-5. **[RefCell](./05-refcell.md)** - Runtime borrow checking
+6. **[RefCell](./06-refcell.md)** - Runtime borrow checking
    - `borrow()` and `borrow_mut()`
    - `BorrowError` and `BorrowMutError`
    - The `Ref` and `RefMut` guard types
    - Dynamic borrow checking
 
-6. **[Rc](./06-rc.md)** - Reference counting
+7. **[Rc](./07-rc.md)** - Reference counting
    - Shared ownership
    - Uses `Cell` internally for the count!
    - Weak references and cycles
    - Reference counting patterns
 
-7. **[Arc](./07-arc.md)** - Atomic reference counting
+8. **[Arc](./08-arc.md)** - Atomic reference counting
    - Thread-safe reference counting
    - Atomic operations
    - When to use `Arc` vs `Rc`
 
 ### Part 3: Core Traits & Concepts
 
-8. **[Send and Sync](./08-send-sync.md)** - Thread safety markers
+9. **[Send and Sync](./09-send-sync.md)** - Thread safety markers
    - What are marker traits?
    - `Send` - safe to transfer between threads
    - `Sync` - safe to share between threads
@@ -95,14 +98,14 @@ For these low-level concepts, refer to: https://github.com/arinal/under-the-hood
    - Why `Rc` is not `Send` or `Sync`
    - Why `Arc` is `Send + Sync`
 
-9. **[Closures](./09-closures.md)** - Function-like types
+10. **[Closures](./10-closures.md)** - Function-like types
    - `Fn` - immutable capture
    - `FnMut` - mutable capture
    - `FnOnce` - consuming capture
    - Closure capture mechanics
    - When to use each trait
 
-10. **[Dynamic Dispatch](./10-dynamic-dispatch.md)** - Runtime polymorphism
+11. **[Dynamic Dispatch](./11-dynamic-dispatch.md)** - Runtime polymorphism
     - Static vs Dynamic dispatch
     - Trait objects (`dyn Trait`)
     - Fat pointers (data + vtable)
@@ -111,13 +114,13 @@ For these low-level concepts, refer to: https://github.com/arinal/under-the-hood
 
 ### Part 4: Concurrency Primitives
 
-11. **[Mutex](./11-mutex.md)** - Mutual exclusion
+12. **[Mutex](./12-mutex.md)** - Mutual exclusion
     - Interior mutability for threads
     - Lock guards and RAII
     - Poisoning on panic
     - Deadlock prevention
 
-12. **[Channels](./12-channels.md)** - Message passing
+13. **[Channels](./13-channels.md)** - Message passing
     - `mpsc` - multi-producer, single-consumer
     - `Sender` and `Receiver`
     - Synchronous vs asynchronous channels
@@ -125,41 +128,41 @@ For these low-level concepts, refer to: https://github.com/arinal/under-the-hood
 
 ### Part 5: Combining Patterns
 
-13. **[Rc + RefCell](./13-rc-refcell.md)** - Shared mutable state (single-threaded)
+14. **[Rc + RefCell](./14-rc-refcell.md)** - Shared mutable state (single-threaded)
     - Building a simple graph structure
     - Common patterns and pitfalls
 
-14. **[Arc + Mutex](./14-arc-mutex.md)** - Shared mutable state (multi-threaded)
+15. **[Arc + Mutex](./15-arc-mutex.md)** - Shared mutable state (multi-threaded)
     - Thread-safe shared state
     - Lock contention
     - When to use `RwLock` instead
 
 ### Part 6: Async Rust
 
-15. **[Async State Machines](./15-async-state-machine.md)** - How async/await works
+16. **[Async State Machines](./16-async-state-machine.md)** - How async/await works
     - Desugaring `async fn`
     - State machine transformation
     - Why we need `Pin`
 
-16. **[Future Trait](./16-future.md)** - The async foundation
+17. **[Future Trait](./17-future.md)** - The async foundation
     - The `Future` trait
     - `Poll::Ready` and `Poll::Pending`
     - Implementing a simple future
     - Composing futures
 
-17. **[Waker](./17-waker.md)** - Wake-up mechanism
+18. **[Waker](./18-waker.md)** - Wake-up mechanism
     - How tasks get notified
     - `RawWaker` and `RawWakerVTable`
     - Building a simple waker
     - Wake-on-ready pattern
 
-18. **[Mini Executor](./18-executor.md)** - Running futures
+19. **[Mini Executor](./19-executor.md)** - Running futures
     - Single-threaded executor
     - Task queue and scheduling
     - `block_on` implementation
     - Task spawning
 
-19. **[Mini Tokio](./19-mini-tokio.md)** - Async runtime from scratch
+20. **[Mini Tokio](./20-mini-tokio.md)** - Async runtime from scratch
     - Event loop with epoll/kqueue
     - Multi-threaded work-stealing scheduler
     - Timer wheel implementation
@@ -172,9 +175,15 @@ For these low-level concepts, refer to: https://github.com/arinal/under-the-hood
 - Understanding of ownership and borrowing
 - Familiarity with generics and traits
 
+## Helpful Resources
+
+- **[Rust Language Cheat Sheet](https://cheats.rs/)** - Quick reference for Rust syntax and concepts
+- **[under-the-hood](https://github.com/arinal/under-the-hood)** - Low-level concepts: memory layout, syscalls, blocking vs non-blocking
+
 ## How to Use This Guide
 
 Each chapter contains:
+
 - **Concept explanation** - Why this type exists
 - **Step-by-step implementation** - Building it from scratch
 - **Code examples** - Practical usage
