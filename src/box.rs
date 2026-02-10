@@ -14,7 +14,7 @@ impl<T> MyBox<T> {
     /// ```
     /// use rustlib::r#box::MyBox;
     /// let b = MyBox::new(42);
-    /// *b; // 42
+    /// assert_eq!(*b, 42);
     /// ```
     pub fn new(value: T) -> MyBox<T> {
         unsafe {
@@ -39,7 +39,7 @@ impl<T> MyBox<T> {
     /// ```
     /// use rustlib::r#box::MyBox;
     /// let b = MyBox::new(42);
-    /// b.into_inner(); // 42, b no longer exists
+    /// assert_eq!(b.into_inner(), 42); // b no longer exists
     /// ```
     pub fn into_inner(self) -> T {
         unsafe {
@@ -119,7 +119,7 @@ impl<T> MyBox<T> {
 /// ```
 /// use rustlib::r#box::MyBox;
 /// let b = MyBox::new(42);
-/// *b; // 42
+/// assert_eq!(*b, 42);
 /// ```
 impl<T> Deref for MyBox<T> {
     type Target = T;
@@ -134,7 +134,7 @@ impl<T> Deref for MyBox<T> {
 /// use rustlib::r#box::MyBox;
 /// let mut b = MyBox::new(42);
 /// *b = 100;
-/// *b; // 100
+/// assert_eq!(*b, 100);
 /// ```
 impl<T> DerefMut for MyBox<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
@@ -179,8 +179,8 @@ impl<T: fmt::Debug> fmt::Debug for MyBox<T> {
 /// use rustlib::r#box::MyBox;
 /// let b1 = MyBox::new(42);
 /// let b2 = b1.clone();
-/// *b1; // 42
-/// *b2; // 42 (independent copy)
+/// assert_eq!(*b1, 42);
+/// assert_eq!(*b2, 42); // independent copy
 /// ```
 impl<T: Clone> Clone for MyBox<T> {
     fn clone(&self) -> Self {

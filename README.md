@@ -38,12 +38,12 @@ This guide emphasizes **memory layout** - pointers, stack, and heap. Understandi
 
 ### Part 1: Foundational Types
 
-1. **[Option](./01-option.md)** - The simplest enum
+1. **[Option](./docs/01-option.md)** - The simplest enum
    - Pattern matching basics
    - `Some(T)` and `None` variants
    - Implementing `map`, `and_then`, `unwrap_or`, `filter`, `as_ref`, `take`
 
-2. **[Result](./02-result.md)** - Error handling
+2. **[Result](./docs/02-result.md)** - Error handling
    - `Ok(T)` and `Err(E)` variants
    - The `?` operator
    - Converting between `Option` and `Result`
@@ -51,14 +51,14 @@ This guide emphasizes **memory layout** - pointers, stack, and heap. Understandi
 
 ### Part 2: Smart Pointers & Interior Mutability
 
-3. **[Box](./03-box.md)** - Heap allocation
+3. **[Box](./docs/03-box.md)** - Heap allocation
    - Stack vs Heap
    - The `Deref` and `DerefMut` traits
    - `Drop` for cleanup
    - Why recursive types need `Box`
    - Trait objects basics
 
-4. **[Vec](./04-vec.md)** - Growable arrays
+4. **[Vec](./docs/04-vec.md)** - Growable arrays
    - Heap allocation without `Box`
    - Direct use of allocator APIs (alloc/dealloc)
    - `ptr`, `len`, and `capacity`
@@ -66,25 +66,25 @@ This guide emphasizes **memory layout** - pointers, stack, and heap. Understandi
    - `String` is just `Vec<u8>`
    - Slices: `&[T]` and `&str`
 
-5. **[Cell](./05-cell.md)** - Copy-based interior mutability
+5. **[Cell](./docs/05-cell.md)** - Copy-based interior mutability
    - What is interior mutability?
    - `UnsafeCell` - the foundation
    - `get` and `set` operations
    - When to use `Cell`
 
-6. **[RefCell](./06-refcell.md)** - Runtime borrow checking
+6. **[RefCell](./docs/06-refcell.md)** - Runtime borrow checking
    - `borrow()` and `borrow_mut()`
    - `BorrowError` and `BorrowMutError`
    - The `Ref` and `RefMut` guard types
    - Dynamic borrow checking
 
-7. **[Rc](./07-rc.md)** - Reference counting
+7. **[Rc](./docs/07-rc.md)** - Reference counting
    - Shared ownership
    - Uses `Cell` internally for the count!
    - Weak references and cycles
    - Reference counting patterns
 
-8. **[Arc](./08-arc.md)** - Atomic reference counting
+8. **[Arc](./docs/08-arc.md)** - Atomic reference counting
    - Thread-safe reference counting
    - Atomic operations
    - When to use `Arc` vs `Rc`
@@ -212,7 +212,15 @@ impl<T> MyOption<T> {
 
 ```
 rustlib/
-├── src/                    # Library implementations
+├── docs/                  # Chapter documentation
+│   ├── 01-option.md       # Chapter 1: Option
+│   ├── 02-result.md       # Chapter 2: Result
+│   ├── 03-box.md          # Chapter 3: Box
+│   ├── 04-vec.md          # Chapter 4: Vec
+│   ├── 05-cell.md         # Chapter 5: Cell
+│   ├── 06-refcell.md      # Chapter 6: RefCell (work in progress)
+│   └── 07-rc.md           # Chapter 7: Rc (work in progress)
+├── src/                   # Library implementations
 │   ├── lib.rs             # Main library file
 │   ├── option.rs          # MyOption<T> implementation
 │   ├── result.rs          # MyResult<T, E> implementation
@@ -230,13 +238,7 @@ rustlib/
 │   ├── 05_cell.rs         # Cell exercises
 │   ├── 06_refcell.rs      # RefCell exercises (work in progress)
 │   └── 07_rc.rs           # Rc exercises (work in progress)
-├── 01-option.md           # Chapter 1: Option documentation
-├── 02-result.md           # Chapter 2: Result documentation
-├── 03-box.md              # Chapter 3: Box documentation
-├── 04-vec.md              # Chapter 4: Vec documentation
-├── 05-cell.md             # Chapter 5: Cell documentation
-├── 06-refcell.md          # Chapter 6: RefCell documentation (work in progress)
-└── 07-rc.md               # Chapter 7: Rc documentation (work in progress)
+└── README.md              # This file
 ```
 
 ## Running the Code

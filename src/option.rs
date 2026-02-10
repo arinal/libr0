@@ -11,8 +11,9 @@ pub use MyOption::{None, Some};
 impl<T> MyOption<T> {
     /// Returns `true` if the option is a [`Some`] value.
     /// ```
-    /// Some(42).is_some(); // true
-    /// None::<i32>.is_some(); // false
+    /// use rustlib::option::{MyOption, Some, None};
+    /// assert!(Some(42).is_some());
+    /// assert!(!None::<i32>.is_some());
     /// ```
     pub fn is_some(&self) -> bool {
         matches!(self, Some(_))
@@ -20,8 +21,9 @@ impl<T> MyOption<T> {
 
     /// Returns `true` if the option is a [`None`] value.
     /// ```
-    /// Some(42).is_none(); // false
-    /// None::<i32>.is_none(); // true
+    /// use rustlib::option::{MyOption, Some, None};
+    /// assert!(!Some(42).is_none());
+    /// assert!(None::<i32>.is_none());
     /// ```
     pub fn is_none(&self) -> bool {
         !self.is_some()
@@ -29,7 +31,8 @@ impl<T> MyOption<T> {
 
     /// Returns the contained value, panicking if [`None`].
     /// ```
-    /// Some(42).unwrap(); // 42
+    /// use rustlib::option::{MyOption, Some, None};
+    /// assert_eq!(Some(42).unwrap(), 42);
     /// ```
     pub fn unwrap(self) -> T {
         match self {
@@ -40,8 +43,9 @@ impl<T> MyOption<T> {
 
     /// Returns the contained value or a default.
     /// ```
-    /// Some(42).unwrap_or(0); // 42
-    /// None.unwrap_or(0); // 0
+    /// use rustlib::option::{MyOption, Some, None};
+    /// assert_eq!(Some(42).unwrap_or(0), 42);
+    /// assert_eq!(None.unwrap_or(0), 0);
     /// ```
     pub fn unwrap_or(self, or: T) -> T {
         match self {
@@ -52,8 +56,9 @@ impl<T> MyOption<T> {
 
     /// Returns the contained value or computes it from a closure.
     /// ```
-    /// Some(42).unwrap_or_else(|| 0); // 42
-    /// None.unwrap_or_else(|| 100); // 100
+    /// use rustlib::option::{MyOption, Some, None};
+    /// assert_eq!(Some(42).unwrap_or_else(|| 0), 42);
+    /// assert_eq!(None.unwrap_or_else(|| 100), 100);
     /// ```
     pub fn unwrap_or_else<F: FnOnce() -> T>(self, f: F) -> T {
         match self {
@@ -64,8 +69,9 @@ impl<T> MyOption<T> {
 
     /// Maps a [`MyOption<T>`] to [`MyOption<U>`] by applying a function.
     /// ```
-    /// Some(5).map(|x| x * 2); // Some(10)
-    /// None.map(|x: i32| x * 2); // None
+    /// use rustlib::option::{MyOption, Some, None};
+    /// assert_eq!(Some(5).map(|x| x * 2), Some(10));
+    /// assert_eq!(None.map(|x: i32| x * 2), None);
     /// ```
     pub fn map<U, F: FnOnce(T) -> U>(self, f: F) -> MyOption<U> {
         match self {
@@ -76,8 +82,9 @@ impl<T> MyOption<T> {
 
     /// Applies a function that returns a [`MyOption`].
     /// ```
+    /// use rustlib::option::{MyOption, Some, None};
     /// let sq = |x: i32| Some(x * x);
-    /// Some(2).and_then(sq); // Some(4)
+    /// assert_eq!(Some(2).and_then(sq), Some(4));
     /// ```
     pub fn and_then<U, F: FnOnce(T) -> MyOption<U>>(self, f: F) -> MyOption<U> {
         match self {
@@ -88,8 +95,9 @@ impl<T> MyOption<T> {
 
     /// Returns [`None`] if predicate returns `false`.
     /// ```
-    /// Some(4).filter(|x| x % 2 == 0); // Some(4)
-    /// Some(3).filter(|x| x % 2 == 0); // None
+    /// use rustlib::option::{MyOption, Some, None};
+    /// assert_eq!(Some(4).filter(|x| x % 2 == 0), Some(4));
+    /// assert_eq!(Some(3).filter(|x| x % 2 == 0), None);
     /// ```
     pub fn filter<P: FnOnce(&T) -> bool>(self, predicate: P) -> MyOption<T> {
         match self {
@@ -100,8 +108,9 @@ impl<T> MyOption<T> {
 
     /// Converts from `&MyOption<T>` to `MyOption<&T>`.
     /// ```
+    /// use rustlib::option::{MyOption, Some, None};
     /// let x = Some(String::from("hello"));
-    /// x.as_ref().map(|s| s.len()); // Some(5)
+    /// assert_eq!(x.as_ref().map(|s| s.len()), Some(5));
     /// ```
     pub fn as_ref(&self) -> MyOption<&T> {
         match self {
@@ -112,8 +121,9 @@ impl<T> MyOption<T> {
 
     /// Takes the value out, leaving [`None`] in its place.
     /// ```
+    /// use rustlib::option::{MyOption, Some, None};
     /// let mut x = Some(42);
-    /// x.take(); // Some(42)
+    /// assert_eq!(x.take(), Some(42));
     /// // x is now None
     /// ```
     pub fn take(&mut self) -> MyOption<T> {
@@ -122,8 +132,9 @@ impl<T> MyOption<T> {
 
     /// Returns the option if [`Some`], otherwise returns `other`.
     /// ```
-    /// Some(1).or(Some(2)); // Some(1)
-    /// None.or(Some(2)); // Some(2)
+    /// use rustlib::option::{MyOption, Some, None};
+    /// assert_eq!(Some(1).or(Some(2)), Some(1));
+    /// assert_eq!(None.or(Some(2)), Some(2));
     /// ```
     pub fn or(self, other: MyOption<T>) -> MyOption<T> {
         match self {
@@ -134,8 +145,9 @@ impl<T> MyOption<T> {
 
     /// Returns the option if [`Some`], otherwise calls `f`.
     /// ```
-    /// Some(1).or_else(|| Some(2)); // Some(1)
-    /// None.or_else(|| Some(2)); // Some(2)
+    /// use rustlib::option::{MyOption, Some, None};
+    /// assert_eq!(Some(1).or_else(|| Some(2)), Some(1));
+    /// assert_eq!(None.or_else(|| Some(2)), Some(2));
     /// ```
     pub fn or_else<F: FnOnce() -> MyOption<T>>(self, f: F) -> MyOption<T> {
         match self {

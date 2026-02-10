@@ -21,8 +21,8 @@ impl<T> MyVec<T> {
     /// ```
     /// use rustlib::vec::MyVec;
     /// let v: MyVec<i32> = MyVec::new();
-    /// v.len(); // 0
-    /// v.capacity(); // 0
+    /// assert_eq!(v.len(), 0);
+    /// assert_eq!(v.capacity(), 0);
     /// ```
     pub fn new() -> MyVec<T> {
         MyVec {
@@ -36,8 +36,8 @@ impl<T> MyVec<T> {
     /// ```
     /// use rustlib::vec::MyVec;
     /// let v: MyVec<i32> = MyVec::with_capacity(10);
-    /// v.len(); // 0
-    /// v.capacity(); // 10
+    /// assert_eq!(v.len(), 0);
+    /// assert_eq!(v.capacity(), 10);
     /// ```
     pub fn with_capacity(capacity: usize) -> MyVec<T> {
         if capacity == 0 {
@@ -63,7 +63,7 @@ impl<T> MyVec<T> {
     /// use rustlib::vec::MyVec;
     /// let mut v = MyVec::new();
     /// v.push(1);
-    /// v.len(); // 1
+    /// assert_eq!(v.len(), 1);
     /// ```
     pub fn len(&self) -> usize {
         self.len
@@ -73,7 +73,7 @@ impl<T> MyVec<T> {
     /// ```
     /// use rustlib::vec::MyVec;
     /// let v: MyVec<i32> = MyVec::with_capacity(10);
-    /// v.capacity(); // 10
+    /// assert_eq!(v.capacity(), 10);
     /// ```
     pub fn capacity(&self) -> usize {
         self.capacity
@@ -83,7 +83,7 @@ impl<T> MyVec<T> {
     /// ```
     /// use rustlib::vec::MyVec;
     /// let v: MyVec<i32> = MyVec::new();
-    /// v.is_empty(); // true
+    /// assert!(v.is_empty());
     /// ```
     pub fn is_empty(&self) -> bool {
         self.len == 0
@@ -96,7 +96,7 @@ impl<T> MyVec<T> {
     /// let mut v = MyVec::new();
     /// v.push(1);
     /// v.push(2);
-    /// v.len(); // 2
+    /// assert_eq!(v.len(), 2);
     /// ```
     pub fn push(&mut self, value: T) {
         self.grow_if_needed();
@@ -112,8 +112,8 @@ impl<T> MyVec<T> {
     /// use rustlib::vec::MyVec;
     /// let mut v = MyVec::new();
     /// v.push(1);
-    /// v.pop(); // Some(1)
-    /// v.pop(); // None
+    /// assert_eq!(v.pop(), Some(1));
+    /// assert_eq!(v.pop(), None);
     /// ```
     pub fn pop(&mut self) -> Option<T> {
         if self.len == 0 {
@@ -159,7 +159,7 @@ impl<T> MyVec<T> {
     /// v.push(1);
     /// v.push(2);
     /// v.push(3);
-    /// v.remove(1); // 2
+    /// assert_eq!(v.remove(1), 2);
     /// // v == [1, 3]
     /// ```
     pub fn remove(&mut self, index: usize) -> T {
@@ -186,12 +186,12 @@ impl<T> MyVec<T> {
     /// let mut v = MyVec::new();
     /// v.push(1);
     /// v.clear();
-    /// v.is_empty(); // true
+    /// assert!(v.is_empty());
     /// ```
     pub fn clear(&mut self) {
         if self.len > 0 {
             unsafe {
-                ptr::drop_in_place(std::slice::from_raw_parts_mut(self.ptr, self.len));
+                ptr::drop_in_place(std::ptr::slice_from_raw_parts_mut(self.ptr, self.len));
             }
             self.len = 0;
         }
@@ -203,7 +203,7 @@ impl<T> MyVec<T> {
     /// let mut v = MyVec::with_capacity(10);
     /// v.push(1);
     /// v.shrink_to_fit();
-    /// v.capacity(); // 1
+    /// assert_eq!(v.capacity(), 1);
     /// ```
     pub fn shrink_to_fit(&mut self) {
         if self.capacity == self.len {
@@ -225,9 +225,8 @@ impl<T> MyVec<T> {
         let new_layout = Layout::array::<T>(self.len).unwrap();
         let old_layout = Layout::array::<T>(self.capacity).unwrap();
 
-        let new_ptr = unsafe {
-            realloc(self.ptr as *mut u8, old_layout, new_layout.size()) as *mut T
-        };
+        let new_ptr =
+            unsafe { realloc(self.ptr as *mut u8, old_layout, new_layout.size()) as *mut T };
 
         if new_ptr.is_null() {
             std::alloc::handle_alloc_error(new_layout);
@@ -244,7 +243,7 @@ impl<T> MyVec<T> {
     /// v.push(1);
     /// v.push(2);
     /// let slice = v.as_slice();
-    /// slice[0]; // 1
+    /// assert_eq!(slice[0], 1);
     /// ```
     pub fn as_slice(&self) -> &[T] {
         unsafe { std::slice::from_raw_parts(self.ptr, self.len) }
@@ -256,7 +255,7 @@ impl<T> MyVec<T> {
     /// let mut v = MyVec::new();
     /// v.push(1);
     /// v.as_mut_slice()[0] = 2;
-    /// v[0]; // 2
+    /// assert_eq!(v[0], 2);
     /// ```
     pub fn as_mut_slice(&mut self) -> &mut [T] {
         unsafe { std::slice::from_raw_parts_mut(self.ptr, self.len) }
@@ -281,9 +280,7 @@ impl<T> MyVec<T> {
             unsafe { alloc(new_layout) as *mut T }
         } else {
             let old_layout = Layout::array::<T>(self.capacity).unwrap();
-            unsafe {
-                realloc(self.ptr as *mut u8, old_layout, new_layout.size()) as *mut T
-            }
+            unsafe { realloc(self.ptr as *mut u8, old_layout, new_layout.size()) as *mut T }
         };
 
         if new_ptr.is_null() {
@@ -295,14 +292,18 @@ impl<T> MyVec<T> {
     }
 }
 
+impl<T> Default for MyVec<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Indexing into [`MyVec`] returns a reference to the element.
 /// ```
 /// use rustlib::vec::MyVec;
-/// #[macro_use]
-/// extern crate rustlib;
 /// let mut v = MyVec::new();
 /// v.push(10);
-/// v[0]; // 10
+/// assert_eq!(v[0], 10);
 /// ```
 impl<T> Index<usize> for MyVec<T> {
     type Output = T;
@@ -318,12 +319,10 @@ impl<T> Index<usize> for MyVec<T> {
 /// Mutable indexing allows modifying elements.
 /// ```
 /// use rustlib::vec::MyVec;
-/// #[macro_use]
-/// extern crate rustlib;
 /// let mut v = MyVec::new();
 /// v.push(10);
 /// v[0] = 20;
-/// v[0]; // 20
+/// assert_eq!(v[0], 20);
 /// ```
 impl<T> IndexMut<usize> for MyVec<T> {
     fn index_mut(&mut self, index: usize) -> &mut T {
@@ -346,7 +345,7 @@ impl<T> Drop for MyVec<T> {
     fn drop(&mut self) {
         if self.capacity > 0 {
             unsafe {
-                ptr::drop_in_place(std::slice::from_raw_parts_mut(self.ptr, self.len));
+                ptr::drop_in_place(std::ptr::slice_from_raw_parts_mut(self.ptr, self.len));
                 let layout = Layout::array::<T>(self.capacity).unwrap();
                 dealloc(self.ptr as *mut u8, layout);
             }
@@ -357,12 +356,10 @@ impl<T> Drop for MyVec<T> {
 /// Dereferencing a [`MyVec<T>`] yields a `&[T]` slice.
 /// ```
 /// use rustlib::vec::MyVec;
-/// #[macro_use]
-/// extern crate rustlib;
 /// let mut v = MyVec::new();
 /// v.push(1);
 /// v.push(2);
-/// v.iter(); // Uses [T]::iter() via deref coercion
+/// let _iter = v.iter(); // Uses [T]::iter() via deref coercion
 /// ```
 impl<T> Deref for MyVec<T> {
     type Target = [T];
@@ -375,13 +372,14 @@ impl<T> Deref for MyVec<T> {
 /// Mutable dereferencing yields a `&mut [T]` slice.
 /// ```
 /// use rustlib::vec::MyVec;
-/// #[macro_use]
-/// extern crate rustlib;
 /// let mut v = MyVec::new();
 /// v.push(3);
 /// v.push(1);
 /// v.push(2);
 /// v.sort(); // Uses [T]::sort() via deref coercion
+/// assert_eq!(v[0], 1);
+/// assert_eq!(v[1], 2);
+/// assert_eq!(v[2], 3);
 /// ```
 impl<T> DerefMut for MyVec<T> {
     fn deref_mut(&mut self) -> &mut [T] {
@@ -392,13 +390,11 @@ impl<T> DerefMut for MyVec<T> {
 /// Cloning creates a new [`MyVec`] with deep-copied elements.
 /// ```
 /// use rustlib::vec::MyVec;
-/// #[macro_use]
-/// extern crate rustlib;
 /// let mut v1 = MyVec::new();
 /// v1.push(1);
 /// let v2 = v1.clone();
-/// v1[0]; // 1
-/// v2[0]; // 1 (independent copy)
+/// assert_eq!(v1[0], 1);
+/// assert_eq!(v2[0], 1); // independent copy
 /// ```
 impl<T: Clone> Clone for MyVec<T> {
     fn clone(&self) -> MyVec<T> {
@@ -413,12 +409,10 @@ impl<T: Clone> Clone for MyVec<T> {
 /// Debug formatting shows the vector as a list.
 /// ```
 /// use rustlib::vec::MyVec;
-/// #[macro_use]
-/// extern crate rustlib;
 /// let mut v = MyVec::new();
 /// v.push(1);
 /// v.push(2);
-/// format!("{:?}", v); // "[1, 2]"
+/// assert_eq!(format!("{:?}", v), "[1, 2]");
 /// ```
 impl<T: std::fmt::Debug> std::fmt::Debug for MyVec<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -441,13 +435,11 @@ pub struct MyVecIntoIter<T> {
 
 /// Iterating over [`MyVecIntoIter`] yields owned elements.
 /// ```
-/// use rustlib::vec::MyVec;
-/// #[macro_use]
-/// extern crate rustlib;
+/// use rustlib::my_vec;
 /// let v = my_vec![1, 2, 3];
 /// let mut iter = v.into_iter();
-/// iter.next(); // Some(1)
-/// iter.next(); // Some(2)
+/// assert_eq!(iter.next(), Some(1));
+/// assert_eq!(iter.next(), Some(2));
 /// ```
 impl<T> Iterator for MyVecIntoIter<T> {
     type Item = T;
@@ -470,12 +462,10 @@ impl<T> Iterator for MyVecIntoIter<T> {
 
 /// Dropping [`MyVecIntoIter`] drops remaining unconsumed elements and frees memory.
 /// ```
-/// use rustlib::vec::MyVec;
-/// #[macro_use]
-/// extern crate rustlib;
+/// use rustlib::my_vec;
 /// let v = my_vec![String::from("a"), String::from("b")];
 /// let mut iter = v.into_iter();
-/// iter.next(); // Some("a")
+/// assert_eq!(iter.next(), Some(String::from("a")));
 /// // iter dropped, "b" is dropped and memory freed
 /// ```
 impl<T> Drop for MyVecIntoIter<T> {
@@ -499,13 +489,13 @@ impl<T> Drop for MyVecIntoIter<T> {
 
 /// Converting [`MyVec`] into an iterator yields owned elements.
 /// ```
-/// use rustlib::vec::MyVec;
-/// #[macro_use]
-/// extern crate rustlib;
+/// use rustlib::my_vec;
 /// let v = my_vec![1, 2, 3];
+/// let mut sum = 0;
 /// for val in v {
-///     println!("{}", val); // Takes ownership of each element
+///     sum += val; // Takes ownership of each element
 /// }
+/// assert_eq!(sum, 6);
 /// // v is consumed, can't be used anymore
 /// ```
 impl<T> IntoIterator for MyVec<T> {
@@ -550,6 +540,7 @@ macro_rules! my_vec {
     };
     ($elem:expr; $n:expr) => {{
         let mut v = $crate::MyVec::with_capacity($n);
+        #[allow(clippy::reversed_empty_ranges)]
         for _ in 0..$n {
             v.push($elem.clone());
         }
@@ -824,3 +815,4 @@ mod tests {
         assert!(v.is_empty());
     }
 }
+
