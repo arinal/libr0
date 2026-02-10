@@ -664,84 +664,6 @@ The compiler chains `Deref` implementations automatically. This **only works** w
 
 You can't create your own trait with this behavior - it's built into the compiler specifically for `Deref`/`DerefMut`.
 
-## The Complete Implementation
-
-```rust
-use std::alloc::{alloc, dealloc, Layout};
-use std::ops::{Deref, DerefMut};
-use std::ptr;
-
-struct MyBox<T> {
-    ptr: *mut T,
-}
-
-impl<T> MyBox<T> {
-    fn new(value: T) -> MyBox<T> {
-        unsafe {
-            let layout = Layout::new::<T>();
-            let ptr = alloc(layout) as *mut T;
-
-            if ptr.is_null() {
-                std::alloc::handle_alloc_error(layout);
-            }
-
-            ptr::write(ptr, value);
-            MyBox { ptr }
-        }
-    }
-
-    fn into_inner(self) -> T {
-        unsafe {
-            let value = ptr::read(self.ptr);
-            let layout = Layout::new::<T>();
-            dealloc(self.ptr as *mut u8, layout);
-            std::mem::forget(self);
-            value
-        }
-    }
-
-    fn leak(self) -> &'static mut T {
-        let ptr = self.ptr;
-        std::mem::forget(self);
-        unsafe { &mut *ptr }
-    }
-
-    fn into_raw(self) -> *mut T {
-        let ptr = self.ptr;
-        std::mem::forget(self);
-        ptr
-    }
-
-    unsafe fn from_raw(ptr: *mut T) -> MyBox<T> {
-        MyBox { ptr }
-    }
-}
-
-impl<T> Deref for MyBox<T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        unsafe { &*self.ptr }
-    }
-}
-
-impl<T> DerefMut for MyBox<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        unsafe { &mut *self.ptr }
-    }
-}
-
-impl<T> Drop for MyBox<T> {
-    fn drop(&mut self) {
-        unsafe {
-            ptr::drop_in_place(self.ptr);
-            let layout = Layout::new::<T>();
-            dealloc(self.ptr as *mut u8, layout);
-        }
-    }
-}
-```
-
 ## Vec and String: Box with Extra Metadata
 
 `Box` isn't the only type that uses heap allocation. `Vec` and `String` do too - they're essentially "fat" pointers with extra fields:
@@ -787,6 +709,11 @@ All three:
 - Implement `Deref` for ergonomic access
 - Implement `Drop` to free memory automatically
 
+## Exercises
+
+See the full code in [`src/box.rs`](./src/box.rs) for the complete implementation of `MyOption` with all methods.
+Also, see the exercises in [01_box.rs](./examples/01_box.rs)
+
 ## Key Takeaways
 
 1. **Box is just a pointer** - Single pointer to heap-allocated data
@@ -794,13 +721,6 @@ All three:
 3. **Drop ensures cleanup** - Memory freed when Box goes out of scope
 4. **Deref coercion is magic** - `&Box<T>` automatically becomes `&T`
 5. **Use for recursive types** - Break infinite size with indirection
-
-## Exercises
-
-1. Implement `Debug` for `MyBox<T>` where `T: Debug`
-2. Add a `map` method: `fn map<U, F: FnOnce(T) -> U>(self, f: F) -> MyBox<U>`
-3. Implement `Clone` for `MyBox<T>` where `T: Clone`
-4. Try creating a recursive `List` type using `MyBox`
 
 ## Next Chapter
 

@@ -512,99 +512,10 @@ impl<T> MyOption<T> {
 // Result -> Option (already shown above with .ok())
 ```
 
-## The Complete Implementation
+## Implementation
 
-```rust
-#[derive(Debug, Clone, PartialEq)]
-enum MyResult<T, E> {
-    Ok(T),
-    Err(E),
-}
-
-use MyResult::{Ok, Err};
-
-impl<T, E> MyResult<T, E> {
-    fn is_ok(&self) -> bool {
-        matches!(self, Ok(_))
-    }
-
-    fn is_err(&self) -> bool {
-        !self.is_ok()
-    }
-
-    fn ok(self) -> Option<T> {
-        match self {
-            Ok(x) => Some(x),
-            Err(_) => None,
-        }
-    }
-
-    fn err(self) -> Option<E> {
-        match self {
-            Ok(_) => None,
-            Err(e) => Some(e),
-        }
-    }
-
-    fn unwrap_or(self, default: T) -> T {
-        match self {
-            Ok(val) => val,
-            Err(_) => default,
-        }
-    }
-
-    fn unwrap_or_else<F: FnOnce(E) -> T>(self, f: F) -> T {
-        match self {
-            Ok(val) => val,
-            Err(e) => f(e),
-        }
-    }
-
-    fn map<U, F: FnOnce(T) -> U>(self, f: F) -> MyResult<U, E> {
-        match self {
-            Ok(x) => MyResult::Ok(f(x)),
-            Err(e) => MyResult::Err(e),
-        }
-    }
-
-    fn map_err<F2, O: FnOnce(E) -> F2>(self, op: O) -> MyResult<T, F2> {
-        match self {
-            Ok(x) => MyResult::Ok(x),
-            Err(e) => MyResult::Err(op(e)),
-        }
-    }
-
-    fn and_then<U, F: FnOnce(T) -> MyResult<U, E>>(self, f: F) -> MyResult<U, E> {
-        match self {
-            Ok(x) => f(x),
-            Err(e) => MyResult::Err(e),
-        }
-    }
-
-    fn as_ref(&self) -> MyResult<&T, &E> {
-        match self {
-            Ok(x) => MyResult::Ok(x),
-            Err(e) => MyResult::Err(e),
-        }
-    }
-}
-
-impl<T, E: std::fmt::Debug> MyResult<T, E> {
-    fn unwrap(self) -> T {
-        match self {
-            Ok(val) => val,
-            Err(e) => panic!("called unwrap on Err: {:?}", e),
-        }
-    }
-
-    fn expect(self, msg: &str) -> T {
-        match self {
-            Ok(val) => val,
-            Err(e) => panic!("{}: {:?}", msg, e),
-        }
-    }
-}
-```
+See the full code in [`src/result.rs`](./src/result.rs) for the complete implementation of `MyOption` with all methods.
+Also, see the exercises in [01_result.rs](./examples/01_result.rs)
 
 ## Key Takeaways
 
@@ -613,13 +524,6 @@ impl<T, E: std::fmt::Debug> MyResult<T, E> {
 3. **map for success, map_err for errors** - Transform either side
 4. **and_then chains fallible operations** - The workhorse of error handling
 5. **? is syntax sugar for and_then + early return** - Use it in real code
-
-## Exercises
-
-1. Implement `or` - returns self if `Ok`, otherwise returns the other result
-2. Implement `or_else` - lazy version with access to the error
-3. Implement `and` - returns other if self is `Ok`, otherwise returns self's error
-4. Implement `flatten` - converts `MyResult<MyResult<T, E>, E>` to `MyResult<T, E>`
 
 ## Next Chapter
 

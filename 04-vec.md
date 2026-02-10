@@ -146,6 +146,49 @@ Capacity progression: 0 → 1 → 2 → 4 → 8 → 16 → 32 → ...
 
 Why double? Amortized O(1) push operations.
 
+**Note:** The `vec!` macro is syntactic sugar for repeatedly calling `push`:
+
+```rust
+let v = vec![1, 2, 3];
+// Expands to roughly:
+// let mut v = Vec::new();
+// v.push(1);
+// v.push(2);
+// v.push(3);
+```
+
+Here's a simplified implementation of the macro:
+
+```rust
+#[macro_export]
+macro_rules! vec {
+    () => {
+        Vec::new()
+    };
+    ($elem:expr; $n:expr) => {
+        // vec![0; 5] creates [0, 0, 0, 0, 0]
+        {
+            let mut v = Vec::with_capacity($n);
+            v.resize($n, $elem);
+            v
+        }
+    };
+    ($($x:expr),+ $(,)?) => {
+        // vec![1, 2, 3]
+        {
+            let mut v = Vec::new();
+            $(v.push($x);)*
+            v
+        }
+    };
+}
+```
+
+The macro has three patterns:
+1. `vec![]` - creates an empty vector
+2. `vec![elem; n]` - creates a vector with `n` copies of `elem`
+3. `vec![x, y, z]` - creates a vector with the given elements
+
 ### Pop - Removing Elements
 
 ```rust
@@ -549,14 +592,9 @@ See `examples/04_vec.rs` for the full implementation with:
 
 ## Exercises
 
-1. Implement `insert(index, value)` - insert at arbitrary position
-2. Implement `remove(index)` - remove and return element
-3. Implement `shrink_to_fit()` - reduce capacity to match len
-4. Implement `extend_from_slice(&[T])` - append a slice
-5. Implement an iterator for `MyVec<T>`
-6. Implement a slice-like type `MySlice<T>` with `(ptr, len)` - what functionality can you replicate?
+See ./examples/04_vec.rs for exercises.
 
-### Exercise 6: Slice-like Type
+### Implement a slice-like type
 
 Here's a starting point for a slice-like type:
 

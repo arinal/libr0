@@ -1,92 +1,112 @@
-//! Chapter 4: Cell - Interior Mutability
+//! Chapter 5: Cell - Exercises
 //!
+//! Complete the TODO items to practice using MyCell for interior mutability.
 //! Run with: cargo run --example cell
 
-use std::cell::UnsafeCell;
+#![allow(unused)]
 
-pub struct MyCell<T> {
-    value: UnsafeCell<T>,
+#[macro_use]
+mod common;
+
+use rustlib::cell::MyCell;
+
+// ============================================================================
+// Exercises - Replace variables with TODOs with the correct MyCell operations
+// ============================================================================
+
+fn _01_new_and_get() {
+    let cell = MyCell::new(42);
+    let value = 0; // TODO: get the value from cell
+
+    assert_eq!(value, 42);
 }
 
-// Cell is !Sync - can't be shared between threads
-// This is automatically inferred from UnsafeCell
+fn _02_set() {
+    let cell = MyCell::new(10);
+    // TODO: set cell to 20
 
-impl<T> MyCell<T> {
-    pub fn new(value: T) -> MyCell<T> {
-        MyCell {
-            value: UnsafeCell::new(value),
-        }
-    }
-
-    pub fn set(&self, value: T) {
-        // SAFETY: Single-threaded, no references escape
-        unsafe {
-            *self.value.get() = value;
-        }
-    }
-
-    pub fn replace(&self, value: T) -> T {
-        // SAFETY: Single-threaded, no references escape
-        unsafe { std::mem::replace(&mut *self.value.get(), value) }
-    }
-
-    pub fn into_inner(self) -> T {
-        self.value.into_inner()
-    }
-
-    pub fn as_ptr(&self) -> *mut T {
-        self.value.get()
-    }
-
-    // Exercise: swap two cells
-    pub fn swap(&self, other: &MyCell<T>) {
-        // SAFETY: Single-threaded, no references escape
-        unsafe {
-            std::ptr::swap(self.value.get(), other.value.get());
-        }
-    }
+    assert_eq!(cell.get(), 20);
 }
 
-impl<T: Copy> MyCell<T> {
-    pub fn get(&self) -> T {
-        // SAFETY: We only copy out, never expose a reference
-        unsafe { *self.value.get() }
-    }
+fn _03_shared_mutation() {
+    let cell = MyCell::new(0);
+    let ref1 = &cell;
+    let ref2 = &cell;
 
-    // Exercise: update
-    pub fn update<F: FnOnce(T) -> T>(&self, f: F) {
-        let old = self.get();
-        self.set(f(old));
-    }
+    // TODO: use ref1 to set cell to 5
+    // TODO: use ref2 to set cell to 10
+
+    assert_eq!(cell.get(), 10);
+    // Both shared references could mutate!
 }
 
-impl<T: Default> MyCell<T> {
-    pub fn take(&self) -> T {
-        self.replace(T::default())
-    }
+fn _04_replace() {
+    let cell = MyCell::new(String::from("hello"));
+    let old = String::new(); // TODO: replace cell contents with "world"
+
+    assert_eq!(old, "hello");
+    assert_eq!(cell.into_inner(), "world");
 }
 
-impl<T: Clone> Clone for MyCell<T> {
-    fn clone(&self) -> MyCell<T> {
-        unsafe { MyCell::new((*self.value.get()).clone()) }
-    }
+fn _05_swap() {
+    let a = MyCell::new(1);
+    let b = MyCell::new(2);
+
+    // TODO: swap the values of a and b
+
+    assert_eq!(a.get(), 2);
+    assert_eq!(b.get(), 1);
 }
 
-impl<T: Default> Default for MyCell<T> {
-    fn default() -> MyCell<T> {
-        MyCell::new(T::default())
-    }
+fn _06_take() {
+    let cell = MyCell::new(Some(42));
+    let value: Option<i32> = None; // TODO: take the value from cell
+
+    assert_eq!(value, Some(42));
+    assert_eq!(cell.get(), None); // Default is None
 }
 
-// Exercise: Debug for Cell
-impl<T: Copy + std::fmt::Debug> std::fmt::Debug for MyCell<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "MyCell({:?})", self.get())
-    }
+fn _07_update() {
+    let cell = MyCell::new(5);
+    // TODO: update cell by doubling its value (use update method)
+
+    assert_eq!(cell.get(), 10);
+}
+
+fn _08_into_inner() {
+    let cell = MyCell::new(String::from("owned"));
+    let value = String::new(); // TODO: consume cell and extract the value
+
+    assert_eq!(value, "owned");
+    // cell is no longer valid here
+}
+
+fn _09_clone() {
+    let cell1 = MyCell::new(42);
+    let cell2 = MyCell::new(0); // TODO: clone cell1
+
+    cell1.set(100);
+
+    assert_eq!(cell1.get(), 100);
+    assert_eq!(cell2.get(), 42); // Independent copy
+}
+
+fn _10_as_ptr() {
+    let cell = MyCell::new(99);
+    let ptr: *mut i32 = std::ptr::null_mut(); // TODO: get raw pointer from cell
+
+    let value = unsafe { *ptr };
+    assert_eq!(value, 99);
+}
+
+fn _11_default() {
+    let cell: MyCell<i32> = MyCell::new(0); // TODO: create cell using Default trait
+
+    assert_eq!(cell.get(), 0);
 }
 
 // ============================================================================
-// Exercise: Counter using Cell
+// Real-world Demo: Counter with Interior Mutability
 // ============================================================================
 
 struct Counter {
@@ -100,7 +120,7 @@ impl Counter {
         }
     }
 
-    // Note: &self, not &mut self!
+    // Note: Takes &self, not &mut self!
     fn increment(&self) {
         self.count.set(self.count.get() + 1);
     }
@@ -108,155 +128,140 @@ impl Counter {
     fn get(&self) -> usize {
         self.count.get()
     }
+
+    fn reset(&self) {
+        self.count.set(0);
+    }
 }
 
-// ============================================================================
-// Demo
-// ============================================================================
-
-fn _01_basic_get_set() {
-    println!("--- Basic get/set ---");
-    let cell = MyCell::new(5);
-    println!("Initial value: {}", cell.get());
-    cell.set(10);
-    println!("After set(10): {}", cell.get());
-}
-
-fn _02_shared_ref_mutation() {
-    println!("\n--- Shared reference mutation ---");
-    let cell = MyCell::new(0);
-    let ref1 = &cell;
-    let ref2 = &cell;
-    // Both references can "mutate" through set
-    ref1.set(1);
-    println!("After ref1.set(1): {}", cell.get());
-    ref2.set(2);
-    println!("After ref2.set(2): {}", cell.get());
-}
-
-fn _03_replace() {
-    println!("\n--- Replace ---");
-    let cell = MyCell::new(String::from("hello"));
-    let old = cell.replace(String::from("world"));
-    println!("Old value: {}", old);
-    println!("New value: {:?}", unsafe { &*cell.as_ptr() });
-}
-
-fn _04_take() {
-    println!("\n--- Take ---");
-    let cell = MyCell::new(42i32);
-    let taken = cell.take();
-    println!("Taken: {}", taken);
-    println!("Cell now contains: {}", cell.get()); // 0 (default)
-}
-
-fn _05_swap() {
-    println!("\n--- Swap ---");
-    let a = MyCell::new(1);
-    let b = MyCell::new(2);
-    println!("Before swap: a={}, b={}", a.get(), b.get());
-    a.swap(&b);
-    println!("After swap: a={}, b={}", a.get(), b.get());
-}
-
-fn _06_update() {
-    println!("\n--- Update ---");
-    let cell = MyCell::new(5);
-    cell.update(|x| x * 2);
-    println!("After update(|x| x * 2): {}", cell.get());
-}
-
-fn _07_counter() {
-    println!("\n--- Counter (practical example) ---");
-    let counter = Counter::new();
-    println!("Initial count: {}", counter.get());
+fn _12_counter() {
+    let counter: Counter = Counter::new(); // TODO: create new counter
 
     // Multiple shared references can all increment
     let r1 = &counter;
     let r2 = &counter;
     let r3 = &counter;
 
-    r1.increment();
-    r2.increment();
-    r3.increment();
+    // TODO: increment using r1, r2, r3
 
-    println!("After 3 increments: {}", counter.get());
+    let count = 0; // TODO: get final count
+
+    assert_eq!(count, 3);
 }
 
-fn _08_clone() {
-    println!("\n--- Clone ---");
-    let original = MyCell::new(42);
-    let cloned = original.clone();
-    original.set(100);
-    println!("Original: {}", original.get());
-    println!("Cloned (unchanged): {}", cloned.get());
+// ============================================================================
+// Real-world Demo: Config with Interior Mutability
+// ============================================================================
+
+struct Config {
+    max_retries: MyCell<u32>,
+    timeout_ms: MyCell<u32>,
+    debug_mode: MyCell<bool>,
 }
 
-fn _09_debug() {
-    println!("\n--- Debug ---");
-    let cell = MyCell::new(99);
-    println!("Debug output: {:?}", cell);
-}
-
-fn _10_into_inner() {
-    println!("\n--- into_inner ---");
-    let cell = MyCell::new(String::from("owned"));
-    let value = cell.into_inner();
-    println!("Consumed cell, got: {}", value);
-    // cell.get(); // Error: cell has been moved
-}
-
-fn _11_safety() {
-    println!("\n--- Why Cell is safe ---");
-    let cell = MyCell::new(vec![1, 2, 3]);
-    // We can't get a reference to the inner Vec, only replace it
-    let old_vec = cell.replace(vec![4, 5, 6]);
-    println!("Old vec: {:?}", old_vec);
-    // If we could get &Vec, and then call set(), we'd have a dangling reference
-    // Cell prevents this by design!
-}
-
-fn _12_cell_in_structs() {
-    println!("\n--- Cell in structs ---");
-    struct Config {
-        max_retries: MyCell<u32>,
-        timeout_ms: MyCell<u32>,
-        debug_mode: MyCell<bool>,
+impl Config {
+    fn new() -> Config {
+        Config {
+            max_retries: MyCell::new(3),
+            timeout_ms: MyCell::new(1000),
+            debug_mode: MyCell::new(false),
+        }
     }
 
-    let config = Config {
-        max_retries: MyCell::new(3),
-        timeout_ms: MyCell::new(1000),
-        debug_mode: MyCell::new(false),
-    };
+    fn enable_debug(&self) {
+        self.debug_mode.set(true);
+    }
 
-    // Can modify through shared reference
-    let cfg = &config;
-    cfg.debug_mode.set(true);
-    cfg.max_retries.set(5);
-
-    println!("Config: retries={}, timeout={}ms, debug={}",
-        config.max_retries.get(),
-        config.timeout_ms.get(),
-        config.debug_mode.get()
-    );
+    fn set_retries(&self, retries: u32) {
+        self.max_retries.set(retries);
+    }
 }
 
+fn _13_config() {
+    let config = Config::new();
+
+    // Can modify through shared reference
+    let cfg_ref = &config;
+    // TODO: enable debug mode using cfg_ref
+    // TODO: set max_retries to 5 using cfg_ref
+
+    assert_eq!(config.debug_mode.get(), true);
+    assert_eq!(config.max_retries.get(), 5);
+}
+
+// ============================================================================
+// Advanced: Cache with Interior Mutability
+// ============================================================================
+
+struct Cache<T> {
+    value: MyCell<Option<T>>,
+}
+
+impl<T: Copy> Cache<T> {
+    fn new() -> Self {
+        Cache {
+            value: MyCell::new(None),
+        }
+    }
+
+    fn get_or_compute<F: FnOnce() -> T>(&self, f: F) -> T {
+        match self.value.get() {
+            Some(v) => v,
+            None => {
+                let computed = f();
+                self.value.set(Some(computed));
+                computed
+            }
+        }
+    }
+
+    fn clear(&self) {
+        self.value.set(None);
+    }
+}
+
+fn _14_cache() {
+    let cache: Cache<i32> = Cache::new(); // TODO: create new cache
+
+    let mut call_count = 0;
+    let expensive_fn = || {
+        call_count += 1;
+        42
+    };
+
+    let result1 = 0; // TODO: get value using get_or_compute
+    let result2 = 0; // TODO: get value again (should be cached)
+
+    assert_eq!(result1, 42);
+    assert_eq!(result2, 42);
+    assert_eq!(call_count, 1); // Only called once!
+
+    // TODO: clear the cache
+
+    let result3 = cache.get_or_compute(|| 99);
+    assert_eq!(result3, 99);
+}
+
+// ============================================================================
+// Main
+// ============================================================================
+
 fn main() {
-    println!("=== MyCell Demo ===\n");
-
-    _01_basic_get_set();
-    _02_shared_ref_mutation();
-    _03_replace();
-    _04_take();
-    _05_swap();
-    _06_update();
-    _07_counter();
-    _08_clone();
-    _09_debug();
-    _10_into_inner();
-    _11_safety();
-    _12_cell_in_structs();
-
-    println!("\n=== End Demo ===");
+    run_all![
+        "MyCell",
+        _01_new_and_get,
+        _02_set,
+        _03_shared_mutation,
+        _04_replace,
+        _05_swap,
+        _06_take,
+        _07_update,
+        _08_into_inner,
+        _09_clone,
+        _10_as_ptr,
+        _11_default,
+        _12_counter,
+        _13_config,
+        _14_cache,
+    ];
 }

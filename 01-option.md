@@ -656,35 +656,6 @@ let flushed = cache.flush();
 flushed  // Some("cached_value")
 cache.get()  // None (cache is now empty)
 
-// Real-world: State machine transitions
-struct Connection {
-    state: MyOption<String>,
-}
-
-impl Connection {
-    fn new() -> Self {
-        Connection {
-            state: Some(String::from("connected")),
-        }
-    }
-
-    fn disconnect(&mut self) -> bool {
-        // Take the state, disconnecting
-        self.state.take().is_some()
-    }
-
-    fn is_connected(&self) -> bool {
-        self.state.is_some()
-    }
-}
-
-let mut conn = Connection::new();
-conn.is_connected()  // true
-
-let was_connected = conn.disconnect();
-was_connected  // true
-conn.is_connected()  // false
-
 // Taking in a loop
 let mut items = vec![
     Some(1),
@@ -733,78 +704,8 @@ player.weapon  // None
 
 ## The Complete Implementation
 
-```rust
-#[derive(Debug, Clone, PartialEq)]
-enum MyOption<T> {
-    Some(T),
-    None,
-}
-
-use MyOption::{Some, None};
-
-impl<T> MyOption<T> {
-    fn is_some(&self) -> bool {
-        matches!(self, Some(_))
-    }
-
-    fn is_none(&self) -> bool {
-        !self.is_some()
-    }
-
-    fn unwrap(self) -> T {
-        match self {
-            Some(val) => val,
-            None => panic!("called unwrap on a None value"),
-        }
-    }
-
-    fn unwrap_or(self, default: T) -> T {
-        match self {
-            Some(val) => val,
-            None => default,
-        }
-    }
-
-    fn unwrap_or_else<F: FnOnce() -> T>(self, f: F) -> T {
-        match self {
-            Some(val) => val,
-            None => f(),
-        }
-    }
-
-    fn map<U, F: FnOnce(T) -> U>(self, f: F) -> MyOption<U> {
-        match self {
-            Some(x) => MyOption::Some(f(x)),
-            None => MyOption::None,
-        }
-    }
-
-    fn and_then<U, F: FnOnce(T) -> MyOption<U>>(self, f: F) -> MyOption<U> {
-        match self {
-            Some(x) => f(x),
-            None => MyOption::None,
-        }
-    }
-
-    fn filter<P: FnOnce(&T) -> bool>(self, predicate: P) -> MyOption<T> {
-        match self {
-            Some(x) if predicate(&x) => Some(x),
-            _ => None,
-        }
-    }
-
-    fn as_ref(&self) -> MyOption<&T> {
-        match self {
-            Some(x) => MyOption::Some(x),
-            None => MyOption::None,
-        }
-    }
-
-    fn take(&mut self) -> MyOption<T> {
-        std::mem::replace(self, None)
-    }
-}
-```
+See the full code in [`src/option.rs`](src/option.rs) for the complete implementation of `MyOption` with all methods.
+Also, see the exercises in [01_option.rs](./examples/01_option.rs)
 
 ## Key Takeaways
 
@@ -812,13 +713,6 @@ impl<T> MyOption<T> {
 2. **The compiler enforces handling** - Can't ignore the `None` case
 3. **map transforms, and_then chains** - Functional programming patterns
 4. **unwrap is a code smell** - Prefer `unwrap_or`, `unwrap_or_else`, or pattern matching
-
-## Exercises
-
-1. Implement `or` - returns self if `Some`, otherwise returns the other option
-2. Implement `or_else` - lazy version of `or`
-3. Implement `zip` - combines two options into one `Option<(T, U)>`
-4. Implement `flatten` - converts `MyOption<MyOption<T>>` into `MyOption<T>`
 
 ## Next Chapter
 

@@ -1,118 +1,100 @@
-//! Chapter 3: Box - Heap Allocation
+//! Chapter 3: Box - Exercises
 //!
+//! Complete the TODO items to practice using MyBox methods.
 //! Run with: cargo run --example box
 
-use std::alloc::{alloc, dealloc, Layout};
-use std::fmt;
-use std::ops::{Deref, DerefMut};
-use std::ptr;
+#![allow(unused)]
 
-struct MyBox<T> {
-    ptr: *mut T,
+#[macro_use]
+mod common;
+
+use rustlib::r#box::MyBox;
+
+// ============================================================================
+// Exercises - Replace variables with TODOs with the correct MyBox operations
+// ============================================================================
+
+fn _01_new_and_deref() {
+    let boxed = MyBox::new(42);
+    let result = 0; // TODO: dereference boxed to get the value
+
+    let boxed_string = MyBox::new(String::from("hello"));
+    let result2 = 0; // TODO: get the length of the string inside boxed_string
+
+    assert_eq!(result, 42);
+    assert_eq!(result2, 5);
 }
 
-impl<T> MyBox<T> {
-    fn new(value: T) -> MyBox<T> {
-        unsafe {
-            // Calculate memory layout for T
-            let layout = Layout::new::<T>();
+fn _02_deref_mut() {
+    let mut boxed = MyBox::new(10);
+    // TODO: use dereference mutation to change the value to 100
 
-            // Allocate memory
-            let ptr = alloc(layout) as *mut T;
+    let mut boxed_string = MyBox::new(String::from("hello"));
+    // TODO: use push_str to add " world" to the string
 
-            if ptr.is_null() {
-                std::alloc::handle_alloc_error(layout);
-            }
-
-            // Write value to allocated memory
-            ptr::write(ptr, value);
-
-            MyBox { ptr }
-        }
-    }
-
-    fn into_inner(self) -> T {
-        unsafe {
-            // Read the value out
-            let value = ptr::read(self.ptr);
-
-            // Deallocate
-            let layout = Layout::new::<T>();
-            dealloc(self.ptr as *mut u8, layout);
-
-            // Don't run Drop (we already deallocated)
-            std::mem::forget(self);
-
-            value
-        }
-    }
-
-    fn leak(self) -> &'static mut T {
-        let ptr = self.ptr;
-        std::mem::forget(self); // Don't run Drop
-        unsafe { &mut *ptr }
-    }
-
-    fn into_raw(self) -> *mut T {
-        let ptr = self.ptr;
-        std::mem::forget(self); // Don't run Drop
-        ptr
-    }
-
-    unsafe fn from_raw(ptr: *mut T) -> MyBox<T> {
-        MyBox { ptr }
-    }
-
-    // Exercise: map
-    fn map<U, F: FnOnce(T) -> U>(self, f: F) -> MyBox<U> {
-        let value = self.into_inner();
-        MyBox::new(f(value))
-    }
+    assert_eq!(*boxed, 100);
+    assert_eq!(*boxed_string, "hello world");
 }
 
-impl<T> Deref for MyBox<T> {
-    type Target = T;
+fn _03_into_inner() {
+    let boxed = MyBox::new(String::from("owned"));
+    let result = String::new(); // TODO: extract the String from boxed using into_inner
 
-    fn deref(&self) -> &Self::Target {
-        unsafe { &*self.ptr }
-    }
+    assert_eq!(result, "owned");
+    // boxed is no longer valid here
 }
 
-impl<T> DerefMut for MyBox<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        unsafe { &mut *self.ptr }
-    }
+fn _04_map() {
+    let boxed = MyBox::new(5);
+    let result: MyBox<i32> = MyBox::new(0); // TODO: map boxed to multiply by 2
+
+    let boxed_str = MyBox::new(String::from("hello"));
+    let result2: MyBox<usize> = MyBox::new(0); // TODO: map to get length
+
+    assert_eq!(*result, 10);
+    assert_eq!(*result2, 5);
 }
 
-impl<T> Drop for MyBox<T> {
-    fn drop(&mut self) {
-        unsafe {
-            // Call destructor on the value
-            ptr::drop_in_place(self.ptr);
+fn _05_clone() {
+    let boxed1 = MyBox::new(String::from("original"));
+    let boxed2 = MyBox::new(String::new()); // TODO: clone boxed1
 
-            // Deallocate the memory
-            let layout = Layout::new::<T>();
-            dealloc(self.ptr as *mut u8, layout);
-        }
-    }
+    assert_eq!(*boxed1, "original");
+    assert_eq!(*boxed2, "original");
+    // Both boxes own independent copies
 }
 
-// Exercise: Debug
-impl<T: fmt::Debug> fmt::Debug for MyBox<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_tuple("MyBox").field(&**self).finish()
+fn _06_deref_coercion() {
+    fn print_len(s: &str) -> usize {
+        s.len()
     }
+
+    let boxed_string = MyBox::new(String::from("hello"));
+    let result = 0; // TODO: call print_len with &boxed_string (deref coercion!)
+
+    assert_eq!(result, 5);
 }
 
-// Exercise: Clone
-impl<T: Clone> Clone for MyBox<T> {
-    fn clone(&self) -> Self {
-        MyBox::new((**self).clone())
-    }
+fn _07_nested_box() {
+    let inner = MyBox::new(42);
+    let outer: MyBox<MyBox<i32>> = MyBox::new(MyBox::new(0)); // TODO: wrap inner in another MyBox
+
+    let result = 0; // TODO: dereference twice to get the value
+
+    assert_eq!(result, 42);
+}
+
+fn _08_into_raw_from_raw() {
+    let boxed = MyBox::new(String::from("raw"));
+    let ptr: *mut String = std::ptr::null_mut(); // TODO: convert boxed to raw pointer using into_raw
+
+    let restored: MyBox<String> = MyBox::new(String::new()); // TODO: restore from ptr using from_raw (unsafe!)
+
+    assert_eq!(*restored, "raw");
 }
 
 // ============================================================================
-// Recursive type example
+// Real-world Demo: Recursive Data Structures
 // ============================================================================
 
 #[derive(Debug)]
@@ -129,149 +111,42 @@ impl<T> List<T> {
     fn prepend(self, value: T) -> List<T> {
         List::Cons(value, MyBox::new(self))
     }
-}
 
-impl<T: fmt::Display> List<T> {
-    fn display(&self) {
+    fn len(&self) -> usize {
         match self {
-            List::Cons(val, rest) => {
-                print!("{} -> ", val);
-                rest.display();
-            }
-            List::Nil => println!("Nil"),
+            List::Cons(_, rest) => 1 + rest.len(),
+            List::Nil => 0,
         }
     }
 }
 
+fn _09_real_world() {
+    // Create a list: 1 -> 2 -> 3 -> Nil
+    let list: List<i32> = List::Nil; // TODO: create list with values 3, 2, 1 using prepend
+
+    // Without MyBox, this wouldn't compile! List would have infinite size.
+    // MyBox puts data on the heap and stores only a pointer (8 bytes).
+    let list_size = std::mem::size_of::<List<i32>>();
+
+    assert_eq!(list.len(), 3);
+    assert_eq!(list_size, 16); // i32 (4 bytes) + pointer (8 bytes) + enum tag (4 bytes padding)
+}
+
 // ============================================================================
-// Demo
+// Main
 // ============================================================================
-
-fn print_len(s: &str) {
-    println!("String length: {}", s.len());
-}
-
-fn _01_basic_usage() {
-    println!("--- Basic Usage ---");
-    let b = MyBox::new(42);
-    println!("Created MyBox with value: {}", *b);
-}
-
-fn _02_deref() {
-    println!("\n--- Deref ---");
-    let b = MyBox::new(10);
-    let value: i32 = *b; // Deref to get value
-    println!("Dereferenced value: {}", value);
-}
-
-fn _03_deref_mut() {
-    println!("\n--- DerefMut ---");
-    let mut b = MyBox::new(5);
-    println!("Before mutation: {}", *b);
-    *b = 100;
-    println!("After mutation: {}", *b);
-}
-
-fn _04_deref_coercion() {
-    println!("\n--- Deref Coercion ---");
-    let boxed_string = MyBox::new(String::from("hello"));
-    // &MyBox<String> -> &String -> &str automatically!
-    print_len(&boxed_string);
-}
-
-fn _05_into_inner() {
-    println!("\n--- into_inner ---");
-    let b = MyBox::new(String::from("owned"));
-    let s: String = b.into_inner();
-    println!("Extracted: {}", s);
-    // b is now invalid (consumed)
-}
-
-fn _06_debug() {
-    println!("\n--- Debug ---");
-    let b = MyBox::new(vec![1, 2, 3]);
-    println!("{:?}", b);
-}
-
-fn _07_clone() {
-    println!("\n--- Clone ---");
-    let b1 = MyBox::new(String::from("original"));
-    let b2 = b1.clone();
-    println!("b1: {:?}", b1);
-    println!("b2: {:?}", b2);
-}
-
-fn _08_map() {
-    println!("\n--- map ---");
-    let b = MyBox::new(5);
-    let doubled = b.map(|x| x * 2);
-    println!("5 mapped to doubled: {:?}", doubled);
-
-    let b = MyBox::new(String::from("hello"));
-    let len_box = b.map(|s| s.len());
-    println!("\"hello\" mapped to length: {:?}", len_box);
-}
-
-fn _09_recursive_list() {
-    println!("\n--- Recursive Type (List) ---");
-    let list = List::new().prepend(3).prepend(2).prepend(1);
-    print!("List: ");
-    list.display();
-}
-
-fn _10_drop() {
-    println!("\n--- Drop ---");
-    {
-        let _b = MyBox::new(String::from("will be dropped"));
-        println!("MyBox exists in this scope");
-    } // _b dropped here
-    println!("MyBox has been dropped (memory freed)");
-}
-
-fn _11_leak() {
-    println!("\n--- leak ---");
-    let b = MyBox::new(42);
-    let leaked: &'static mut i32 = b.leak();
-    println!("Leaked value: {}", *leaked);
-    *leaked = 999;
-    println!("Modified leaked value: {}", *leaked);
-    println!("This memory is never freed!");
-}
-
-fn _12_raw_pointers() {
-    println!("\n--- into_raw / from_raw ---");
-    let b = MyBox::new(String::from("raw pointer"));
-    let ptr = MyBox::into_raw(b);
-    println!("Converted to raw pointer: {:p}", ptr);
-
-    let restored = unsafe { MyBox::from_raw(ptr) };
-    println!("Restored from raw pointer: {:?}", restored);
-    // restored will be dropped here
-}
-
-fn _13_size_comparison() {
-    println!("\n--- Size Comparison ---");
-    println!("Size of MyBox<[u8; 1000]>: {} bytes", std::mem::size_of::<MyBox<[u8; 1000]>>());
-    println!("Size of [u8; 1000]: {} bytes", std::mem::size_of::<[u8; 1000]>());
-    println!("MyBox is just a pointer (8 bytes on 64-bit)!");
-}
 
 fn main() {
-    println!("=== MyBox Demo ===\n");
-
-    _01_basic_usage();
-    _02_deref();
-    _03_deref_mut();
-    _04_deref_coercion();
-    _05_into_inner();
-    _06_debug();
-    _07_clone();
-    _08_map();
-    _09_recursive_list();
-    _10_drop();
-    _11_leak();
-    _12_raw_pointers();
-    _13_size_comparison();
-
-    println!("\n=== End Demo ===");
+    run_all![
+        "MyBox",
+        _01_new_and_deref,
+        _02_deref_mut,
+        _03_into_inner,
+        _04_map,
+        _05_clone,
+        _06_deref_coercion,
+        _07_nested_box,
+        _08_into_raw_from_raw,
+        _09_real_world,
+    ];
 }

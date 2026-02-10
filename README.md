@@ -208,15 +208,99 @@ impl<T> MyOption<T> {
 }
 ```
 
+## Project Structure
+
+```
+rustlib/
+├── src/                    # Library implementations
+│   ├── lib.rs             # Main library file
+│   ├── option.rs          # MyOption<T> implementation
+│   ├── result.rs          # MyResult<T, E> implementation
+│   ├── box.rs             # MyBox<T> implementation
+│   ├── vec.rs             # MyVec<T> implementation
+│   ├── cell.rs            # MyCell<T> implementation
+│   ├── refcell.rs         # MyRefCell<T> (work in progress)
+│   └── rc.rs              # MyRc<T> and MyWeak<T> (work in progress)
+├── examples/              # Exercise files (with TODOs)
+│   ├── common.rs          # Shared test utilities
+│   ├── 01_option.rs       # Option exercises
+│   ├── 02_result.rs       # Result exercises
+│   ├── 03_box.rs          # Box exercises
+│   ├── 04_vec.rs          # Vec exercises
+│   ├── 05_cell.rs         # Cell exercises
+│   ├── 06_refcell.rs      # RefCell exercises (work in progress)
+│   └── 07_rc.rs           # Rc exercises (work in progress)
+├── 01-option.md           # Chapter 1: Option documentation
+├── 02-result.md           # Chapter 2: Result documentation
+├── 03-box.md              # Chapter 3: Box documentation
+├── 04-vec.md              # Chapter 4: Vec documentation
+├── 05-cell.md             # Chapter 5: Cell documentation
+├── 06-refcell.md          # Chapter 6: RefCell documentation (work in progress)
+└── 07-rc.md               # Chapter 7: Rc documentation (work in progress)
+```
+
 ## Running the Code
 
-Each chapter has corresponding code in the `examples/` directory:
+### Running Examples (Exercises)
+
+Each chapter has corresponding exercises in the `examples/` directory:
 
 ```bash
-cargo run --example option
-cargo run --example cell
-cargo run --example rc
-cargo run --example mini_tokio
+# Run individual examples (Chapters 1-5 completed)
+cargo run --example option      # Chapter 1
+cargo run --example result      # Chapter 2
+cargo run --example box         # Chapter 3
+cargo run --example vec         # Chapter 4
+cargo run --example cell        # Chapter 5
+
+# Chapters 6-7 are work in progress
+# cargo run --example refcell   # Chapter 6 (WIP)
+# cargo run --example rc        # Chapter 7 (WIP)
+```
+
+### Running Tests
+
+The project includes comprehensive tests:
+
+```bash
+# Run all tests (111 unit tests + 80 doctests)
+cargo test
+
+# Run only unit tests
+cargo test --lib
+
+# Run only documentation tests
+cargo test --doc
+
+# Run tests for a specific module
+cargo test option
+cargo test cell
+```
+
+**Test Coverage:**
+- **111 unit tests** - Testing all implementations in `src/`
+- **80 doctests** - Embedded in documentation comments
+- All tests passing ✓
+
+### Using as a Library
+
+You can use the completed implementations in your own code:
+
+```rust
+// Completed types (Chapters 1-5)
+use rustlib::option::{MyOption, Some, None};
+use rustlib::result::{MyResult, Ok, Err};
+use rustlib::r#box::MyBox;
+use rustlib::vec::MyVec;
+use rustlib::cell::MyCell;
+
+// Use the my_vec! macro
+use rustlib::my_vec;
+let v = my_vec![1, 2, 3];
+
+// Work in progress (Chapters 6-7)
+// use rustlib::refcell::MyRefCell;  // WIP
+// use rustlib::rc::{MyRc, MyWeak};  // WIP
 ```
 
 ## License

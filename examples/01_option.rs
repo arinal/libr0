@@ -1,436 +1,261 @@
-//! Chapter 1: Option - The Simplest Enum
+//! Chapter 1: Option - Exercises
 //!
-//! Run with: cargo run --example option
+//! Complete the TODO items to practice using MyOption methods.
+//! Run with: cargo run --example 01_option
 
-#[derive(Debug, Clone, PartialEq)]
-enum MyOption<T> {
-    Some(T),
-    None,
-}
+#![allow(unused)]
 
-use MyOption::{None, Some};
+#[macro_use]
+mod common;
 
-impl<T> MyOption<T> {
-    fn is_some(&self) -> bool {
-        matches!(self, Some(_))
-    }
-
-    fn is_none(&self) -> bool {
-        !self.is_some()
-    }
-
-    fn unwrap(self) -> T {
-        match self {
-            Some(val) => val,
-            None => panic!("called unwrap on a None value"),
-        }
-    }
-
-    fn unwrap_or(self, or: T) -> T {
-        match self {
-            Some(val) => val,
-            None => or,
-        }
-    }
-
-    fn unwrap_or_else<F: FnOnce() -> T>(self, f: F) -> T {
-        match self {
-            Some(val) => val,
-            None => f(),
-        }
-    }
-
-    fn map<U, F: FnOnce(T) -> U>(self, f: F) -> MyOption<U> {
-        match self {
-            Some(x) => MyOption::Some(f(x)),
-            None => MyOption::None,
-        }
-    }
-
-    fn and_then<U, F: FnOnce(T) -> MyOption<U>>(self, f: F) -> MyOption<U> {
-        match self {
-            Some(x) => f(x),
-            None => MyOption::None,
-        }
-    }
-
-    fn filter<P: FnOnce(&T) -> bool>(self, predicate: P) -> MyOption<T> {
-        match self {
-            Some(x) if predicate(&x) => Some(x),
-            _ => None,
-        }
-    }
-
-    fn as_ref(&self) -> MyOption<&T> {
-        match self {
-            Some(x) => MyOption::Some(x),
-            None => MyOption::None,
-        }
-    }
-
-    fn take(&mut self) -> MyOption<T> {
-        std::mem::replace(self, None)
-    }
-
-    // Exercise solutions
-
-    fn or(self, other: MyOption<T>) -> MyOption<T> {
-        match self {
-            Some(x) => Some(x),
-            None => other,
-        }
-    }
-
-    fn or_else<F: FnOnce() -> MyOption<T>>(self, f: F) -> MyOption<T> {
-        match self {
-            Some(x) => Some(x),
-            None => f(),
-        }
-    }
-}
-
-impl<T, U> MyOption<(T, U)> {
-    fn unzip(self) -> (MyOption<T>, MyOption<U>) {
-        match self {
-            Some((a, b)) => (Some(a), Some(b)),
-            None => (None, None),
-        }
-    }
-}
-
-impl<T> MyOption<MyOption<T>> {
-    fn flatten(self) -> MyOption<T> {
-        match self {
-            Some(inner) => inner,
-            None => None,
-        }
-    }
-}
-
-// Zip requires a separate function since we need two type parameters
-fn zip<T, U>(a: MyOption<T>, b: MyOption<U>) -> MyOption<(T, U)> {
-    match (a, b) {
-        (Some(x), Some(y)) => Some((x, y)),
-        _ => None,
-    }
-}
+use rustlib::option::{zip, MyOption, None, Some};
 
 // ============================================================================
-// Demo
+// Exercises - Replace variables with TODOs with the correct MyOption method calls
 // ============================================================================
 
-fn find_user(id: u32) -> MyOption<String> {
-    match id {
-        1 => Some(String::from("Alice")),
-        2 => Some(String::from("Bob")),
-        _ => None,
+fn _01_is_some_is_none() {
+    let value: MyOption<i32> = Some(42);
+    let result = false; // TODO: check if value is some, e.g. value.is_some()
+
+    let empty: MyOption<i32> = None;
+    let result2 = false; // TODO: check if empty is none
+
+    assert!(result);
+    assert!(result2);
+}
+
+fn _02_unwrap_or() {
+    let port: MyOption<u16> = None;
+    let result = 0; // TODO: get port or default to 8080
+
+    let timeout: MyOption<u32> = Some(30);
+    let result2 = 0; // TODO: get timeout or default to 60
+
+    assert_eq!(result, 8080);
+    assert_eq!(result2, 30);
+}
+
+fn _03_unwrap_or_else() {
+    fn expensive_computation() -> i32 {
+        42
     }
+
+    let cache: MyOption<i32> = None;
+    let result = 0; // TODO: get cache or compute expensive value using expensive_computation
+
+    let cache2: MyOption<i32> = Some(100);
+    let result2 = 0; // TODO: get cache or compute (should not call function)
+
+    assert_eq!(result, 42);
+    assert_eq!(result2, 100);
 }
 
-fn get_user_email(name: &str) -> MyOption<String> {
-    match name {
-        "Alice" => Some(String::from("alice@example.com")),
-        _ => None,
+fn _04_map() {
+    let name: MyOption<&str> = Some("alice");
+    let result: MyOption<&str> = None; // TODO: convert name to uppercase
+    let length: MyOption<usize> = None; // TODO: get length of name
+
+    let empty: MyOption<&str> = None;
+    let result3: MyOption<&str> = Some(""); // TODO: map empty to uppercase
+
+    assert_eq!(result, Some("ALICE"));
+    assert_eq!(length, Some(5));
+    assert_eq!(result3, None);
+}
+
+fn _05_and_then() {
+    fn safe_divide(a: i32, b: i32) -> MyOption<i32> {
+        if b == 0 {
+            None
+        } else {
+            Some(a / b)
+        }
     }
+
+    let value: MyOption<i32> = Some(20);
+    let result: MyOption<i32> = None; // TODO: divide by 4, then divide by 5 using and_then
+
+    let value2: MyOption<i32> = Some(10);
+    let result2: MyOption<i32> = Some(0); // TODO: divide by 0 using and_then
+
+    let a = Some(1);
+    let b = Some(2);
+    let c = Some(3);
+    let result3: MyOption<i32> = None; // TODO: sum a, b, c using and_then
+
+    assert_eq!(result, Some(1));
+    assert_eq!(result2, None);
 }
 
-fn _01_basic_usage() {
-    println!("--- Basic Usage ---");
-    let user = find_user(1);
-    match &user {
-        Some(name) => println!("Found user: {}", name),
-        None => println!("User not found"),
+fn _06_filter() {
+    let value = Some(15);
+    let result: MyOption<i32> = None; // TODO: keep value if >= 10
+
+    let value2 = Some(5);
+    let result2: MyOption<i32> = Some(0); // TODO: keep value if >= 10
+
+    let value3: MyOption<i32> = None;
+    let result3: MyOption<i32> = Some(0); // TODO: filter none
+
+    assert_eq!(result, Some(15));
+    assert_eq!(result2, None);
+    assert_eq!(result3, None);
+}
+
+fn _07_as_ref() {
+    let message = Some(String::from("Hello, world!"));
+    let length: MyOption<usize> = None; // TODO: get length without moving message
+    let contains: MyOption<bool> = None; // TODO: check if contains 'world' without moving message
+
+    assert_eq!(length, Some(11));
+    assert_eq!(contains, Some(true));
+    assert_eq!(message, Some(String::from("Hello, world!")));
+}
+
+fn _08_take() {
+    let mut slot = Some(String::from("data"));
+    let result: MyOption<String> = None; // TODO: take value from slot
+
+    assert_eq!(result, Some(String::from("data")));
+    assert_eq!(slot, None);
+}
+
+fn _09_or() {
+    let primary: MyOption<i32> = None;
+    let fallback: MyOption<i32> = Some(42);
+    let result: MyOption<i32> = None; // TODO: use primary or fallback
+
+    let primary2: MyOption<i32> = Some(10);
+    let fallback2: MyOption<i32> = Some(42);
+    let result2: MyOption<i32> = None; // TODO: use primary or fallback
+
+    assert_eq!(result, Some(42));
+    assert_eq!(result2, Some(10));
+}
+
+fn _10_or_else() {
+    fn compute() -> MyOption<i32> {
+        Some(42)
     }
+
+    let cache: MyOption<i32> = Some(100);
+    let result: MyOption<i32> = None; // TODO: use cache or compute
+
+    let cache2: MyOption<i32> = None;
+    let result2: MyOption<i32> = None; // TODO: compute if cache is none using or_else
+
+    assert_eq!(result, Some(100));
+    assert_eq!(result2, Some(42));
 }
 
-fn _02_is_some_is_none() {
-    println!("\n--- is_some / is_none ---");
-    let x: MyOption<u32> = Some(42);
-    println!("Some(42).is_some() = {}", x.is_some());
-    println!("Some(42).is_none() = {}", x.is_none());
-
-    let y: MyOption<u32> = None;
-    println!("None.is_some() = {}", y.is_some());
-    println!("None.is_none() = {}", y.is_none());
-
-    // Early return pattern
-    if find_user(99).is_none() {
-        println!("User 99 not found - would return early in real code");
-    }
-}
-
-fn _03_unwrap() {
-    println!("\n--- unwrap (use with caution!) ---");
-    let x = Some("value");
-    println!("Some(\"value\").unwrap() = {}", x.unwrap());
-    println!("Note: unwrap on None would panic! Only use when 100% sure it's Some");
-}
-
-fn _04_unwrap_or() {
-    println!("\n--- unwrap_or ---");
-    let x = Some(42);
-    println!("Some(42).unwrap_or(0) = {}", x.unwrap_or(0));
-
-    let y: MyOption<i32> = None;
-    println!("None.unwrap_or(0) = {}", y.unwrap_or(0));
-
-    // Configuration with defaults
-    let port = None.unwrap_or(8080);
-    println!("Default port: {}", port);
-}
-
-fn _05_unwrap_or_else() {
-    println!("\n--- unwrap_or_else (lazy evaluation) ---");
-    let x = Some(42);
-    println!("Some(42).unwrap_or_else(|| 0) = {}", x.unwrap_or_else(|| {
-        println!("  (This closure is NOT called for Some)");
-        0
-    }));
-
-    let y: MyOption<i32> = None;
-    println!("None.unwrap_or_else(|| 0) = {}", y.unwrap_or_else(|| {
-        println!("  (This closure IS called for None)");
-        0
-    }));
-}
-
-fn _06_map() {
-    println!("\n--- map (transform values) ---");
-    let name = Some(String::from("alice"));
-    let name_len = name.map(|s| s.len());
-    println!("Some(\"alice\").map(len) = {:?}", name_len);
-
-    let nothing: MyOption<String> = None;
-    let nothing_len = nothing.map(|s| s.len());
-    println!("None.map(len) = {:?}", nothing_len);
-
-    // Chaining maps
-    let number = Some(5);
-    let result = number
-        .map(|n| n * 2)
-        .map(|n| n + 3)
-        .map(|n| n.to_string());
-    println!("Some(5) -> *2 -> +3 -> to_string = {:?}", result);
-
-    // None propagates through map chain
-    let none_number: MyOption<i32> = None;
-    let none_result = none_number.map(|n| n * 2).map(|n| n + 3);
-    println!("None -> map -> map = {:?}", none_result);
-}
-
-fn _07_and_then() {
-    println!("\n--- and_then (chain fallible operations) ---");
-
-    // Compare map vs and_then
-    println!("Why and_then? Because map would give nested Options:");
-    let _x = Some(10);
-    // Using map would give Some(Some(5)) - nested!
-    // Using and_then gives Some(5) - flattened!
-
-    let email = find_user(1).and_then(|name| get_user_email(&name));
-    println!("find_user(1) -> get_email = {:?}", email);
-
-    let no_email = find_user(2).and_then(|name| get_user_email(&name));
-    println!("find_user(2) -> get_email = {:?} (Bob has no email)", no_email);
-
-    let no_user = find_user(99).and_then(|name| get_user_email(&name));
-    println!("find_user(99) -> get_email = {:?} (user not found)", no_user);
-}
-
-fn _08_filter() {
-    println!("\n--- filter (conditional keep) ---");
-
-    // Keep even numbers
-    let even = Some(4).filter(|n| n % 2 == 0);
-    println!("Some(4).filter(even) = {:?}", even);
-
-    let odd = Some(3).filter(|n| n % 2 == 0);
-    println!("Some(3).filter(even) = {:?}", odd);
-
-    // None stays None
-    let nothing: MyOption<i32> = None;
-    let still_nothing = nothing.filter(|n| n % 2 == 0);
-    println!("None.filter(even) = {:?}", still_nothing);
-
-    // Range validation
-    let in_range = Some(15).filter(|n| *n >= 10 && *n <= 20);
-    println!("Some(15).filter(10..=20) = {:?}", in_range);
-
-    let out_of_range = Some(25).filter(|n| *n >= 10 && *n <= 20);
-    println!("Some(25).filter(10..=20) = {:?}", out_of_range);
-
-    // String validation
-    let long_name = find_user(1).filter(|n| n.len() > 3);
-    println!("Alice filtered (len > 3) = {:?}", long_name);
-
-    let short_name = find_user(2).filter(|n| n.len() > 3);
-    println!("Bob filtered (len > 3) = {:?} (too short!)", short_name);
-}
-
-fn _09_as_ref() {
-    println!("\n--- as_ref (use value without moving) ---");
-    let data = Some(String::from("hello world"));
-
-    // Multiple operations on the same Option
-    let len = data.as_ref().map(|s| s.len());
-    let uppercase = data.as_ref().map(|s| s.to_uppercase());
-    let contains = data.as_ref().map(|s| s.contains("world"));
-
-    println!("Length: {:?}", len);
-    println!("Uppercase: {:?}", uppercase);
-    println!("Contains 'world': {:?}", contains);
-    println!("Original still valid: {:?}", data);
-
-    // Without as_ref, data would be moved on first map!
-    let maybe_name: MyOption<String> = Some(String::from("Charlie"));
-    let len = maybe_name.as_ref().map(|s| s.len());
-    println!("Length via as_ref: {:?}", len);
-    println!("Original still valid: {:?}", maybe_name);
-}
-
-fn _10_take() {
-    println!("\n--- take (extract and replace with None) ---");
-    let mut slot = Some(String::from("taken"));
-    println!("Before take: {:?}", slot);
-
-    let taken = slot.take();
-    println!("Taken value: {:?}", taken);
-    println!("Slot after take: {:?}", slot);
-
-    // Taking from None returns None
-    let mut empty: MyOption<i32> = None;
-    let result = empty.take();
-    println!("Take from None: {:?}", result);
-
-    // Useful for state machines
-    struct Connection {
-        state: MyOption<String>,
-    }
-    let mut conn = Connection {
-        state: Some(String::from("connected")),
-    };
-    let old_state = conn.state.take();
-    println!("Old connection state: {:?}", old_state);
-    println!("Connection is now: {:?}", conn.state);
-}
-
-fn _11_or() {
-    println!("\n--- or (provide alternative Option) ---");
-    let first: MyOption<i32> = Some(1);
-    let second: MyOption<i32> = Some(2);
-    println!("Some(1).or(Some(2)) = {:?}", first.or(second));
-
-    let none_first: MyOption<i32> = None;
-    let some_second: MyOption<i32> = Some(42);
-    println!("None.or(Some(42)) = {:?}", none_first.or(some_second));
-}
-
-fn _12_or_else() {
-    println!("\n--- or_else (lazy alternative Option) ---");
-    let x = Some(1);
-    let result = x.or_else(|| {
-        println!("  (This is NOT called for Some)");
-        Some(2)
-    });
-    println!("Some(1).or_else(|| Some(2)) = {:?}", result);
-
-    let y: MyOption<i32> = None;
-    let result = y.or_else(|| {
-        println!("  (This IS called for None)");
-        Some(2)
-    });
-    println!("None.or_else(|| Some(2)) = {:?}", result);
-}
-
-fn _13_zip() {
-    println!("\n--- zip (combine two Options) ---");
+fn _11_zip() {
     let a: MyOption<i32> = Some(1);
     let b: MyOption<&str> = Some("hello");
-    println!("zip(Some(1), Some(\"hello\")) = {:?}", zip(a, b));
+    let result: MyOption<(i32, &str)> = None; // TODO: zip a and b
 
-    let c: MyOption<i32> = None;
-    let d: MyOption<&str> = Some("world");
-    println!("zip(None, Some(\"world\")) = {:?}", zip(c, d));
+    let a2: MyOption<i32> = None;
+    let b2: MyOption<&str> = Some("world");
+    let result2: MyOption<(i32, &str)> = Some((0, "")); // TODO: zip none and some
 
-    let e: MyOption<i32> = Some(42);
-    let f: MyOption<&str> = None;
-    println!("zip(Some(42), None) = {:?}", zip(e, f));
+    assert_eq!(result, Some((1, "hello")));
+    assert_eq!(result2, None);
 }
 
-fn _14_flatten() {
-    println!("\n--- flatten (remove one level of nesting) ---");
+fn _12_flatten() {
+    let not_nested: MyOption<i32> = Some(42);
+    // try that a non-nested option don't have `flatten` method
+    // let _ = not_nested.flatten(); // This should not compile
+
     let nested: MyOption<MyOption<i32>> = Some(Some(42));
-    println!("Some(Some(42)).flatten() = {:?}", nested.flatten());
+    let result: MyOption<i32> = None; // TODO: flatten nested
 
-    let nested_none: MyOption<MyOption<i32>> = Some(None);
-    println!("Some(None).flatten() = {:?}", nested_none.flatten());
+    let nested2: MyOption<MyOption<i32>> = Some(None);
+    let result2: MyOption<i32> = Some(0); // TODO: flatten some(none)
 
-    let outer_none: MyOption<MyOption<i32>> = None;
-    println!("None.flatten() = {:?}", outer_none.flatten());
+    assert_eq!(result, Some(42));
+    assert_eq!(result2, None);
 }
 
-fn _15_unzip() {
-    println!("\n--- unzip (split tuple Option) ---");
-    let tuple: MyOption<(i32, &str)> = Some((1, "hello"));
-    let (first, second) = tuple.unzip();
-    println!("Some((1, \"hello\")).unzip() = ({:?}, {:?})", first, second);
+fn _13_unzip() {
+    let pair: MyOption<(i32, &str)> = Some((42, "answer"));
+    let (num, text) = (None, None); // TODO: unzip pair
 
-    let no_tuple: MyOption<(i32, &str)> = None;
-    let (a, b) = no_tuple.unzip();
-    println!("None.unzip() = ({:?}, {:?})", a, b);
+    let pair2: MyOption<(i32, &str)> = None;
+    let (num2, text2) = (Some(0), Some("")); // TODO: unzip none
+
+    assert_eq!(num, Some(42));
+    assert_eq!(text, Some("answer"));
+    assert_eq!(num2, None);
+    assert_eq!(text2, None);
 }
 
-fn _16_real_world() {
-    println!("\n--- Real-world example: Configuration pipeline ---");
-    fn parse_port(s: &str) -> MyOption<u16> {
-        match s.parse().ok() {
-            std::option::Option::Some(n) => Some(n),
-            std::option::Option::None => None,
-        }
+// ============================================================================
+// Real-world Demo: User Profile Lookup
+// ============================================================================
+
+#[derive(Debug, PartialEq, Clone)]
+struct User {
+    id: u32,
+    name: String,
+    email: MyOption<String>,
+}
+
+fn find_user(id: u32) -> MyOption<User> {
+    match id {
+        1 => Some(User {
+            id: 1,
+            name: String::from("Alice"),
+            email: Some(String::from("alice@example.com")),
+        }),
+        2 => Some(User {
+            id: 2,
+            name: String::from("Bob"),
+            email: None,
+        }),
+        _ => None,
     }
-
-    fn validate_port(port: u16) -> MyOption<u16> {
-        if port > 1024 && port < 65535 {
-            Some(port)
-        } else {
-            None
-        }
-    }
-
-    let config_value = Some(String::from("8080"));
-    let port = config_value
-        .and_then(|s| parse_port(&s))
-        .and_then(validate_port)
-        .unwrap_or(3000);
-    println!("Parsed and validated port: {}", port);
-
-    let bad_config = Some(String::from("80"));
-    let port = bad_config
-        .and_then(|s| parse_port(&s))
-        .and_then(validate_port)
-        .unwrap_or(3000);
-    println!("Invalid port (80 < 1024), using default: {}", port);
 }
+
+fn _14_real_world() {
+    // Find user and extract email
+    let result: MyOption<String> = None; // TODO: find user 1 and get their email
+
+    // User with no email - provide default
+    let user = find_user(2);
+    let result2 = String::new(); // TODO: get user 2's email or use 'noreply@example.com'
+
+    // Check if user exists
+    let result3 = false; // TODO: check if user 999 exists using is_none
+
+    // Chain operations: find user, then check if email contains '@'
+    let result4: MyOption<bool> = None; // TODO: find user 1, get email, check if contains '@'
+
+    assert_eq!(result, Some(String::from("alice@example.com")));
+    assert_eq!(result2, String::from("noreply@example.com"));
+    assert!(result3);
+    assert_eq!(result4, Some(true));
+}
+
+// ============================================================================
+// Main
+// ============================================================================
 
 fn main() {
-    println!("=== MyOption Demo ===\n");
-
-    _01_basic_usage();
-    _02_is_some_is_none();
-    _03_unwrap();
-    _04_unwrap_or();
-    _05_unwrap_or_else();
-    _06_map();
-    _07_and_then();
-    _08_filter();
-    _09_as_ref();
-    _10_take();
-    _11_or();
-    _12_or_else();
-    _13_zip();
-    _14_flatten();
-    _15_unzip();
-    _16_real_world();
-
-    println!("\n=== End Demo ===");
+    run_all!["MyOption",
+        _01_is_some_is_none,
+        _02_unwrap_or,
+        _03_unwrap_or_else,
+        _04_map,
+        _05_and_then,
+        _06_filter,
+        _07_as_ref,
+        _08_take,
+        _09_or,
+        _10_or_else,
+        _11_zip,
+        _12_flatten,
+        _13_unzip,
+        _14_real_world,
+    ];
 }

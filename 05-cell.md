@@ -45,9 +45,9 @@ impl Stats {
 
 // The problem:
 let stats = Stats { value: 42, access_count: 0 };
-let a = stats.get_value();  // Takes &stats
-let b = stats.get_value();  // Takes &stats again
-// Both can exist at the same time - but we can't count accesses!
+let a = stats.get_value();  // Takes &stats, access_count should be 1
+let b = stats.get_value();  // Takes &stats again, access_count should be 2
+// But we can't mutate access_count through &self, so it stays 0!
 
 // Solution: Use Cell for the counter.
 // We will implement Cell shortly, but we're using the standard library for demonstration.
@@ -130,11 +130,28 @@ fn clone_rc<T>(rc: &SimpleRc<T>) -> &SimpleRc<T> {
 
 ## What is Interior Mutability?
 
-**Interior mutability** lets you mutate data even when you only have a shared reference to it. It moves the borrow checking from compile-time to either:
+**Interior mutability** lets you mutate data even when you only have a shared reference (`&T`) to it.
 
-- **Runtime** - types like `RefCell`, `Mutex` check borrowing rules at runtime
-- **Unsafe code** - types like `Cell` use unsafe methods internally but provide safe APIs
-- **Hardware** - atomics rely on CPU guarantees
+Normal Rust rules:
+```rust
+let mut x = 5;
+let r = &x;    // Shared reference
+
+// x = 10;     // ❌ Error: cannot mutate x while borrowed
+// *r = 10;    // ❌ Error: cannot mutate through shared reference
+```
+
+With interior mutability:
+```rust
+use std::cell::Cell;
+
+let x = Cell::new(5);
+let r = &x;    // Shared reference
+
+r.set(10);     // ✅ Can mutate through shared reference!
+```
+
+**How?** Types like `Cell` use `unsafe` code internally to bypass compile-time checks, but provide a safe API that ensures you can't violate Rust's safety rules.
 
 All interior mutability types are wrappers around `UnsafeCell` (which we'll explore next). Rust provides safe wrappers that handle the unsafe operations for you. We'll implement these wrappers (`Cell`, `RefCell`) later in this chapter to understand how they work.
 
@@ -583,70 +600,7 @@ println!("{}", counter.get());  // Undefined behavior!
 
 ## The Complete Implementation
 
-```rust
-use std::cell::UnsafeCell;
-
-pub struct MyCell<T> {
-    value: UnsafeCell<T>,
-}
-
-// Cell is not Sync - it can't be shared between threads safely
-// This is automatically inferred because UnsafeCell is !Sync
-
-impl<T> MyCell<T> {
-    pub fn new(value: T) -> MyCell<T> {
-        MyCell {
-            value: UnsafeCell::new(value),
-        }
-    }
-
-    pub fn set(&self, value: T) {
-        unsafe {
-            *self.value.get() = value;
-        }
-    }
-
-    pub fn replace(&self, value: T) -> T {
-        unsafe { std::mem::replace(&mut *self.value.get(), value) }
-    }
-
-    pub fn into_inner(self) -> T {
-        self.value.into_inner()
-    }
-
-    pub fn as_ptr(&self) -> *mut T {
-        self.value.get()
-    }
-}
-
-impl<T: Copy> MyCell<T> {
-    pub fn get(&self) -> T {
-        unsafe { *self.value.get() }
-    }
-}
-
-impl<T: Default> MyCell<T> {
-    pub fn take(&self) -> T {
-        self.replace(T::default())
-    }
-}
-
-impl<T: Clone> Clone for MyCell<T> {
-    fn clone(&self) -> MyCell<T> {
-        // We can't just copy the UnsafeCell, we need to:
-        // 1. Get a reference to the inner value
-        // 2. Clone it
-        // 3. Wrap in new Cell
-        unsafe { MyCell::new((*self.value.get()).clone()) }
-    }
-}
-
-impl<T: Default> Default for MyCell<T> {
-    fn default() -> MyCell<T> {
-        MyCell::new(T::default())
-    }
-}
-```
+See the full implementation in [cell.rs](./src/cell.rs).
 
 ## Cell vs Other Interior Mutability Types
 
@@ -680,29 +634,7 @@ Use `RefCell` when:
 
 ## Exercises
 
-1. Implement `swap` - swap values between two Cells:
-
-   ```rust
-   fn swap(a: &MyCell<T>, b: &MyCell<T>) where T: Copy
-   ```
-
-2. Add `update` - apply a function to update the value:
-
-   ```rust
-   fn update<F: FnOnce(T) -> T>(&self, f: F) where T: Copy
-   ```
-
-3. Implement `Debug` for `MyCell<T>`:
-
-   ```rust
-   impl<T: Copy + Debug> Debug for MyCell<T>
-   ```
-
-4. Implement `PartialEq` for `MyCell<T>`:
-   ```rust
-   impl<T: Copy + PartialEq> PartialEq for MyCell<T>
-   ```
-   Two cells should be equal if their values are equal.
+See [exercises](./examples/05_cell.rs).
 
 ## Next Chapter
 
