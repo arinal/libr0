@@ -5,13 +5,23 @@
 In many languages, any function can throw an exception:
 
 ```java
-String content = readFile("config.txt"); // might throw IOException
-int port = Integer.parseInt(content);     // might throw NumberFormatException
+String content = readFile("non-existent-file.txt"); // throws exception
+println("File content: " + content);
 ```
 
-The compiler doesn't force you to handle these. Errors become invisible landmines in your code. Java's checked exceptions tried to fix this, but they're widely considered a failed experiment.
+In Java, the above code compiles fine, even though the programmer "forgot" to handle exception.
 
-Rust's approach: make errors **visible in the type signature**.
+Rust's approach: readFile returns a wrapper to indicate it can fail:
+```rust
+let result = readFile("non-existent-file.txt"); // returns Result<String, Error>
+// result is not the content, but a wrapper that can be Ok(content) or Err(error)
+// to extract the content, you're forced to handle both cases:
+match result {
+    Ok(content) => println!("File content: {}", content),
+    Err(e) => println!("Failed to read file: {:?}", e),
+}
+// this way, the programmer can't "forget" to handle errors, as the case with the java example.
+```
 
 ## Our Result Type
 
@@ -29,33 +39,95 @@ Two variants:
 
 The caller **must** handle both cases. The compiler won't let you ignore errors.
 
+## What Can Be an Error?
+
+The `E` in `Result<T, E>` can be **any type**. It doesn't need to implement `std::error::Error` or any special trait, as long as you wrap it in `Err()`.
+
+```rust
+// String as error
+let error: MyResult<i32, String> = Err(String::from("something broke"));
+
+// &str as error
+let error: MyResult<i32, &str> = Err("file not found");
+
+// Number as error code
+let error: MyResult<i32, i32> = Err(404);
+
+// Custom enum - most common in real code
+#[derive(Debug)]
+enum ParseError {
+    Empty,
+    TooLong,
+    InvalidFormat,
+}
+let error: MyResult<i32, ParseError> = Err(ParseError::Empty);
+```
+
+**Key rule**: Always wrap your error in `Err()`. Don't return the error type directly:
+
+```rust
+// ❌ Wrong
+fn parse(s: &str) -> MyResult<i32, &str> {
+    if s.is_empty() {
+        "empty string"  // ERROR: expected MyResult, found &str
+    } else {
+        Ok(42)
+    }
+}
+
+// ✅ Correct
+fn parse(s: &str) -> MyResult<i32, &str> {
+    if s.is_empty() {
+        Err("empty string")  // Wrapped in Err!
+    } else {
+        Ok(42)
+    }
+}
+```
+
 ## Basic Usage
+
+Let's validate a person with a custom error type:
 
 ```rust
 use MyResult::{Ok, Err};
 
 #[derive(Debug)]
-enum ParseError {
-    Empty,
-    InvalidNumber,
+struct Person {
+    name: String,
+    age: i32,
 }
 
-fn parse_port(s: &str) -> MyResult<u16, ParseError> {
-    if s.is_empty() {
-        return Err(ParseError::Empty);
-    }
+#[derive(Debug)]
+enum InvalidPersonError {
+    EmptyName,
+    InvalidAge(i32),
+}
 
-    match s.parse() {
-        std::result::Result::Ok(n) => Ok(n),
-        std::result::Result::Err(_) => Err(ParseError::InvalidNumber),
+fn validate_person(person: Person) -> MyResult<Person, InvalidPersonError> {
+    if person.name.is_empty() {
+        Err(InvalidPersonError::EmptyName)  // Wrap in Err!
+    } else if person.age < 0 {
+        Err(InvalidPersonError::InvalidAge(person.age))  // Capture the bad value
+    } else {
+        Ok(person)  // Wrap valid person in Ok!
     }
 }
 
 fn main() {
-    match parse_port("8080") {
-        Ok(port) => println!("Port: {}", port),
-        Err(e) => println!("Error: {:?}", e),
+    let person = Person { name: String::from("Alice"), age: 30 };
+    match validate_person(person) {
+        Ok(valid_person) => println!("Valid person: {:?}", valid_person),
+        Err(e) => println!("Invalid person: {:?}", e),
     }
+    // Output: Valid person: Person { name: "Alice", age: 30 }
+
+    let bad_person = Person { name: String::from(""), age: -5 };
+    match validate_person(bad_person) {
+        Ok(valid_person) => println!("Valid person: {:?}", valid_person),
+        Err(e) => println!("Invalid person: {:?}", e),
+    }
+    // Output: Invalid person: EmptyName
 }
 ```
 
@@ -130,22 +202,31 @@ let success: MyResult<i32, &str> = Ok(42);
 success.unwrap()  // 42
 
 let failure: MyResult<i32, &str> = Err("oops");
-// failure.unwrap()  // ❌ Panics: "called unwrap on Err: \"oops\""
+failure.unwrap()  // ❌ Panics: "called unwrap on Err: \"oops\""
 
 // expect provides context
 let result: MyResult<Config, &str> = Err("missing file");
-// result.expect("Config must be loaded");
+result.expect("Config must be loaded");
 // ❌ Panics: "Config must be loaded: \"missing file\""
 
-// Misconception: "I checked is_ok(), so unwrap is safe"
+// Anti-pattern: checking then unwrapping
+let result: MyResult<i32, &str> = Ok(42);
 if result.is_ok() {
-    let val = result.unwrap();  // ❌ result was moved by is_ok()!
+    let val = result.unwrap();  // Won't panic, but verbose and clunky
+    // use val...
 }
+// What about the Err case? You still need another if/else!
 
-// Use pattern matching instead
+// Pattern matching is cleaner - extracts value and handles both cases
+let result: MyResult<i32, &str> = Ok(42);
 match result {
     Ok(val) => { /* use val */ },
-    Err(e) => { /* handle e */ }
+    Err(e) => { /* handle error */ }
+}
+
+// Or use if let for the Ok case only
+if let Ok(val) = result {
+    // use val...
 }
 ```
 
@@ -178,7 +259,6 @@ success.unwrap_or(0)  // 10
 let failure: MyResult<i32, &str> = Err("bad");
 failure.unwrap_or(0)  // 0
 
-// Misconception: unwrap_or_else doesn't get the error
 let result: MyResult<i32, &str> = Err("parse error");
 let val = result.unwrap_or_else(|e| {
     eprintln!("Error: {}", e);  // ✅ Has access to error!
@@ -191,8 +271,15 @@ fn expensive_default() -> i32 {
     42
 }
 
-Ok(10).unwrap_or(expensive_default())       // Calls expensive_default() even for Ok!
-Ok(10).unwrap_or_else(|_| expensive_default())  // ✅ Only calls on Err
+let result = Ok(10);
+
+// expensive_default() is being called
+// even though the result is not used!
+let out = result.unwrap_or(expensive_default())
+// expensive_default() is only called if result is Err
+// which in this case it is not, so we avoid the unnecessary computation!
+let out = result.unwrap_or_else(|_| expensive_default())
+
 ```
 
 ### map - Transform Success
@@ -252,8 +339,7 @@ success.map_err(|e| e.to_uppercase())  // Ok(5) - unchanged!
 let failure: MyResult<i32, &str> = Err("bad");
 failure.map_err(|e| e.to_uppercase())  // Err("BAD")
 
-// Misconception: map_err transforms Ok values
-// ❌ Wrong! map_err ONLY transforms Err values
+// map_err ONLY transforms Err values
 Ok(42).map_err(String::from)  // Still Ok(42), not transformed
 
 // Convert error types
@@ -339,11 +425,6 @@ success.ok()  // Some(42)
 
 let failure: MyResult<i32, &str> = Err("something went wrong");
 failure.ok()  // None - error information lost!
-
-// Misconception: ok() preserves error information
-// ❌ Wrong! ok() discards the error
-let result: MyResult<i32, String> = Err(String::from("detailed error"));
-let option = result.ok();  // None - "detailed error" is gone
 
 // ✅ Use ok() when you don't care about the error
 let port = parse_port("8080")
@@ -480,6 +561,91 @@ fn process_config() -> Result<Config, Error> {
 
 We can't implement `?` for our custom type (it requires the `Try` trait which is unstable), but understanding what it does is essential.
 
+### The `?` Operator is Also Monadic
+
+Both `and_then` and `?` are **monadic operations** - they both short-circuit on errors, just in different styles.
+
+**`and_then` - Functional style (expression-based):**
+
+```rust
+// Linear chain:
+fn calculate(input: &str) -> MyResult<i32, &str> {
+    parse_int(input)
+        .and_then(|n| safe_divide(n, 2))
+        .and_then(|n| check_positive(n))
+        .map(|n| n * 10)
+}
+// If any step returns Err, the chain stops and returns that Err
+
+// Nested pattern - same calculation, nested style (like Scala's for-comprehension):
+fn calculate_nested(input: &str) -> MyResult<i32, &str> {
+    parse_int(input).and_then(|n|
+        safe_divide(n, 2).and_then(|n2|
+            check_positive(n2).map(|n3| n3 * 10)
+        )
+    )
+}
+// Same calculation as linear chain, but nested. Demonstrates short-circuiting beautifully:
+// If parse_int returns Err, the nested closures are NEVER invoked at all!
+```
+
+**`?` - Imperative style (statement-based):**
+
+```rust
+fn calculate(input: &str) -> MyResult<i32, &str> {
+    let n = parse_int(input)?;           // Returns Err if parse fails
+    let n = safe_divide(n, 2)?;          // Returns Err if divide fails
+    let n = check_positive(n)?;          // Returns Err if check fails
+    Ok(n * 10)
+}
+// If any step returns Err, the function returns early with that Err
+```
+
+Both do the same thing: **stop on first error and propagate it up**.
+
+**Visualizing `?` short-circuit:**
+
+```rust
+fn multi_step() -> MyResult<i32, &str> {
+    let a = step1()?;        // Ok(5)  - continues
+    let b = step2(a)?;       // Err("failed") - returns immediately
+    let c = step3(b)?;       // Never runs
+    let d = step4(c)?;       // Never runs
+    Ok(d)                    // Never runs
+}
+// Returns: Err("failed")
+
+// Expanded to show what happens:
+fn multi_step_expanded() -> MyResult<i32, &str> {
+    let a = match step1() {
+        Ok(val) => val,
+        Err(e) => return Err(e),  // Early return
+    };
+    let b = match step2(a) {
+        Ok(val) => val,
+        Err(e) => return Err(e),  // Early return - stops here!
+    };
+    // Everything below never executes
+    let c = match step3(b) {
+        Ok(val) => val,
+        Err(e) => return Err(e),
+    };
+    let d = match step4(c) {
+        Ok(val) => val,
+        Err(e) => return Err(e),
+    };
+    Ok(d)
+}
+```
+
+**Key insight**: Both `and_then` and `?` implement the same monadic pattern:
+
+1. Execute an operation that might fail
+2. If it succeeds, continue with the result
+3. If it fails, stop immediately and propagate the error
+
+This is why Result-based error handling in Rust is so ergonomic - errors automatically bubble up without explicit checking at every step.
+
 ## Result vs Option
 
 | Situation                      | Use            |
@@ -519,11 +685,14 @@ Also, see the exercises in [01_result.rs](./examples/01_result.rs)
 
 ## Key Takeaways
 
-1. **Errors are values** - Not hidden control flow like exceptions
-2. **The type signature tells the truth** - `Result<T, E>` means "this can fail"
-3. **map for success, map_err for errors** - Transform either side
-4. **and_then chains fallible operations** - The workhorse of error handling
-5. **? is syntax sugar for and_then + early return** - Use it in real code
+1. **Errors are values** - Not hidden control flow like exceptions. The compiler forces you to handle them.
+2. **The type signature tells the truth** - `Result<T, E>` means "this can fail". No surprises, no invisible exceptions.
+3. **E can be any type** - String, &str, enums, integers, custom types. No special traits required. Just wrap it in `Err()`.
+4. **map for success, map_err for errors** - Transform either side independently. Only one variant changes at a time.
+5. **and_then chains fallible operations** - The workhorse of error handling. Flattens nested Results and short-circuits on first error.
+6. **Two styles, same pattern** - Linear chains (`and_then`) and nested closures both demonstrate monadic short-circuiting. If any step fails, everything stops.
+7. **? is syntax sugar for and_then + early return** - Imperative style that does the same thing. Use it in real code.
+8. **Short-circuit behavior is free** - Errors automatically propagate up without explicit checking at every step. That's why Result-based error handling is so ergonomic.
 
 ## Next Chapter
 
