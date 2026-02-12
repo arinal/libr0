@@ -468,7 +468,7 @@ impl<T, E> MyResult<T, E> {
 // Problem: map consumes the Result
 let result: MyResult<String, String> = Ok(String::from("hello"));
 let len = result.map(|s| s.len());
-// println!("{:?}", result);  // ❌ ERROR: result was moved!
+// println!("{:?}", result);  // ❌ result was moved!
 
 // ✅ Solution: Use as_ref() to borrow
 let result: MyResult<String, String> = Ok(String::from("hello"));
@@ -680,8 +680,8 @@ impl<T> MyOption<T> {
 
 ## Implementation
 
-See the full code in [`src/result.rs`](./src/result.rs) for the complete implementation of `MyOption` with all methods.
-Also, see the exercises in [01_result.rs](./examples/01_result.rs)
+See the full code in [`src/result.rs`](./src/result.rs) for the complete implementation of `MyResult` with all methods.
+Also, see the exercises in [02_result.rs](./examples/02_result.rs)
 
 ## Key Takeaways
 
