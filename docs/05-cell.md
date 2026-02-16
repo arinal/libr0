@@ -87,7 +87,6 @@ There are also other types for interior mutability for different use cases: `Ref
 Let's try building a naive `ClumsyCell` that gives you references:
 
 ```rust
-// Broken! Don't use this!
 use std::cell::UnsafeCell;
 
 struct ClumsyCell<T> {
@@ -142,7 +141,6 @@ This is why **Cell only works with `Copy` types** (for `get()`). Can't copy out 
 All through `&Cell<T>`, not `&mut Cell<T>`. That's the magic.
 
 ## Motivation: When You Need to Mutate Through Shared References
-
 
 When the struct is **mostly read-only** (`value` never changes), but a **minor field** (`access_count`) needs to change. Making the entire struct mutable just for this tracking would be too awkward and restrictive.
 
@@ -342,7 +340,6 @@ cell.set(10);       // Mutate through &self
 println!("{}", n);  // Still reads 5, because n is a copy, not a reference!
 ```
 
-
 ```
 Initial state:
 ┌──────────────┐
@@ -353,20 +350,20 @@ Initial state:
 └──────────────┘
 
 cell.get() - Returns a COPY:
-┌──────────────┐              
-│ Cell<i32>    │              
-│ ┌──────────┐ │    copy    ┌────┐                                             
+┌──────────────┐
+│ Cell<i32>    │
+│ ┌──────────┐ │    copy    ┌────┐
 │ │ value: 5 │ │ ─────────> │ 5  │  ← Copy created in new memory location
 │ └──────────┘ │            └────┘    no reference to Cell's internal value!
 └──────────────┘
 
 cell.set(10) - REPLACES the value:
-┌──────────────┐ 
-│ Cell<i32>    │ 
+┌──────────────┐
+│ Cell<i32>    │
 │ ┌──────────┐ │            ┌────┐
 │ │ value:10 │ │            │ 5  │  ← Old value still 5
 │ └──────────┘ │            └────┘
-└──────────────┘ 
+└──────────────┘
 ```
 
 **Key insight**: You never get `&i32` or `&mut i32` pointing to the value inside Cell's box. Only copies come out. The inner value never escapes as a reference.
