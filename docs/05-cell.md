@@ -10,7 +10,7 @@ struct Stats {
 
 impl Stats {
     fn get_value(&self) -> i32 {
-        self.access_counter += 1;  // ❌ ERROR: can't mutate through &self
+        self.access_counter += 1;  // ❌ can't mutate through &self
         self.value
     }
 }
@@ -32,7 +32,7 @@ fn get_value(&mut self) -> i32 {  // Now requires &mut self
 let stats = Stats { value: 42, access_counter: 0 };
 let r1 = &stats;
 let r2 = &stats;
-let v1 = r1.get_value();  // ❌ ERROR: can't call get_value on &Stats
+let v1 = r1.get_value();  // ❌ can't call get_value on &Stats
 let v2 = r2.get_value();  // Need &mut, can't have multiple readers!
 ```
 
@@ -569,7 +569,7 @@ std::thread::spawn(move || {
 // Cell<T> is NOT Sync (cannot be shared between threads)
 let cell = Cell::new(42);
 std::thread::spawn(|| {
-    cell.set(100);  // ❌ ERROR: Cell is not Sync
+    cell.set(100);  // ❌ Cell is not Sync
 });
 ```
 
