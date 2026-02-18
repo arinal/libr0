@@ -5,7 +5,7 @@ use std::cell::UnsafeCell;
 /// A mutable memory location with interior mutability.
 /// Allows mutation through shared references without borrowing rules.
 /// Only works in single-threaded contexts (!Sync).
-pub struct MyCell<T> {
+pub struct MyCell<T: ?Sized> {
     value: UnsafeCell<T>,
 }
 
@@ -87,6 +87,37 @@ impl<T> MyCell<T> {
         unsafe {
             std::ptr::swap(self.value.get(), other.value.get());
         }
+    }
+}
+
+// Separate impl block with ?Sized to support dynamically sized types
+impl<T: ?Sized> MyCell<T> {
+    /// Returns a mutable reference when you have exclusive access to the Cell.
+    ///
+    /// Unlike other Cell methods that work with `&self`, this requires `&mut self`,
+    /// giving you compile-time guaranteed exclusive access. This means you can safely
+    /// get a real `&mut T` to the inner value, no copying needed.
+    ///
+    /// **Note:** This is rarely used in practice! Cell exists precisely so you DON'T
+    /// need `&mut`. If you have `&mut Cell<T>`, you might as well have used `T` directly.
+    /// For actual interior mutability through `&self`, use the other Cell methods like
+    /// `set()` and `get()`, or consider `RefCell` if you need references to non-Copy types.
+    ///
+    /// **About `?Sized`:** This method uses `impl<T: ?Sized>` which removes the default
+    /// `Sized` bound. This allows `get_mut` to work with dynamically sized types (DSTs)
+    /// like `[T]` or `str`. Since this method works with references (`&mut T`), it doesn't
+    /// need `T` to be `Sized` - references to DSTs are perfectly fine.
+    ///
+    /// ```
+    /// use rustlib::cell::MyCell;
+    ///
+    /// let mut c = MyCell::new(5);
+    /// *c.get_mut() += 1;  // Direct mutable access
+    ///
+    /// assert_eq!(c.get(), 6);
+    /// ```
+    pub fn get_mut(&mut self) -> &mut T {
+        self.value.get_mut()
     }
 }
 
@@ -245,5 +276,16 @@ mod tests {
     fn test_debug() {
         let cell = MyCell::new(42);
         assert_eq!(format!("{:?}", cell), "MyCell(42)");
+    }
+
+    #[test]
+    fn test_get_mut() {
+        let mut cell = MyCell::new(5);
+        *cell.get_mut() += 1;
+        assert_eq!(cell.get(), 6);
+
+        // Can also use get_mut to read
+        let val_ref = cell.get_mut();
+        assert_eq!(*val_ref, 6);
     }
 }

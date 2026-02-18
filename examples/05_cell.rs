@@ -242,6 +242,35 @@ fn _14_cache() {
     assert_eq!(result3, 99);
 }
 
+fn _15_get_mut() {
+    // get_mut gives you a real mutable reference
+    // But you need &mut Cell for this, not just &Cell
+    let mut cell = MyCell::new(5);
+
+    // Direct mutable access - no copying needed
+    *cell.get_mut() += 10;
+    assert_eq!(cell.get(), 15);
+
+    // Can pass the mutable reference to other functions
+    fn increment(value: &mut i32) {
+        *value += 1;
+    }
+    increment(cell.get_mut());
+    assert_eq!(cell.get(), 16);
+
+    // Works with non-Copy types too!
+    let mut cell_vec = MyCell::new(vec![1, 2, 3]);
+    cell_vec.get_mut().push(4);
+    // Can't use get() here because Vec is not Copy
+    // But we can use replace() or into_inner()
+    assert_eq!(cell_vec.into_inner(), vec![1, 2, 3, 4]);
+
+    // Why is get_mut rarely used?
+    // If you have &mut Cell, you could've just used T directly!
+    println!("get_mut is useful when you have &mut Cell, but that's rare");
+    println!("Cell's main purpose is interior mutability through &Cell");
+}
+
 // ============================================================================
 // Main
 // ============================================================================
@@ -263,5 +292,6 @@ fn main() {
         _12_counter,
         _13_config,
         _14_cache,
+        _15_get_mut,
     ];
 }
