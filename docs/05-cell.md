@@ -373,7 +373,7 @@ cell.set(10) - REPLACES the value:
 ```rust
 use std::cell::UnsafeCell;
 
-pub struct MyCell<T> {
+pub struct Cell0<T> {
     value: UnsafeCell<T>,
 }
 ```
@@ -381,9 +381,9 @@ pub struct MyCell<T> {
 ### new - Create a Cell
 
 ```rust
-impl<T> MyCell<T> {
-    pub fn new(value: T) -> MyCell<T> {
-        MyCell {
+impl<T> Cell0<T> {
+    pub fn new(value: T) -> Cell0<T> {
+        Cell0 {
             value: UnsafeCell::new(value),
         }
     }
@@ -393,7 +393,7 @@ impl<T> MyCell<T> {
 ### get - Copy the Value Out
 
 ```rust
-impl<T: Copy> MyCell<T> {
+impl<T: Copy> Cell0<T> {
     pub fn get(&self) -> T {
         // SAFETY: We only copy the value out, never give a reference
         unsafe { *self.value.get() }
@@ -406,7 +406,7 @@ Note the `T: Copy` bound. This is crucial - we can only implement `get` for `Cop
 ### set - Replace the Value
 
 ```rust
-impl<T> MyCell<T> {
+impl<T> Cell0<T> {
     pub fn set(&self, value: T) {
         // SAFETY: We replace the entire value atomically (single-threaded)
         unsafe {
@@ -421,7 +421,7 @@ Notice `set` doesn't require `Copy` - we're replacing the value, not reading it.
 ### replace - Set and Return Old Value
 
 ```rust
-impl<T> MyCell<T> {
+impl<T> Cell0<T> {
     pub fn replace(&self, value: T) -> T {
         // SAFETY: We swap values without creating references
         unsafe {
@@ -434,7 +434,7 @@ impl<T> MyCell<T> {
 ### take - Take the Value, Leave Default
 
 ```rust
-impl<T: Default> MyCell<T> {
+impl<T: Default> Cell0<T> {
     pub fn take(&self) -> T {
         self.replace(T::default())
     }
@@ -444,7 +444,7 @@ impl<T: Default> MyCell<T> {
 ### into_inner - Consume Cell, Get Value
 
 ```rust
-impl<T> MyCell<T> {
+impl<T> Cell0<T> {
     pub fn into_inner(self) -> T {
         self.value.into_inner()
     }
@@ -461,7 +461,7 @@ But Cell does have a `get_mut` method that returns `&mut T`. Here's the catch:
 
 ```rust
 // Note: Separate impl block with ?Sized
-impl<T: ?Sized> MyCell<T> {
+impl<T: ?Sized> Cell0<T> {
     pub fn get_mut(&mut self) -> &mut T {  // Takes &mut self!
         self.value.get_mut()
     }
@@ -475,7 +475,7 @@ impl<T: ?Sized> MyCell<T> {
 This means you need **exclusive mutable access** to the Cell itself. At that point, you don't need interior mutability at all - Rust already knows at compile-time that you have exclusive access!
 
 ```rust
-let mut cell = MyCell::new(5);  // Note: mut cell
+let mut cell = Cell0::new(5);  // Note: mut cell
 *cell.get_mut() += 1;           // Direct mutable access
 assert_eq!(cell.get(), 6);
 ```
@@ -483,7 +483,7 @@ assert_eq!(cell.get(), 6);
 **The compiler enforces normal borrow rules:**
 
 ```rust
-let mut cell = MyCell::new(5);
+let mut cell = Cell0::new(5);
 let r1 = cell.get_mut();  // First mutable borrow
 let r2 = cell.get_mut();  // ❌ Error: cannot borrow `cell` as mutable more than once
 

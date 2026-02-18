@@ -1,4 +1,4 @@
-//! MyRc - Educational reimplementation of Rc<T>
+//! Rc0 - Educational reimplementation of Rc<T>
 
 use std::cell::Cell;
 use std::mem::ManuallyDrop;
@@ -12,63 +12,63 @@ struct RcInner<T> {
     value: ManuallyDrop<T>,
 }
 
-pub struct MyRc<T> {
+pub struct Rc0<T> {
     ptr: *mut RcInner<T>,
 }
 
-pub struct MyWeak<T> {
+pub struct Weak0<T> {
     ptr: *mut RcInner<T>,
 }
 
-impl<T> MyRc<T> {
-    pub fn new(value: T) -> MyRc<T> {
+impl<T> Rc0<T> {
+    pub fn new(value: T) -> Rc0<T> {
         let inner = Box::new(RcInner {
             strong_count: Cell::new(1),
             weak_count: Cell::new(1), // Implicit weak ref for strong refs
             value: ManuallyDrop::new(value),
         });
-        MyRc {
+        Rc0 {
             ptr: Box::into_raw(inner),
         }
     }
 
-    pub fn strong_count(this: &MyRc<T>) -> usize {
+    pub fn strong_count(this: &Rc0<T>) -> usize {
         unsafe { (*this.ptr).strong_count.get() }
     }
 
-    pub fn weak_count(this: &MyRc<T>) -> usize {
+    pub fn weak_count(this: &Rc0<T>) -> usize {
         // Subtract the implicit weak ref
         unsafe { (*this.ptr).weak_count.get() - 1 }
     }
 
-    pub fn downgrade(this: &MyRc<T>) -> MyWeak<T> {
+    pub fn downgrade(this: &Rc0<T>) -> Weak0<T> {
         let inner = unsafe { &*this.ptr };
         inner.weak_count.set(inner.weak_count.get() + 1);
-        MyWeak { ptr: this.ptr }
+        Weak0 { ptr: this.ptr }
     }
 
-    pub fn get_mut(this: &mut MyRc<T>) -> Option<&mut T> {
-        if MyRc::strong_count(this) == 1 && MyRc::weak_count(this) == 0 {
+    pub fn get_mut(this: &mut Rc0<T>) -> Option<&mut T> {
+        if Rc0::strong_count(this) == 1 && Rc0::weak_count(this) == 0 {
             unsafe { Some(&mut (*this.ptr).value) }
         } else {
             None
         }
     }
 
-    pub fn ptr_eq(a: &MyRc<T>, b: &MyRc<T>) -> bool {
+    pub fn ptr_eq(a: &Rc0<T>, b: &Rc0<T>) -> bool {
         a.ptr == b.ptr
     }
 }
 
-impl<T> Clone for MyRc<T> {
-    fn clone(&self) -> MyRc<T> {
+impl<T> Clone for Rc0<T> {
+    fn clone(&self) -> Rc0<T> {
         let inner = unsafe { &*self.ptr };
         inner.strong_count.set(inner.strong_count.get() + 1);
-        MyRc { ptr: self.ptr }
+        Rc0 { ptr: self.ptr }
     }
 }
 
-impl<T> Deref for MyRc<T> {
+impl<T> Deref for Rc0<T> {
     type Target = T;
 
     fn deref(&self) -> &T {
@@ -76,7 +76,7 @@ impl<T> Deref for MyRc<T> {
     }
 }
 
-impl<T> Drop for MyRc<T> {
+impl<T> Drop for Rc0<T> {
     fn drop(&mut self) {
         let inner = unsafe { &*self.ptr };
         let count = inner.strong_count.get();
@@ -101,9 +101,9 @@ impl<T> Drop for MyRc<T> {
     }
 }
 
-impl<T: std::fmt::Debug> std::fmt::Debug for MyRc<T> {
+impl<T: std::fmt::Debug> std::fmt::Debug for Rc0<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "MyRc({:?})", **self)
+        write!(f, "Rc0({:?})", **self)
     }
 }
 
@@ -111,14 +111,14 @@ impl<T: std::fmt::Debug> std::fmt::Debug for MyRc<T> {
 // Weak implementation
 // ============================================================================
 
-impl<T> MyWeak<T> {
-    pub fn upgrade(&self) -> Option<MyRc<T>> {
+impl<T> Weak0<T> {
+    pub fn upgrade(&self) -> Option<Rc0<T>> {
         let inner = unsafe { &*self.ptr };
         if inner.strong_count.get() == 0 {
             None
         } else {
             inner.strong_count.set(inner.strong_count.get() + 1);
-            Some(MyRc { ptr: self.ptr })
+            Some(Rc0 { ptr: self.ptr })
         }
     }
 
@@ -127,15 +127,15 @@ impl<T> MyWeak<T> {
     }
 }
 
-impl<T> Clone for MyWeak<T> {
-    fn clone(&self) -> MyWeak<T> {
+impl<T> Clone for Weak0<T> {
+    fn clone(&self) -> Weak0<T> {
         let inner = unsafe { &*self.ptr };
         inner.weak_count.set(inner.weak_count.get() + 1);
-        MyWeak { ptr: self.ptr }
+        Weak0 { ptr: self.ptr }
     }
 }
 
-impl<T> Drop for MyWeak<T> {
+impl<T> Drop for Weak0<T> {
     fn drop(&mut self) {
         let inner = unsafe { &*self.ptr };
         let weak = inner.weak_count.get();
@@ -154,71 +154,71 @@ mod tests {
 
     #[test]
     fn test_new_and_deref() {
-        let rc = MyRc::new(42);
+        let rc = Rc0::new(42);
         assert_eq!(*rc, 42);
     }
 
     #[test]
     fn test_clone() {
-        let rc1 = MyRc::new(42);
+        let rc1 = Rc0::new(42);
         let rc2 = rc1.clone();
 
         assert_eq!(*rc1, 42);
         assert_eq!(*rc2, 42);
-        assert_eq!(MyRc::strong_count(&rc1), 2);
+        assert_eq!(Rc0::strong_count(&rc1), 2);
     }
 
     #[test]
     fn test_strong_count() {
-        let rc1 = MyRc::new(42);
-        assert_eq!(MyRc::strong_count(&rc1), 1);
+        let rc1 = Rc0::new(42);
+        assert_eq!(Rc0::strong_count(&rc1), 1);
 
         let rc2 = rc1.clone();
-        assert_eq!(MyRc::strong_count(&rc1), 2);
-        assert_eq!(MyRc::strong_count(&rc2), 2);
+        assert_eq!(Rc0::strong_count(&rc1), 2);
+        assert_eq!(Rc0::strong_count(&rc2), 2);
 
         drop(rc2);
-        assert_eq!(MyRc::strong_count(&rc1), 1);
+        assert_eq!(Rc0::strong_count(&rc1), 1);
     }
 
     #[test]
     fn test_ptr_eq() {
-        let rc1 = MyRc::new(42);
+        let rc1 = Rc0::new(42);
         let rc2 = rc1.clone();
-        let rc3 = MyRc::new(42);
+        let rc3 = Rc0::new(42);
 
-        assert!(MyRc::ptr_eq(&rc1, &rc2));
-        assert!(!MyRc::ptr_eq(&rc1, &rc3));
+        assert!(Rc0::ptr_eq(&rc1, &rc2));
+        assert!(!Rc0::ptr_eq(&rc1, &rc3));
     }
 
     #[test]
     fn test_get_mut() {
-        let mut rc1 = MyRc::new(42);
+        let mut rc1 = Rc0::new(42);
 
         // Single owner, should get mutable reference
-        if let Some(val) = MyRc::get_mut(&mut rc1) {
+        if let Some(val) = Rc0::get_mut(&mut rc1) {
             *val = 100;
         }
         assert_eq!(*rc1, 100);
 
         // Multiple owners, should return None
         let _rc2 = rc1.clone();
-        assert!(MyRc::get_mut(&mut rc1).is_none());
+        assert!(Rc0::get_mut(&mut rc1).is_none());
     }
 
     #[test]
     fn test_downgrade() {
-        let rc = MyRc::new(42);
-        let weak = MyRc::downgrade(&rc);
+        let rc = Rc0::new(42);
+        let weak = Rc0::downgrade(&rc);
 
-        assert_eq!(MyRc::weak_count(&rc), 1);
+        assert_eq!(Rc0::weak_count(&rc), 1);
         assert_eq!(weak.strong_count(), 1);
     }
 
     #[test]
     fn test_weak_upgrade() {
-        let rc = MyRc::new(42);
-        let weak = MyRc::downgrade(&rc);
+        let rc = Rc0::new(42);
+        let weak = Rc0::downgrade(&rc);
 
         let upgraded = weak.upgrade();
         assert!(upgraded.is_some());
@@ -227,8 +227,8 @@ mod tests {
 
     #[test]
     fn test_weak_upgrade_after_drop() {
-        let rc = MyRc::new(42);
-        let weak = MyRc::downgrade(&rc);
+        let rc = Rc0::new(42);
+        let weak = Rc0::downgrade(&rc);
 
         drop(rc);
 
@@ -238,17 +238,17 @@ mod tests {
 
     #[test]
     fn test_weak_clone() {
-        let rc = MyRc::new(42);
-        let weak1 = MyRc::downgrade(&rc);
+        let rc = Rc0::new(42);
+        let weak1 = Rc0::downgrade(&rc);
         let _weak2 = weak1.clone();
 
-        assert_eq!(MyRc::weak_count(&rc), 2);
+        assert_eq!(Rc0::weak_count(&rc), 2);
     }
 
     #[test]
     fn test_drop_with_weak_refs() {
-        let rc = MyRc::new(String::from("hello"));
-        let weak = MyRc::downgrade(&rc);
+        let rc = Rc0::new(String::from("hello"));
+        let weak = Rc0::downgrade(&rc);
 
         drop(rc);
 
@@ -258,27 +258,27 @@ mod tests {
 
     #[test]
     fn test_debug() {
-        let rc = MyRc::new(42);
-        assert_eq!(format!("{:?}", rc), "MyRc(42)");
+        let rc = Rc0::new(42);
+        assert_eq!(format!("{:?}", rc), "Rc0(42)");
     }
 
     #[test]
     fn test_multiple_weak_refs() {
-        let rc = MyRc::new(42);
-        let weak1 = MyRc::downgrade(&rc);
-        let weak2 = MyRc::downgrade(&rc);
+        let rc = Rc0::new(42);
+        let weak1 = Rc0::downgrade(&rc);
+        let weak2 = Rc0::downgrade(&rc);
         let weak3 = weak1.clone();
 
-        assert_eq!(MyRc::weak_count(&rc), 3);
+        assert_eq!(Rc0::weak_count(&rc), 3);
 
         drop(weak1);
-        assert_eq!(MyRc::weak_count(&rc), 2);
+        assert_eq!(Rc0::weak_count(&rc), 2);
 
         drop(weak2);
-        assert_eq!(MyRc::weak_count(&rc), 1);
+        assert_eq!(Rc0::weak_count(&rc), 1);
 
         drop(weak3);
-        assert_eq!(MyRc::weak_count(&rc), 0);
+        assert_eq!(Rc0::weak_count(&rc), 0);
     }
 
     #[test]
@@ -288,7 +288,7 @@ mod tests {
         assert_eq!(Arc::strong_count(&drop_checker), 1);
 
         {
-            let rc1 = MyRc::new(drop_checker.clone());
+            let rc1 = Rc0::new(drop_checker.clone());
             let rc2 = rc1.clone();
             let rc3 = rc1.clone();
 

@@ -1,34 +1,34 @@
-//! MyCell - Educational reimplementation of `Cell<T>`
+//! Cell0 - Educational reimplementation of `Cell<T>`
 
 use std::cell::UnsafeCell;
 
 /// A mutable memory location with interior mutability.
 /// Allows mutation through shared references without borrowing rules.
 /// Only works in single-threaded contexts (!Sync).
-pub struct MyCell<T: ?Sized> {
+pub struct Cell0<T: ?Sized> {
     value: UnsafeCell<T>,
 }
 
 // Cell is !Sync - can't be shared between threads
 // This is automatically inferred from UnsafeCell
 
-impl<T> MyCell<T> {
+impl<T> Cell0<T> {
     /// Creates a new cell containing the given value.
     /// ```
-    /// use rustlib::cell::MyCell;
-    /// let cell = MyCell::new(42);
+    /// use rustlib::cell::Cell0;
+    /// let cell = Cell0::new(42);
     /// assert_eq!(cell.get(), 42);
     /// ```
-    pub fn new(value: T) -> MyCell<T> {
-        MyCell {
+    pub fn new(value: T) -> Cell0<T> {
+        Cell0 {
             value: UnsafeCell::new(value),
         }
     }
 
     /// Sets the contained value.
     /// ```
-    /// use rustlib::cell::MyCell;
-    /// let cell = MyCell::new(10);
+    /// use rustlib::cell::Cell0;
+    /// let cell = Cell0::new(10);
     /// cell.set(20);
     /// assert_eq!(cell.get(), 20);
     /// ```
@@ -41,8 +41,8 @@ impl<T> MyCell<T> {
 
     /// Replaces the contained value and returns the old value.
     /// ```
-    /// use rustlib::cell::MyCell;
-    /// let cell = MyCell::new(10);
+    /// use rustlib::cell::Cell0;
+    /// let cell = Cell0::new(10);
     /// let old = cell.replace(20);
     /// assert_eq!(old, 10);
     /// assert_eq!(cell.get(), 20);
@@ -54,8 +54,8 @@ impl<T> MyCell<T> {
 
     /// Consumes the cell and returns the contained value.
     /// ```
-    /// use rustlib::cell::MyCell;
-    /// let cell = MyCell::new(42);
+    /// use rustlib::cell::Cell0;
+    /// let cell = Cell0::new(42);
     /// assert_eq!(cell.into_inner(), 42);
     /// ```
     pub fn into_inner(self) -> T {
@@ -64,8 +64,8 @@ impl<T> MyCell<T> {
 
     /// Returns a raw pointer to the underlying data.
     /// ```
-    /// use rustlib::cell::MyCell;
-    /// let cell = MyCell::new(42);
+    /// use rustlib::cell::Cell0;
+    /// let cell = Cell0::new(42);
     /// let ptr = cell.as_ptr();
     /// assert_eq!(unsafe { *ptr }, 42);
     /// ```
@@ -75,14 +75,14 @@ impl<T> MyCell<T> {
 
     /// Swaps the values of two cells.
     /// ```
-    /// use rustlib::cell::MyCell;
-    /// let a = MyCell::new(10);
-    /// let b = MyCell::new(20);
+    /// use rustlib::cell::Cell0;
+    /// let a = Cell0::new(10);
+    /// let b = Cell0::new(20);
     /// a.swap(&b);
     /// assert_eq!(a.get(), 20);
     /// assert_eq!(b.get(), 10);
     /// ```
-    pub fn swap(&self, other: &MyCell<T>) {
+    pub fn swap(&self, other: &Cell0<T>) {
         // SAFETY: Single-threaded, no references escape
         unsafe {
             std::ptr::swap(self.value.get(), other.value.get());
@@ -91,7 +91,7 @@ impl<T> MyCell<T> {
 }
 
 // Separate impl block with ?Sized to support dynamically sized types
-impl<T: ?Sized> MyCell<T> {
+impl<T: ?Sized> Cell0<T> {
     /// Returns a mutable reference when you have exclusive access to the Cell.
     ///
     /// Unlike other Cell methods that work with `&self`, this requires `&mut self`,
@@ -109,9 +109,9 @@ impl<T: ?Sized> MyCell<T> {
     /// need `T` to be `Sized` - references to DSTs are perfectly fine.
     ///
     /// ```
-    /// use rustlib::cell::MyCell;
+    /// use rustlib::cell::Cell0;
     ///
-    /// let mut c = MyCell::new(5);
+    /// let mut c = Cell0::new(5);
     /// *c.get_mut() += 1;  // Direct mutable access
     ///
     /// assert_eq!(c.get(), 6);
@@ -121,12 +121,12 @@ impl<T: ?Sized> MyCell<T> {
     }
 }
 
-impl<T: Copy> MyCell<T> {
+impl<T: Copy> Cell0<T> {
     /// Returns a copy of the contained value.
     /// Only available for types that implement [`Copy`].
     /// ```
-    /// use rustlib::cell::MyCell;
-    /// let cell = MyCell::new(42);
+    /// use rustlib::cell::Cell0;
+    /// let cell = Cell0::new(42);
     /// assert_eq!(cell.get(), 42);
     /// ```
     pub fn get(&self) -> T {
@@ -136,8 +136,8 @@ impl<T: Copy> MyCell<T> {
 
     /// Updates the contained value using the provided function.
     /// ```
-    /// use rustlib::cell::MyCell;
-    /// let cell = MyCell::new(10);
+    /// use rustlib::cell::Cell0;
+    /// let cell = Cell0::new(10);
     /// cell.update(|x| x * 2);
     /// assert_eq!(cell.get(), 20);
     /// ```
@@ -147,11 +147,11 @@ impl<T: Copy> MyCell<T> {
     }
 }
 
-impl<T: Default> MyCell<T> {
+impl<T: Default> Cell0<T> {
     /// Takes the value, replacing it with the default value.
     /// ```
-    /// use rustlib::cell::MyCell;
-    /// let cell = MyCell::new(Some(42));
+    /// use rustlib::cell::Cell0;
+    /// let cell = Cell0::new(Some(42));
     /// assert_eq!(cell.take(), Some(42));
     /// assert_eq!(cell.get(), None);
     /// ```
@@ -160,42 +160,42 @@ impl<T: Default> MyCell<T> {
     }
 }
 
-/// Cloning a [`MyCell`] creates an independent copy.
+/// Cloning a [`Cell0`] creates an independent copy.
 /// ```
-/// use rustlib::cell::MyCell;
-/// let cell1 = MyCell::new(42);
+/// use rustlib::cell::Cell0;
+/// let cell1 = Cell0::new(42);
 /// let cell2 = cell1.clone();
 /// cell1.set(100);
 /// assert_eq!(cell1.get(), 100);
 /// assert_eq!(cell2.get(), 42);
 /// ```
-impl<T: Clone> Clone for MyCell<T> {
-    fn clone(&self) -> MyCell<T> {
-        unsafe { MyCell::new((*self.value.get()).clone()) }
+impl<T: Clone> Clone for Cell0<T> {
+    fn clone(&self) -> Cell0<T> {
+        unsafe { Cell0::new((*self.value.get()).clone()) }
     }
 }
 
 /// Creates a cell with the default value.
 /// ```
-/// use rustlib::cell::MyCell;
-/// let cell: MyCell<i32> = MyCell::default();
+/// use rustlib::cell::Cell0;
+/// let cell: Cell0<i32> = Cell0::default();
 /// assert_eq!(cell.get(), 0);
 /// ```
-impl<T: Default> Default for MyCell<T> {
-    fn default() -> MyCell<T> {
-        MyCell::new(T::default())
+impl<T: Default> Default for Cell0<T> {
+    fn default() -> Cell0<T> {
+        Cell0::new(T::default())
     }
 }
 
 /// Debug formatting shows the contained value.
 /// ```
-/// use rustlib::cell::MyCell;
-/// let cell = MyCell::new(42);
-/// assert_eq!(format!("{:?}", cell), "MyCell(42)");
+/// use rustlib::cell::Cell0;
+/// let cell = Cell0::new(42);
+/// assert_eq!(format!("{:?}", cell), "Cell0(42)");
 /// ```
-impl<T: Copy + std::fmt::Debug> std::fmt::Debug for MyCell<T> {
+impl<T: Copy + std::fmt::Debug> std::fmt::Debug for Cell0<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "MyCell({:?})", self.get())
+        write!(f, "Cell0({:?})", self.get())
     }
 }
 
@@ -205,20 +205,20 @@ mod tests {
 
     #[test]
     fn test_new_and_get() {
-        let cell = MyCell::new(42);
+        let cell = Cell0::new(42);
         assert_eq!(cell.get(), 42);
     }
 
     #[test]
     fn test_set() {
-        let cell = MyCell::new(10);
+        let cell = Cell0::new(10);
         cell.set(20);
         assert_eq!(cell.get(), 20);
     }
 
     #[test]
     fn test_replace() {
-        let cell = MyCell::new(10);
+        let cell = Cell0::new(10);
         let old = cell.replace(20);
         assert_eq!(old, 10);
         assert_eq!(cell.get(), 20);
@@ -226,8 +226,8 @@ mod tests {
 
     #[test]
     fn test_swap() {
-        let cell1 = MyCell::new(10);
-        let cell2 = MyCell::new(20);
+        let cell1 = Cell0::new(10);
+        let cell2 = Cell0::new(20);
 
         cell1.swap(&cell2);
 
@@ -237,27 +237,27 @@ mod tests {
 
     #[test]
     fn test_into_inner() {
-        let cell = MyCell::new(42);
+        let cell = Cell0::new(42);
         assert_eq!(cell.into_inner(), 42);
     }
 
     #[test]
     fn test_take() {
-        let cell = MyCell::new(Some(42));
+        let cell = Cell0::new(Some(42));
         assert_eq!(cell.take(), Some(42));
         assert_eq!(cell.get(), None);
     }
 
     #[test]
     fn test_update() {
-        let cell = MyCell::new(10);
+        let cell = Cell0::new(10);
         cell.update(|x| x * 2);
         assert_eq!(cell.get(), 20);
     }
 
     #[test]
     fn test_clone() {
-        let cell = MyCell::new(42);
+        let cell = Cell0::new(42);
         let cell2 = cell.clone();
         assert_eq!(cell.get(), cell2.get());
 
@@ -268,19 +268,19 @@ mod tests {
 
     #[test]
     fn test_default() {
-        let cell: MyCell<i32> = MyCell::default();
+        let cell: Cell0<i32> = Cell0::default();
         assert_eq!(cell.get(), 0);
     }
 
     #[test]
     fn test_debug() {
-        let cell = MyCell::new(42);
-        assert_eq!(format!("{:?}", cell), "MyCell(42)");
+        let cell = Cell0::new(42);
+        assert_eq!(format!("{:?}", cell), "Cell0(42)");
     }
 
     #[test]
     fn test_get_mut() {
-        let mut cell = MyCell::new(5);
+        let mut cell = Cell0::new(5);
         *cell.get_mut() += 1;
         assert_eq!(cell.get(), 6);
 

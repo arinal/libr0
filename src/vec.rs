@@ -1,7 +1,7 @@
-//! MyVec - Educational reimplementation of `Vec<T>`
+//! Vec0 - Educational reimplementation of `Vec<T>`
 
 //! ```
-//! use rustlib::vec::MyVec;
+//! use rustlib::vec::Vec0;
 //! #[macro_use]
 //! extern crate rustlib;
 //! ```
@@ -10,22 +10,22 @@ use std::alloc::{alloc, dealloc, realloc, Layout};
 use std::ops::{Deref, DerefMut, Index, IndexMut};
 use std::ptr;
 
-pub struct MyVec<T> {
+pub struct Vec0<T> {
     ptr: *mut T,
     len: usize,
     capacity: usize,
 }
 
-impl<T> MyVec<T> {
+impl<T> Vec0<T> {
     /// Creates an empty vector without allocating.
     /// ```
-    /// use rustlib::vec::MyVec;
-    /// let v: MyVec<i32> = MyVec::new();
+    /// use rustlib::vec::Vec0;
+    /// let v: Vec0<i32> = Vec0::new();
     /// assert_eq!(v.len(), 0);
     /// assert_eq!(v.capacity(), 0);
     /// ```
-    pub fn new() -> MyVec<T> {
-        MyVec {
+    pub fn new() -> Vec0<T> {
+        Vec0 {
             ptr: std::ptr::NonNull::dangling().as_ptr(),
             len: 0,
             capacity: 0,
@@ -34,14 +34,14 @@ impl<T> MyVec<T> {
 
     /// Creates an empty vector with preallocated capacity.
     /// ```
-    /// use rustlib::vec::MyVec;
-    /// let v: MyVec<i32> = MyVec::with_capacity(10);
+    /// use rustlib::vec::Vec0;
+    /// let v: Vec0<i32> = Vec0::with_capacity(10);
     /// assert_eq!(v.len(), 0);
     /// assert_eq!(v.capacity(), 10);
     /// ```
-    pub fn with_capacity(capacity: usize) -> MyVec<T> {
+    pub fn with_capacity(capacity: usize) -> Vec0<T> {
         if capacity == 0 {
-            return MyVec::new();
+            return Vec0::new();
         }
 
         let layout = Layout::array::<T>(capacity).unwrap();
@@ -51,7 +51,7 @@ impl<T> MyVec<T> {
             std::alloc::handle_alloc_error(layout);
         }
 
-        MyVec {
+        Vec0 {
             ptr,
             len: 0,
             capacity,
@@ -60,8 +60,8 @@ impl<T> MyVec<T> {
 
     /// Returns the number of elements in the vector.
     /// ```
-    /// use rustlib::vec::MyVec;
-    /// let mut v = MyVec::new();
+    /// use rustlib::vec::Vec0;
+    /// let mut v = Vec0::new();
     /// v.push(1);
     /// assert_eq!(v.len(), 1);
     /// ```
@@ -71,8 +71,8 @@ impl<T> MyVec<T> {
 
     /// Returns the total capacity (allocated space).
     /// ```
-    /// use rustlib::vec::MyVec;
-    /// let v: MyVec<i32> = MyVec::with_capacity(10);
+    /// use rustlib::vec::Vec0;
+    /// let v: Vec0<i32> = Vec0::with_capacity(10);
     /// assert_eq!(v.capacity(), 10);
     /// ```
     pub fn capacity(&self) -> usize {
@@ -81,8 +81,8 @@ impl<T> MyVec<T> {
 
     /// Returns `true` if the vector contains no elements.
     /// ```
-    /// use rustlib::vec::MyVec;
-    /// let v: MyVec<i32> = MyVec::new();
+    /// use rustlib::vec::Vec0;
+    /// let v: Vec0<i32> = Vec0::new();
     /// assert!(v.is_empty());
     /// ```
     pub fn is_empty(&self) -> bool {
@@ -92,8 +92,8 @@ impl<T> MyVec<T> {
     /// Appends an element to the end of the vector.
     /// Grows capacity if needed (doubles each time).
     /// ```
-    /// use rustlib::vec::MyVec;
-    /// let mut v = MyVec::new();
+    /// use rustlib::vec::Vec0;
+    /// let mut v = Vec0::new();
     /// v.push(1);
     /// v.push(2);
     /// assert_eq!(v.len(), 2);
@@ -109,8 +109,8 @@ impl<T> MyVec<T> {
 
     /// Removes and returns the last element, or [`None`] if empty.
     /// ```
-    /// use rustlib::vec::MyVec;
-    /// let mut v = MyVec::new();
+    /// use rustlib::vec::Vec0;
+    /// let mut v = Vec0::new();
     /// v.push(1);
     /// assert_eq!(v.pop(), Some(1));
     /// assert_eq!(v.pop(), None);
@@ -126,8 +126,8 @@ impl<T> MyVec<T> {
 
     /// Inserts an element at position `index`, shifting elements to the right.
     /// ```
-    /// use rustlib::vec::MyVec;
-    /// let mut v = MyVec::new();
+    /// use rustlib::vec::Vec0;
+    /// let mut v = Vec0::new();
     /// v.push(1);
     /// v.push(3);
     /// v.insert(1, 2);
@@ -154,8 +154,8 @@ impl<T> MyVec<T> {
 
     /// Removes and returns the element at position `index`, shifting elements to the left.
     /// ```
-    /// use rustlib::vec::MyVec;
-    /// let mut v = MyVec::new();
+    /// use rustlib::vec::Vec0;
+    /// let mut v = Vec0::new();
     /// v.push(1);
     /// v.push(2);
     /// v.push(3);
@@ -182,8 +182,8 @@ impl<T> MyVec<T> {
 
     /// Clears the vector, removing all elements. Capacity remains unchanged.
     /// ```
-    /// use rustlib::vec::MyVec;
-    /// let mut v = MyVec::new();
+    /// use rustlib::vec::Vec0;
+    /// let mut v = Vec0::new();
     /// v.push(1);
     /// v.clear();
     /// assert!(v.is_empty());
@@ -199,8 +199,8 @@ impl<T> MyVec<T> {
 
     /// Shrinks the capacity to match the length.
     /// ```
-    /// use rustlib::vec::MyVec;
-    /// let mut v = MyVec::with_capacity(10);
+    /// use rustlib::vec::Vec0;
+    /// let mut v = Vec0::with_capacity(10);
     /// v.push(1);
     /// v.shrink_to_fit();
     /// assert_eq!(v.capacity(), 1);
@@ -238,8 +238,8 @@ impl<T> MyVec<T> {
 
     /// Returns a reference to the elements as a slice.
     /// ```
-    /// use rustlib::vec::MyVec;
-    /// let mut v = MyVec::new();
+    /// use rustlib::vec::Vec0;
+    /// let mut v = Vec0::new();
     /// v.push(1);
     /// v.push(2);
     /// let slice = v.as_slice();
@@ -251,8 +251,8 @@ impl<T> MyVec<T> {
 
     /// Returns a mutable reference to the elements as a slice.
     /// ```
-    /// use rustlib::vec::MyVec;
-    /// let mut v = MyVec::new();
+    /// use rustlib::vec::Vec0;
+    /// let mut v = Vec0::new();
     /// v.push(1);
     /// v.as_mut_slice()[0] = 2;
     /// assert_eq!(v[0], 2);
@@ -292,20 +292,20 @@ impl<T> MyVec<T> {
     }
 }
 
-impl<T> Default for MyVec<T> {
+impl<T> Default for Vec0<T> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-/// Indexing into [`MyVec`] returns a reference to the element.
+/// Indexing into [`Vec0`] returns a reference to the element.
 /// ```
-/// use rustlib::vec::MyVec;
-/// let mut v = MyVec::new();
+/// use rustlib::vec::Vec0;
+/// let mut v = Vec0::new();
 /// v.push(10);
 /// assert_eq!(v[0], 10);
 /// ```
-impl<T> Index<usize> for MyVec<T> {
+impl<T> Index<usize> for Vec0<T> {
     type Output = T;
 
     fn index(&self, index: usize) -> &T {
@@ -318,13 +318,13 @@ impl<T> Index<usize> for MyVec<T> {
 
 /// Mutable indexing allows modifying elements.
 /// ```
-/// use rustlib::vec::MyVec;
-/// let mut v = MyVec::new();
+/// use rustlib::vec::Vec0;
+/// let mut v = Vec0::new();
 /// v.push(10);
 /// v[0] = 20;
 /// assert_eq!(v[0], 20);
 /// ```
-impl<T> IndexMut<usize> for MyVec<T> {
+impl<T> IndexMut<usize> for Vec0<T> {
     fn index_mut(&mut self, index: usize) -> &mut T {
         if index >= self.len {
             panic!("index out of bounds: {} >= {}", index, self.len);
@@ -333,15 +333,15 @@ impl<T> IndexMut<usize> for MyVec<T> {
     }
 }
 
-/// Dropping a [`MyVec`] drops all elements and deallocates memory.
+/// Dropping a [`Vec0`] drops all elements and deallocates memory.
 /// ```
-/// use rustlib::vec::MyVec;
+/// use rustlib::vec::Vec0;
 /// {
-///     let mut v = MyVec::new();
+///     let mut v = Vec0::new();
 ///     v.push(String::from("hello"));
 /// } // v dropped here, memory freed
 /// ```
-impl<T> Drop for MyVec<T> {
+impl<T> Drop for Vec0<T> {
     fn drop(&mut self) {
         if self.capacity > 0 {
             unsafe {
@@ -353,15 +353,15 @@ impl<T> Drop for MyVec<T> {
     }
 }
 
-/// Dereferencing a [`MyVec<T>`] yields a `&[T]` slice.
+/// Dereferencing a [`Vec0<T>`] yields a `&[T]` slice.
 /// ```
-/// use rustlib::vec::MyVec;
-/// let mut v = MyVec::new();
+/// use rustlib::vec::Vec0;
+/// let mut v = Vec0::new();
 /// v.push(1);
 /// v.push(2);
 /// let _iter = v.iter(); // Uses [T]::iter() via deref coercion
 /// ```
-impl<T> Deref for MyVec<T> {
+impl<T> Deref for Vec0<T> {
     type Target = [T];
 
     fn deref(&self) -> &[T] {
@@ -371,8 +371,8 @@ impl<T> Deref for MyVec<T> {
 
 /// Mutable dereferencing yields a `&mut [T]` slice.
 /// ```
-/// use rustlib::vec::MyVec;
-/// let mut v = MyVec::new();
+/// use rustlib::vec::Vec0;
+/// let mut v = Vec0::new();
 /// v.push(3);
 /// v.push(1);
 /// v.push(2);
@@ -381,24 +381,24 @@ impl<T> Deref for MyVec<T> {
 /// assert_eq!(v[1], 2);
 /// assert_eq!(v[2], 3);
 /// ```
-impl<T> DerefMut for MyVec<T> {
+impl<T> DerefMut for Vec0<T> {
     fn deref_mut(&mut self) -> &mut [T] {
         self.as_mut_slice()
     }
 }
 
-/// Cloning creates a new [`MyVec`] with deep-copied elements.
+/// Cloning creates a new [`Vec0`] with deep-copied elements.
 /// ```
-/// use rustlib::vec::MyVec;
-/// let mut v1 = MyVec::new();
+/// use rustlib::vec::Vec0;
+/// let mut v1 = Vec0::new();
 /// v1.push(1);
 /// let v2 = v1.clone();
 /// assert_eq!(v1[0], 1);
 /// assert_eq!(v2[0], 1); // independent copy
 /// ```
-impl<T: Clone> Clone for MyVec<T> {
-    fn clone(&self) -> MyVec<T> {
-        let mut new_vec = MyVec::with_capacity(self.len);
+impl<T: Clone> Clone for Vec0<T> {
+    fn clone(&self) -> Vec0<T> {
+        let mut new_vec = Vec0::with_capacity(self.len);
         for i in 0..self.len {
             new_vec.push(self[i].clone());
         }
@@ -408,13 +408,13 @@ impl<T: Clone> Clone for MyVec<T> {
 
 /// Debug formatting shows the vector as a list.
 /// ```
-/// use rustlib::vec::MyVec;
-/// let mut v = MyVec::new();
+/// use rustlib::vec::Vec0;
+/// let mut v = Vec0::new();
 /// v.push(1);
 /// v.push(2);
 /// assert_eq!(format!("{:?}", v), "[1, 2]");
 /// ```
-impl<T: std::fmt::Debug> std::fmt::Debug for MyVec<T> {
+impl<T: std::fmt::Debug> std::fmt::Debug for Vec0<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_list().entries(self.as_slice().iter()).finish()
     }
@@ -424,24 +424,24 @@ impl<T: std::fmt::Debug> std::fmt::Debug for MyVec<T> {
 // IntoIterator implementation
 // ============================================================================
 
-/// Iterator that consumes a [`MyVec`] and yields owned elements.
-/// Created by calling [`MyVec::into_iter`].
-pub struct MyVecIntoIter<T> {
+/// Iterator that consumes a [`Vec0`] and yields owned elements.
+/// Created by calling [`Vec0::into_iter`].
+pub struct IntoIter<T> {
     ptr: *mut T,
     len: usize,
     capacity: usize,
     index: usize,
 }
 
-/// Iterating over [`MyVecIntoIter`] yields owned elements.
+/// Iterating over [`IntoIter`] yields owned elements.
 /// ```
-/// use rustlib::my_vec;
-/// let v = my_vec![1, 2, 3];
+/// use rustlib::vec0;
+/// let v = vec0![1, 2, 3];
 /// let mut iter = v.into_iter();
 /// assert_eq!(iter.next(), Some(1));
 /// assert_eq!(iter.next(), Some(2));
 /// ```
-impl<T> Iterator for MyVecIntoIter<T> {
+impl<T> Iterator for IntoIter<T> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -460,15 +460,15 @@ impl<T> Iterator for MyVecIntoIter<T> {
     }
 }
 
-/// Dropping [`MyVecIntoIter`] drops remaining unconsumed elements and frees memory.
+/// Dropping [`IntoIter`] drops remaining unconsumed elements and frees memory.
 /// ```
-/// use rustlib::my_vec;
-/// let v = my_vec![String::from("a"), String::from("b")];
+/// use rustlib::vec0;
+/// let v = vec0![String::from("a"), String::from("b")];
 /// let mut iter = v.into_iter();
 /// assert_eq!(iter.next(), Some(String::from("a")));
 /// // iter dropped, "b" is dropped and memory freed
 /// ```
-impl<T> Drop for MyVecIntoIter<T> {
+impl<T> Drop for IntoIter<T> {
     fn drop(&mut self) {
         // Drop remaining elements that weren't consumed
         while self.index < self.len {
@@ -487,10 +487,10 @@ impl<T> Drop for MyVecIntoIter<T> {
     }
 }
 
-/// Converting [`MyVec`] into an iterator yields owned elements.
+/// Converting [`Vec0`] into an iterator yields owned elements.
 /// ```
-/// use rustlib::my_vec;
-/// let v = my_vec![1, 2, 3];
+/// use rustlib::vec0;
+/// let v = vec0![1, 2, 3];
 /// let mut sum = 0;
 /// for val in v {
 ///     sum += val; // Takes ownership of each element
@@ -498,12 +498,12 @@ impl<T> Drop for MyVecIntoIter<T> {
 /// assert_eq!(sum, 6);
 /// // v is consumed, can't be used anymore
 /// ```
-impl<T> IntoIterator for MyVec<T> {
+impl<T> IntoIterator for Vec0<T> {
     type Item = T;
-    type IntoIter = MyVecIntoIter<T>;
+    type IntoIter = IntoIter<T>;
 
     fn into_iter(self) -> Self::IntoIter {
-        let iter = MyVecIntoIter {
+        let iter = IntoIter {
             ptr: self.ptr,
             len: self.len,
             capacity: self.capacity,
@@ -519,27 +519,27 @@ impl<T> IntoIterator for MyVec<T> {
 // vec! macro - syntactic sugar for creating vectors
 // ============================================================================
 
-/// Creates a [`MyVec`] containing the given elements.
+/// Creates a [`Vec0`] containing the given elements.
 ///
 /// ```
-/// use rustlib::my_vec;
-/// use rustlib::vec::MyVec;
+/// use rustlib::vec0;
+/// use rustlib::vec::Vec0;
 /// // Empty vector
-/// let v: MyVec<i32> = my_vec![];
+/// let v: Vec0<i32> = vec0![];
 ///
 /// // Vector with elements
-/// let v = my_vec![1, 2, 3];
+/// let v = vec0![1, 2, 3];
 ///
 /// // Vector with n copies of an element
-/// let v = my_vec![0; 5]; // [0, 0, 0, 0, 0]
+/// let v = vec0![0; 5]; // [0, 0, 0, 0, 0]
 /// ```
 #[macro_export]
-macro_rules! my_vec {
+macro_rules! vec0 {
     () => {
-        $crate::MyVec::new()
+        $crate::Vec0::new()
     };
     ($elem:expr; $n:expr) => {{
-        let mut v = $crate::MyVec::with_capacity($n);
+        let mut v = $crate::Vec0::with_capacity($n);
         #[allow(clippy::reversed_empty_ranges)]
         for _ in 0..$n {
             v.push($elem.clone());
@@ -547,7 +547,7 @@ macro_rules! my_vec {
         v
     }};
     ($($x:expr),+ $(,)?) => {{
-        let mut v = $crate::MyVec::new();
+        let mut v = $crate::Vec0::new();
         $(v.push($x);)*
         v
     }};
@@ -559,7 +559,7 @@ mod tests {
 
     #[test]
     fn test_new() {
-        let vec: MyVec<i32> = MyVec::new();
+        let vec: Vec0<i32> = Vec0::new();
         assert_eq!(vec.len(), 0);
         assert_eq!(vec.capacity(), 0);
         assert!(vec.is_empty());
@@ -567,14 +567,14 @@ mod tests {
 
     #[test]
     fn test_with_capacity() {
-        let vec: MyVec<i32> = MyVec::with_capacity(10);
+        let vec: Vec0<i32> = Vec0::with_capacity(10);
         assert_eq!(vec.len(), 0);
         assert_eq!(vec.capacity(), 10);
     }
 
     #[test]
     fn test_push_and_pop() {
-        let mut vec = MyVec::new();
+        let mut vec = Vec0::new();
         vec.push(1);
         vec.push(2);
         vec.push(3);
@@ -588,7 +588,7 @@ mod tests {
 
     #[test]
     fn test_growth() {
-        let mut vec = MyVec::new();
+        let mut vec = Vec0::new();
         assert_eq!(vec.capacity(), 0);
 
         vec.push(1);
@@ -603,7 +603,7 @@ mod tests {
 
     #[test]
     fn test_index() {
-        let mut vec = MyVec::new();
+        let mut vec = Vec0::new();
         vec.push(10);
         vec.push(20);
         vec.push(30);
@@ -615,7 +615,7 @@ mod tests {
 
     #[test]
     fn test_index_mut() {
-        let mut vec = MyVec::new();
+        let mut vec = Vec0::new();
         vec.push(10);
         vec.push(20);
 
@@ -626,13 +626,13 @@ mod tests {
     #[test]
     #[should_panic(expected = "index out of bounds")]
     fn test_index_out_of_bounds() {
-        let vec: MyVec<i32> = MyVec::new();
+        let vec: Vec0<i32> = Vec0::new();
         let _ = vec[0];
     }
 
     #[test]
     fn test_insert() {
-        let mut vec = MyVec::new();
+        let mut vec = Vec0::new();
         vec.push(1);
         vec.push(3);
         vec.insert(1, 2);
@@ -644,7 +644,7 @@ mod tests {
 
     #[test]
     fn test_remove() {
-        let mut vec = MyVec::new();
+        let mut vec = Vec0::new();
         vec.push(1);
         vec.push(2);
         vec.push(3);
@@ -657,7 +657,7 @@ mod tests {
 
     #[test]
     fn test_clear() {
-        let mut vec = MyVec::new();
+        let mut vec = Vec0::new();
         vec.push(1);
         vec.push(2);
         vec.push(3);
@@ -669,7 +669,7 @@ mod tests {
 
     #[test]
     fn test_shrink_to_fit() {
-        let mut vec = MyVec::with_capacity(10);
+        let mut vec = Vec0::with_capacity(10);
         vec.push(1);
         vec.push(2);
 
@@ -681,7 +681,7 @@ mod tests {
 
     #[test]
     fn test_deref_to_slice() {
-        let mut vec = MyVec::new();
+        let mut vec = Vec0::new();
         vec.push(1);
         vec.push(2);
         vec.push(3);
@@ -693,7 +693,7 @@ mod tests {
 
     #[test]
     fn test_into_iter() {
-        let mut vec = MyVec::new();
+        let mut vec = Vec0::new();
         vec.push(1);
         vec.push(2);
         vec.push(3);
@@ -707,7 +707,7 @@ mod tests {
 
     #[test]
     fn test_clone() {
-        let mut vec = MyVec::new();
+        let mut vec = Vec0::new();
         vec.push(1);
         vec.push(2);
 
@@ -718,7 +718,7 @@ mod tests {
 
     #[test]
     fn test_debug() {
-        let mut vec = MyVec::new();
+        let mut vec = Vec0::new();
         vec.push(1);
         vec.push(2);
 
@@ -733,7 +733,7 @@ mod tests {
         assert_eq!(Arc::strong_count(&item), 1);
 
         {
-            let mut vec = MyVec::new();
+            let mut vec = Vec0::new();
             vec.push(item.clone());
             vec.push(item.clone());
             assert_eq!(Arc::strong_count(&item), 3);
@@ -744,13 +744,13 @@ mod tests {
 
     #[test]
     fn test_my_vec_macro_empty() {
-        let v: MyVec<i32> = my_vec![];
+        let v: Vec0<i32> = vec0![];
         assert_eq!(v.len(), 0);
     }
 
     #[test]
     fn test_my_vec_macro_elements() {
-        let v = my_vec![1, 2, 3];
+        let v = vec0![1, 2, 3];
         assert_eq!(v.len(), 3);
         assert_eq!(v[0], 1);
         assert_eq!(v[1], 2);
@@ -759,7 +759,7 @@ mod tests {
 
     #[test]
     fn test_my_vec_macro_repeat() {
-        let v = my_vec![0; 5];
+        let v = vec0![0; 5];
         assert_eq!(v.len(), 5);
         for i in 0..5 {
             assert_eq!(v[i], 0);
@@ -768,14 +768,14 @@ mod tests {
 
     #[test]
     fn test_my_vec_macro_single_element() {
-        let v = my_vec![42];
+        let v = vec0![42];
         assert_eq!(v.len(), 1);
         assert_eq!(v[0], 42);
     }
 
     #[test]
     fn test_my_vec_macro_trailing_comma() {
-        let v = my_vec![1, 2, 3,];
+        let v = vec0![1, 2, 3,];
         assert_eq!(v.len(), 3);
         assert_eq!(v[0], 1);
         assert_eq!(v[1], 2);
@@ -784,7 +784,7 @@ mod tests {
 
     #[test]
     fn test_my_vec_macro_strings() {
-        let v = my_vec![String::from("hello"), String::from("world")];
+        let v = vec0![String::from("hello"), String::from("world")];
         assert_eq!(v.len(), 2);
         assert_eq!(v[0], "hello");
         assert_eq!(v[1], "world");
@@ -792,7 +792,7 @@ mod tests {
 
     #[test]
     fn test_my_vec_macro_repeat_string() {
-        let v = my_vec![String::from("test"); 3];
+        let v = vec0![String::from("test"); 3];
         assert_eq!(v.len(), 3);
         assert_eq!(v[0], "test");
         assert_eq!(v[1], "test");
@@ -801,7 +801,7 @@ mod tests {
 
     #[test]
     fn test_my_vec_macro_expressions() {
-        let v = my_vec![1 + 1, 2 * 2, 3 - 1];
+        let v = vec0![1 + 1, 2 * 2, 3 - 1];
         assert_eq!(v.len(), 3);
         assert_eq!(v[0], 2);
         assert_eq!(v[1], 4);
@@ -810,7 +810,7 @@ mod tests {
 
     #[test]
     fn test_my_vec_macro_repeat_zero() {
-        let v: MyVec<i32> = my_vec![42; 0];
+        let v: Vec0<i32> = vec0![42; 0];
         assert_eq!(v.len(), 0);
         assert!(v.is_empty());
     }

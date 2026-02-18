@@ -14,10 +14,10 @@ pub mod refcell;
 pub mod rc;
 
 // Re-export main types for convenience
-pub use option::MyOption;
-pub use result::MyResult;
-pub use r#box::MyBox;
-pub use vec::{MyVec, MyVecIntoIter};
-pub use cell::MyCell;
-pub use refcell::{MyRefCell, Ref, RefMut, BorrowError, BorrowMutError};
-pub use rc::{MyRc, MyWeak};
+pub use option::Option0;
+pub use result::Result0;
+pub use r#box::Box0;
+pub use vec::{Vec0, IntoIter};
+pub use cell::Cell0;
+pub use refcell::{RefCell0, Ref, RefMut, BorrowError, BorrowMutError};
+pub use rc::{Rc0, Weak0};

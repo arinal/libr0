@@ -275,7 +275,7 @@ We can't truly replicate `Box` without compiler magic, but we can understand its
 use std::alloc::{alloc, dealloc, Layout};
 use std::ptr;
 
-struct MyBox<T> {
+struct Box0<T> {
     ptr: *mut T,
 }
 ```
@@ -283,8 +283,8 @@ struct MyBox<T> {
 ### new - Allocate and Store
 
 ```rust
-impl<T> MyBox<T> {
-    fn new(value: T) -> MyBox<T> {
+impl<T> Box0<T> {
+    fn new(value: T) -> Box0<T> {
         unsafe {
             // 1. Calculate memory layout for T
             let layout = Layout::new::<T>();
@@ -299,7 +299,7 @@ impl<T> MyBox<T> {
             // 3. Write value to allocated memory
             ptr::write(ptr, value);
 
-            MyBox { ptr }
+            Box0 { ptr }
         }
     }
 }
@@ -312,7 +312,7 @@ impl<T> MyBox<T> {
 ```rust
 use std::ops::Deref;
 
-impl<T> Deref for MyBox<T> {
+impl<T> Deref for Box0<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -324,7 +324,7 @@ impl<T> Deref for MyBox<T> {
 With `Deref`, this works:
 
 ```rust
-let b = MyBox::new(5);
+let b = Box0::new(5);
 *b  // 5
 
 // Can we move out with *b?
@@ -332,7 +332,7 @@ let c = *b;  // ✅ Works! i32 is Copy, so this copies the value
 c  // 5
 
 // What about non-Copy types?
-let s = MyBox::new(String::from("hello"));
+let s = Box0::new(String::from("hello"));
 
 // This works fine - gets a reference:
 let borrowed = *s;  // borrowed: &String
@@ -371,7 +371,7 @@ To get ownership of non-Copy types, use `into_inner()` to consume the box.
 ```rust
 use std::ops::DerefMut;
 
-impl<T> DerefMut for MyBox<T> {
+impl<T> DerefMut for Box0<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         unsafe { &mut *self.ptr }
     }
@@ -381,7 +381,7 @@ impl<T> DerefMut for MyBox<T> {
 Now we can mutate:
 
 ```rust
-let mut b = MyBox::new(5);
+let mut b = Box0::new(5);
 *b = 10;
 ```
 
@@ -390,7 +390,7 @@ let mut b = MyBox::new(5);
 The whole point of smart pointers: automatic cleanup.
 
 ```rust
-impl<T> Drop for MyBox<T> {
+impl<T> Drop for Box0<T> {
     fn drop(&mut self) {
         unsafe {
             // 1. Call destructor on the value
@@ -409,21 +409,21 @@ impl<T> Drop for MyBox<T> {
 ```rust
 // 1. End of scope
 {
-    let b = MyBox::new(String::from("hello"));
+    let b = Box0::new(String::from("hello"));
     println!("Using box: {}", *b);
 }  // Drop called here - memory freed automatically
 
 // 2. Explicit drop
-let b = MyBox::new(42);
+let b = Box0::new(42);
 drop(b);  // Drop called immediately
 // b is no longer valid
 
 // 3. Reassignment
-let mut b = MyBox::new(10);
-b = MyBox::new(20);  // Drop called on old MyBox(10), then new one assigned
+let mut b = Box0::new(10);
+b = Box0::new(20);  // Drop called on old Box0(10), then new one assigned
 
 // 4. NOT called when using into_inner, leak, or into_raw
-let b = MyBox::new(5);
+let b = Box0::new(5);
 let value = b.into_inner();  // Drop NOT called - we handled cleanup manually
 ```
 
@@ -432,7 +432,7 @@ let value = b.into_inner();  // Drop NOT called - we handled cleanup manually
 Sometimes you want to move the value out of the box and take ownership, deallocating the box itself but keeping the value:
 
 ```rust
-impl<T> MyBox<T> {
+impl<T> Box0<T> {
     fn into_inner(self) -> T {
         unsafe {
             // 1. Read the value from heap into stack variable
@@ -470,7 +470,7 @@ Both are undefined behavior. `mem::forget` tells the compiler "don't run Drop on
 **Example:**
 
 ```rust
-let boxed = MyBox::new(String::from("hello"));
+let boxed = Box0::new(String::from("hello"));
 let s = boxed.into_inner();  // Extract String, deallocate Box
 s  // "hello" - we now own the String directly
 // boxed is consumed, but Drop wasn't called
@@ -492,14 +492,14 @@ After `into_inner()`:
 
 - The `String` **struct** (24 bytes: ptr + len + cap) is now on the stack
 - The actual string data `"hello"` is **still on the heap**
-- We freed the memory where `MyBox` stored the String struct, but not the string's data
+- We freed the memory where `Box0` stored the String struct, but not the string's data
 
 **Before `into_inner()`:**
 
 ```
         STACK         │      HEAP
                       │
-   boxed: MyBox       │     String struct (24 bytes)
+   boxed: Box0       │     String struct (24 bytes)
    ┌───────────────┐  │    ┌───────────────────┐
    │ ptr: 0x1000 ──┼──┼──→ │ ptr: 0x3000 ──┐   │
    └───────────────┘  │    │ len: 5        │   │
@@ -535,7 +535,7 @@ The String still owns its heap-allocated data - we just moved the String struct 
 Sometimes you want to keep data alive forever without deallocation:
 
 ```rust
-impl<T> MyBox<T> {
+impl<T> Box0<T> {
     fn leak(self) -> &'static mut T {
         let ptr = self.ptr;
         std::mem::forget(self);  // Don't run Drop
@@ -547,7 +547,7 @@ impl<T> MyBox<T> {
 **Example:**
 
 ```rust
-let boxed = MyBox::new(42);
+let boxed = Box0::new(42);
 let leaked: &'static mut i32 = boxed.leak();
 *leaked = 100;  // Can mutate forever
 // Memory is never freed!
@@ -565,7 +565,7 @@ Yes! `leak()` is **safe** (not marked `unsafe`) because:
 
 ```rust
 fn leak_and_lose() {
-    let boxed = MyBox::new(42);
+    let boxed = Box0::new(42);
     let leaked: &'static mut i32 = boxed.leak();  // Get the reference
     // leaked is a local variable that will be destroyed when function ends
     // But the heap memory it points to? Still there!
@@ -592,15 +592,15 @@ Use cases: global state, thread-local storage, or when interfacing with C code t
 Convert to/from raw pointers for FFI or manual memory management:
 
 ```rust
-impl<T> MyBox<T> {
+impl<T> Box0<T> {
     fn into_raw(self) -> *mut T {
         let ptr = self.ptr;
         std::mem::forget(self);  // Don't run Drop
         ptr
     }
 
-    unsafe fn from_raw(ptr: *mut T) -> MyBox<T> {
-        MyBox { ptr }
+    unsafe fn from_raw(ptr: *mut T) -> Box0<T> {
+        Box0 { ptr }
     }
 }
 ```
@@ -610,12 +610,12 @@ impl<T> MyBox<T> {
 ```rust
 extern "C" { fn c_process_data(ptr: *mut String); }
 
-let boxed = MyBox::new(String::from("hello"));
-let ptr = MyBox::into_raw(boxed);
+let boxed = Box0::new(String::from("hello"));
+let ptr = Box0::into_raw(boxed);
 unsafe { c_process_data(ptr); }  // Pass to C
 
 // from_raw is UNSAFE - you must guarantee the pointer came from into_raw
-let restored = unsafe { MyBox::from_raw(ptr) };  // Get it back
+let restored = unsafe { Box0::from_raw(ptr) };  // Get it back
 ```
 
 **Warning:** `from_raw` is `unsafe` because:
@@ -627,7 +627,7 @@ let restored = unsafe { MyBox::from_raw(ptr) };  // Get it back
 Compare to dereferencing and moving:
 
 ```rust
-let boxed = MyBox::new(String::from("hello"));
+let boxed = Box0::new(String::from("hello"));
 let s = *boxed;  // Move out of box
 // ERROR: Can't move out of `*boxed` because Box implements Deref but not DerefMove
 ```
@@ -636,25 +636,25 @@ This doesn't work with the real `Box` either - you need `Box::into_inner()` (or 
 
 ## Deref Coercion
 
-One of Rust's nicest features. When you have `&MyBox<T>`, it can automatically become `&T`:
+One of Rust's nicest features. When you have `&Box0<T>`, it can automatically become `&T`:
 
 ```rust
 fn print_len(s: &str) {
     println!("Length: {}", s.len());
 }
 
-let boxed = MyBox::new(String::from("hello"));
-print_len(&boxed);  // &MyBox<String> -> &String -> &str
+let boxed = Box0::new(String::from("hello"));
+print_len(&boxed);  // &Box0<String> -> &String -> &str
 ```
 
 **How does this work?**
 
 Deref coercion is a **special compiler feature** that only works with the `Deref` trait. The compiler automatically inserts deref calls to make types match:
 
-1. You pass `&boxed`, which is `&MyBox<String>`
+1. You pass `&boxed`, which is `&Box0<String>`
 2. Function expects `&str`
-3. Compiler tries: "Can I turn `&MyBox<String>` into `&str`?"
-4. First deref: `&MyBox<String>` → calls `deref()` → `&String`
+3. Compiler tries: "Can I turn `&Box0<String>` into `&str`?"
+4. First deref: `&Box0<String>` → calls `deref()` → `&String`
 5. Second deref: `&String` → calls `deref()` → `&str` ✅ Match!
 
 The compiler chains `Deref` implementations automatically. This **only works** with:
@@ -711,7 +711,7 @@ All three:
 
 ## Exercises
 
-See the full code in [`src/box.rs`](./src/box.rs) for the complete implementation of `MyOption` with all methods.
+See the full code in [`src/box.rs`](./src/box.rs) for the complete implementation of `Option0` with all methods.
 Also, see the exercises in [01_box.rs](./examples/01_box.rs)
 
 ## Key Takeaways

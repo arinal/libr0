@@ -8,20 +8,35 @@ Building Rust's standard library from scratch - a hands-on learning guide to und
 
 We're building Rust's library (lib) from zero, one type at a time.
 
-## Philosophy
+## Approach
 
-The best way to understand how something works is to build it yourself. This guide takes you through implementing Rust's fundamental types from scratch, starting with simple enums and progressing to async runtime internals.
+**Learn by building.** The best way to understand something is to implement it yourself. This guide takes you through Rust's fundamental types from scratch, starting with simple enums and progressing to async runtime internals. Each chapter builds on the previous one.
 
-Each chapter builds on the previous one, introducing new concepts gradually.
+**De-abstract the abstractions.** Rust concepts aren't magic:
+- Borrowing? Just a safe pointer (one pointer in memory)
+- Moving? Just a copy (mov instruction or memcpy)
+- `Box`? Just alloc + dealloc wrapped in a struct
+- `RefCell`? Just a counter and panic! when rules break
+- `async`? Compiler-generated state machines
 
-This guide emphasizes **memory layout** - pointers, stack, and heap. Understanding process memory layout will help you see how these types actually work in memory. Understanding blocking vs non-blocking operations is also helpful when we implement the event loop using epoll.
+**Show the underlying reality:**
+- What's in memory? Show the layout
+- What does the CPU do? Explain the instruction or syscall
+- What does the compiler generate? Show the desugaring
+
+**Concrete over abstract.** When abstractions are hard to grasp, we use good representative examples. Understanding comes from working code, not theory.
+
+**Address common confusions.** If people commonly misunderstand something, we call it out explicitly.
 
 **Recommended resources:**
 
-- For Rust memory layout visualization: [cheats.rs/#memory-layout](https://cheats.rs/#memory-layout)
-- For low-level concepts (syscalls, process memory, epoll): [under-the-hood](https://github.com/arinal/under-the-hood)
+Since this guide relies heavily on memory layout, this is a great reference for visualizing each type in Rust:
+- [cheats.rs/#memory-layout](https://cheats.rs/#memory-layout) - Visual memory layouts for Rust types
 
-**Things that will surprise you:**
+For low-level concepts (syscalls, process memory, blocking vs non-blocking operations):
+- [under-the-hood](https://github.com/arinal/under-the-hood)
+
+## What You'll Discover
 
 - **Rust has no null** - The language itself doesn't have null. `Option<T>` is just a regular enum we can implement ourselves.
 - **String is just a struct** - `String`, `Vec`, `Box`, `Rc` - they're all normal structs you can build yourself. Nothing magical.
@@ -72,104 +87,33 @@ This guide emphasizes **memory layout** - pointers, stack, and heap. Understandi
    - `get` and `set` operations
    - When to use `Cell`
 
-6. **[RefCell](./docs/06-refcell.md)** - Runtime borrow checking
-   - `borrow()` and `borrow_mut()`
-   - `BorrowError` and `BorrowMutError`
-   - The `Ref` and `RefMut` guard types
-   - Dynamic borrow checking
+### Appendix
 
-7. **[Rc](./docs/07-rc.md)** - Reference counting
-   - Shared ownership
-   - Uses `Cell` internally for the count!
-   - Weak references and cycles
-   - Reference counting patterns
+- **[Closures](./docs/appendix-closures.md)** - Function-like types
+  - `Fn` - immutable capture
+  - `FnMut` - mutable capture
+  - `FnOnce` - consuming capture
+  - Closure capture mechanics
+  - When to use each trait
 
-8. **[Arc](./docs/08-arc.md)** - Atomic reference counting
-   - Thread-safe reference counting
-   - Atomic operations
-   - When to use `Arc` vs `Rc`
+### Coming Soon
 
-### Part 3: Core Traits & Concepts
+The following chapters are planned but not yet implemented. See [CLAUDE.md](./CLAUDE.md) for the full roadmap.
 
-9. **[Send and Sync](./09-send-sync.md)** - Thread safety markers
-   - What are marker traits?
-   - `Send` - safe to transfer between threads
-   - `Sync` - safe to share between threads
-   - Auto-trait implementation rules
-   - Why `Rc` is not `Send` or `Sync`
-   - Why `Arc` is `Send + Sync`
-
-10. **[Closures](./10-closures.md)** - Function-like types
-
-   - `Fn` - immutable capture
-   - `FnMut` - mutable capture
-   - `FnOnce` - consuming capture
-   - Closure capture mechanics
-   - When to use each trait
-
-11. **[Dynamic Dispatch](./11-dynamic-dispatch.md)** - Runtime polymorphism
-    - Static vs Dynamic dispatch
-    - Trait objects (`dyn Trait`)
-    - Fat pointers (data + vtable)
-    - Object safety rules
-    - Performance trade-offs
-
-### Part 4: Concurrency Primitives
-
-12. **[Mutex](./12-mutex.md)** - Mutual exclusion
-    - Interior mutability for threads
-    - Lock guards and RAII
-    - Poisoning on panic
-    - Deadlock prevention
-
-13. **[Channels](./13-channels.md)** - Message passing
-    - `mpsc` - multi-producer, single-consumer
-    - `Sender` and `Receiver`
-    - Synchronous vs asynchronous channels
-    - Channel patterns
-
-### Part 5: Combining Patterns
-
-14. **[Rc + RefCell](./14-rc-refcell.md)** - Shared mutable state (single-threaded)
-    - Building a simple graph structure
-    - Common patterns and pitfalls
-
-15. **[Arc + Mutex](./15-arc-mutex.md)** - Shared mutable state (multi-threaded)
-    - Thread-safe shared state
-    - Lock contention
-    - When to use `RwLock` instead
-
-### Part 6: Async Rust
-
-16. **[Async State Machines](./16-async-state-machine.md)** - How async/await works
-    - Desugaring `async fn`
-    - State machine transformation
-    - Why we need `Pin`
-
-17. **[Future Trait](./17-future.md)** - The async foundation
-    - The `Future` trait
-    - `Poll::Ready` and `Poll::Pending`
-    - Implementing a simple future
-    - Composing futures
-
-18. **[Waker](./18-waker.md)** - Wake-up mechanism
-    - How tasks get notified
-    - `RawWaker` and `RawWakerVTable`
-    - Building a simple waker
-    - Wake-on-ready pattern
-
-19. **[Mini Executor](./19-executor.md)** - Running futures
-    - Single-threaded executor
-    - Task queue and scheduling
-    - `block_on` implementation
-    - Task spawning
-
-20. **[Mini Tokio](./20-mini-tokio.md)** - Async runtime from scratch
-    - Event loop with epoll/kqueue
-    - Multi-threaded work-stealing scheduler
-    - Timer wheel implementation
-    - TCP listener and streams
-    - Putting it all together
+- **RefCell** - Runtime borrow checking with guard types
+- **Rc** - Reference counting for shared ownership
+- **Arc** - Atomic reference counting
+- **Send and Sync** - Thread safety markers
+- **Dynamic Dispatch** - Runtime polymorphism
+- **Mutex** - Mutual exclusion
+- **Channels** - Message passing
+- **Rc + RefCell** - Shared mutable state (single-threaded)
+- **Arc + Mutex** - Shared mutable state (multi-threaded)
+- **Async State Machines** - How async/await works
+- **Future Trait** - The async foundation
+- **Waker** - Wake-up mechanism
+- **Mini Executor** - Running futures
+- **Mini Tokio** - Async runtime from scratch
 
 ## Prerequisites
 
@@ -212,52 +156,38 @@ impl<T> MyOption<T> {
 
 ```
 rustlib/
-├── docs/                  # Chapter documentation
-│   ├── 01-option.md       # Chapter 1: Option
-│   ├── 02-result.md       # Chapter 2: Result
-│   ├── 03-box.md          # Chapter 3: Box
-│   ├── 04-vec.md          # Chapter 4: Vec
-│   ├── 05-cell.md         # Chapter 5: Cell
-│   ├── 06-refcell.md      # Chapter 6: RefCell (work in progress)
-│   └── 07-rc.md           # Chapter 7: Rc (work in progress)
-├── src/                   # Library implementations
-│   ├── lib.rs             # Main library file
-│   ├── option.rs          # MyOption<T> implementation
-│   ├── result.rs          # MyResult<T, E> implementation
-│   ├── box.rs             # MyBox<T> implementation
-│   ├── vec.rs             # MyVec<T> implementation
-│   ├── cell.rs            # MyCell<T> implementation
-│   ├── refcell.rs         # MyRefCell<T> (work in progress)
-│   └── rc.rs              # MyRc<T> and MyWeak<T> (work in progress)
-├── examples/              # Exercise files (with TODOs)
-│   ├── common.rs          # Shared test utilities
-│   ├── 01_option.rs       # Option exercises
-│   ├── 02_result.rs       # Result exercises
-│   ├── 03_box.rs          # Box exercises
-│   ├── 04_vec.rs          # Vec exercises
-│   ├── 05_cell.rs         # Cell exercises
-│   ├── 06_refcell.rs      # RefCell exercises (work in progress)
-│   └── 07_rc.rs           # Rc exercises (work in progress)
-└── README.md              # This file
+├── docs/                     # Chapter documentation
+│   ├── 01-option.md          # Chapter 1: Option
+│   ├── 02-result.md          # Chapter 2: Result
+│   ├── 03-box.md             # Chapter 3: Box
+│   ├── 04-vec.md             # Chapter 4: Vec
+│   ├── 05-cell.md            # Chapter 5: Cell
+│   └── appendix-closures.md  # Appendix: Closures
+├── src/                      # Library implementations
+│   ├── lib.rs                # Main library file
+│   ├── option.rs             # MyOption<T> implementation
+│   ├── result.rs             # Result0<T, E> implementation
+│   ├── box.rs                # Box0<T> implementation
+│   ├── vec.rs                # Vec0<T> implementation
+│   ├── cell.rs               # Cell0<T> implementation
+│   ├── refcell.rs            # RefCell0<T> implementation
+│   └── rc.rs                 # Rc0<T> and Weak0<T> implementation
+└── README.md                 # This file
 ```
 
 ## Running the Code
 
-### Running Examples (Exercises)
+### Running Examples
 
-Each chapter has corresponding exercises in the `examples/` directory:
+Each chapter has corresponding example code in the `examples/` directory:
 
 ```bash
 # Run individual examples (Chapters 1-5 completed)
-cargo run --example option      # Chapter 1
-cargo run --example result      # Chapter 2
-cargo run --example box         # Chapter 3
-cargo run --example vec         # Chapter 4
-cargo run --example cell        # Chapter 5
-
-# Chapters 6-7 are work in progress
-# cargo run --example refcell   # Chapter 6 (WIP)
-# cargo run --example rc        # Chapter 7 (WIP)
+cargo run --example option      # Chapter 1: Option
+cargo run --example result      # Chapter 2: Result
+cargo run --example box         # Chapter 3: Box
+cargo run --example vec         # Chapter 4: Vec
+cargo run --example cell        # Chapter 5: Cell
 ```
 
 ### Running Tests
@@ -265,7 +195,7 @@ cargo run --example cell        # Chapter 5
 The project includes comprehensive tests:
 
 ```bash
-# Run all tests (111 unit tests + 80 doctests)
+# Run all tests
 cargo test
 
 # Run only unit tests
@@ -279,11 +209,6 @@ cargo test option
 cargo test cell
 ```
 
-**Test Coverage:**
-- **111 unit tests** - Testing all implementations in `src/`
-- **80 doctests** - Embedded in documentation comments
-- All tests passing ✓
-
 ### Using as a Library
 
 You can use the completed implementations in your own code:
@@ -291,18 +216,14 @@ You can use the completed implementations in your own code:
 ```rust
 // Completed types (Chapters 1-5)
 use rustlib::option::{MyOption, Some, None};
-use rustlib::result::{MyResult, Ok, Err};
-use rustlib::r#box::MyBox;
-use rustlib::vec::MyVec;
-use rustlib::cell::MyCell;
+use rustlib::result::{Result0, Ok, Err};
+use rustlib::r#box::Box0;
+use rustlib::vec::Vec0;
+use rustlib::cell::Cell0;
 
-// Use the my_vec! macro
-use rustlib::my_vec;
-let v = my_vec![1, 2, 3];
-
-// Work in progress (Chapters 6-7)
-// use rustlib::refcell::MyRefCell;  // WIP
-// use rustlib::rc::{MyRc, MyWeak};  // WIP
+// Use the vec0! macro
+use rustlib::vec0;
+let v = vec0![1, 2, 3];
 ```
 
 ## License

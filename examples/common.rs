@@ -49,7 +49,7 @@ macro_rules! run {
 ///
 /// # Example
 /// ```ignore
-/// run_all!["MyOption",
+/// run_all!["Option0",
 ///     _01_test_one,
 ///     _02_test_two,
 ///     _03_test_three,

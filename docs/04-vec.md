@@ -57,15 +57,15 @@ Instead, `Vec` uses the allocator APIs directly (`alloc`, `realloc`, `dealloc`) 
 use std::alloc::{alloc, dealloc, realloc, Layout};
 use std::ptr;
 
-pub struct MyVec<T> {
+pub struct Vec0<T> {
     ptr: *mut T,
     len: usize,
     capacity: usize,
 }
 
-impl<T> MyVec<T> {
-    pub fn new() -> MyVec<T> {
-        MyVec {
+impl<T> Vec0<T> {
+    pub fn new() -> Vec0<T> {
+        Vec0 {
             ptr: std::ptr::NonNull::dangling().as_ptr(),
             len: 0,
             capacity: 0,
@@ -91,7 +91,7 @@ impl<T> MyVec<T> {
 When `len == capacity`, we need to grow:
 
 ```rust
-impl<T> MyVec<T> {
+impl<T> Vec0<T> {
     pub fn push(&mut self, value: T) {
         if self.len == self.capacity {
             self.grow();
@@ -192,7 +192,7 @@ The macro has three patterns:
 ### Pop - Removing Elements
 
 ```rust
-impl<T> MyVec<T> {
+impl<T> Vec0<T> {
     pub fn pop(&mut self) -> Option<T> {
         if self.len == 0 {
             return None;
@@ -213,7 +213,7 @@ impl<T> MyVec<T> {
 ```rust
 use std::ops::{Index, IndexMut};
 
-impl<T> Index<usize> for MyVec<T> {
+impl<T> Index<usize> for Vec0<T> {
     type Output = T;
 
     fn index(&self, index: usize) -> &T {
@@ -224,7 +224,7 @@ impl<T> Index<usize> for MyVec<T> {
     }
 }
 
-impl<T> IndexMut<usize> for MyVec<T> {
+impl<T> IndexMut<usize> for Vec0<T> {
     fn index_mut(&mut self, index: usize) -> &mut T {
         if index >= self.len {
             panic!("index out of bounds: {} >= {}", index, self.len);
@@ -237,7 +237,7 @@ impl<T> IndexMut<usize> for MyVec<T> {
 Now we can use `vec[i]`:
 
 ```rust
-let mut vec = MyVec::new();
+let mut vec = Vec0::new();
 vec.push(10);
 vec.push(20);
 vec[0]  // 10
@@ -253,7 +253,7 @@ Critical! We must:
 2. Deallocate the memory
 
 ```rust
-impl<T> Drop for MyVec<T> {
+impl<T> Drop for Vec0<T> {
     fn drop(&mut self) {
         if self.capacity > 0 {
             // Drop all elements
@@ -302,7 +302,7 @@ Slice structure:
 Convert `Vec<T>` to `&[T]`:
 
 ```rust
-impl<T> MyVec<T> {
+impl<T> Vec0<T> {
     pub fn as_slice(&self) -> &[T] {
         unsafe {
             std::slice::from_raw_parts(self.ptr, self.len)
@@ -320,7 +320,7 @@ impl<T> MyVec<T> {
 Now we can use slice methods:
 
 ```rust
-let mut vec = MyVec::new();
+let mut vec = Vec0::new();
 vec.push(1);
 vec.push(2);
 vec.push(3);
@@ -333,12 +333,12 @@ slice.iter()     // Iterator over &T
 
 ### Deref Coercion
 
-Make `MyVec<T>` deref to `[T]`:
+Make `Vec0<T>` deref to `[T]`:
 
 ```rust
 use std::ops::{Deref, DerefMut};
 
-impl<T> Deref for MyVec<T> {
+impl<T> Deref for Vec0<T> {
     type Target = [T];
 
     fn deref(&self) -> &[T] {
@@ -346,7 +346,7 @@ impl<T> Deref for MyVec<T> {
     }
 }
 
-impl<T> DerefMut for MyVec<T> {
+impl<T> DerefMut for Vec0<T> {
     fn deref_mut(&mut self) -> &mut [T] {
         self.as_mut_slice()
     }
@@ -356,7 +356,7 @@ impl<T> DerefMut for MyVec<T> {
 Now we can call slice methods directly:
 
 ```rust
-let mut vec = MyVec::new();
+let mut vec = Vec0::new();
 vec.push(3);
 vec.push(1);
 vec.push(2);
@@ -484,10 +484,10 @@ Stack (slice):              │
 ### Creating a Vec
 
 ```rust
-let vec = MyVec::new();
+let vec = Vec0::new();
 // ptr = dangling, len = 0, capacity = 0
 
-let mut vec = MyVec::new();
+let mut vec = Vec0::new();
 vec.push(1);
 // First allocation: capacity = 1
 
@@ -501,10 +501,10 @@ vec.push(3);
 ### Preallocating Capacity
 
 ```rust
-impl<T> MyVec<T> {
-    pub fn with_capacity(capacity: usize) -> MyVec<T> {
+impl<T> Vec0<T> {
+    pub fn with_capacity(capacity: usize) -> Vec0<T> {
         if capacity == 0 {
-            return MyVec::new();
+            return Vec0::new();
         }
 
         let layout = Layout::array::<T>(capacity).unwrap();
@@ -514,7 +514,7 @@ impl<T> MyVec<T> {
             std::alloc::handle_alloc_error(layout);
         }
 
-        MyVec {
+        Vec0 {
             ptr,
             len: 0,
             capacity,
@@ -526,7 +526,7 @@ impl<T> MyVec<T> {
 Use when you know the size upfront:
 
 ```rust
-let mut vec = MyVec::with_capacity(100);
+let mut vec = Vec0::with_capacity(100);
 // 100 pushes without reallocation
 for i in 0..100 {
     vec.push(i);
@@ -536,7 +536,7 @@ for i in 0..100 {
 ### Clear
 
 ```rust
-impl<T> MyVec<T> {
+impl<T> Vec0<T> {
     pub fn clear(&mut self) {
         // Drop all elements
         unsafe {
@@ -608,7 +608,7 @@ pub struct MySlice<'a, T> {
 }
 
 impl<'a, T> MySlice<'a, T> {
-    pub fn from_vec(vec: &'a MyVec<T>) -> MySlice<'a, T> {
+    pub fn from_vec(vec: &'a Vec0<T>) -> MySlice<'a, T> {
         MySlice {
             ptr: vec.ptr,
             len: vec.len,
@@ -642,7 +642,7 @@ Example of what could go wrong without it:
 ```rust
 // WITHOUT PhantomData, this dangerous code might compile:
 let slice = {
-    let vec = MyVec::new();
+    let vec = Vec0::new();
     vec.push(42);
     MySlice::from_vec(&vec)  // vec dies here!
 }; // slice now points to freed memory! ❌ Use-after-free!

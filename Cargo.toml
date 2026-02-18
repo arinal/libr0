@@ -25,3 +25,11 @@ path = "examples/04_vec.rs"
 [[example]]
 name = "cell"
 path = "examples/05_cell.rs"
+
+[[example]]
+name = "refcell"
+path = "examples/06_refcell.rs"
+
+[[example]]
+name = "rc"
+path = "examples/07_rc.rs"

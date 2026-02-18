@@ -26,7 +26,7 @@ match result {
 ## Our Result Type
 
 ```rust
-enum MyResult<T, E> {
+enum Result0<T, E> {
     Ok(T),
     Err(E),
 }
@@ -45,13 +45,13 @@ The `E` in `Result<T, E>` can be **any type**. It doesn't need to implement `std
 
 ```rust
 // String as error
-let error: MyResult<i32, String> = Err(String::from("something broke"));
+let error: Result0<i32, String> = Err(String::from("something broke"));
 
 // &str as error
-let error: MyResult<i32, &str> = Err("file not found");
+let error: Result0<i32, &str> = Err("file not found");
 
 // Number as error code
-let error: MyResult<i32, i32> = Err(404);
+let error: Result0<i32, i32> = Err(404);
 
 // Custom enum - most common in real code
 #[derive(Debug)]
@@ -60,23 +60,23 @@ enum ParseError {
     TooLong,
     InvalidFormat,
 }
-let error: MyResult<i32, ParseError> = Err(ParseError::Empty);
+let error: Result0<i32, ParseError> = Err(ParseError::Empty);
 ```
 
 **Key rule**: Always wrap your error in `Err()`. Don't return the error type directly:
 
 ```rust
 // ❌ Wrong
-fn parse(s: &str) -> MyResult<i32, &str> {
+fn parse(s: &str) -> Result0<i32, &str> {
     if s.is_empty() {
-        "empty string"  // ERROR: expected MyResult, found &str
+        "empty string"  // ERROR: expected Result0, found &str
     } else {
         Ok(42)
     }
 }
 
 // ✅ Correct
-fn parse(s: &str) -> MyResult<i32, &str> {
+fn parse(s: &str) -> Result0<i32, &str> {
     if s.is_empty() {
         Err("empty string")  // Wrapped in Err!
     } else {
@@ -90,7 +90,7 @@ fn parse(s: &str) -> MyResult<i32, &str> {
 Let's validate a person with a custom error type:
 
 ```rust
-use MyResult::{Ok, Err};
+use Result0::{Ok, Err};
 
 #[derive(Debug)]
 struct Person {
@@ -104,7 +104,7 @@ enum InvalidPersonError {
     InvalidAge(i32),
 }
 
-fn validate_person(person: Person) -> MyResult<Person, InvalidPersonError> {
+fn validate_person(person: Person) -> Result0<Person, InvalidPersonError> {
     if person.name.is_empty() {
         Err(InvalidPersonError::EmptyName)  // Wrap in Err!
     } else if person.age < 0 {
@@ -136,7 +136,7 @@ fn main() {
 ### is_ok and is_err
 
 ```rust
-impl<T, E> MyResult<T, E> {
+impl<T, E> Result0<T, E> {
     fn is_ok(&self) -> bool {
         matches!(self, Ok(_))
     }
@@ -150,11 +150,11 @@ impl<T, E> MyResult<T, E> {
 **Examples:**
 
 ```rust
-let success: MyResult<i32, &str> = Ok(42);
+let success: Result0<i32, &str> = Ok(42);
 success.is_ok()   // true
 success.is_err()  // false
 
-let failure: MyResult<i32, &str> = Err("bad input");
+let failure: Result0<i32, &str> = Err("bad input");
 failure.is_ok()   // false
 failure.is_err()  // true
 
@@ -176,7 +176,7 @@ match result {
 Extract value, panic on error:
 
 ```rust
-impl<T, E: std::fmt::Debug> MyResult<T, E> {
+impl<T, E: std::fmt::Debug> Result0<T, E> {
     fn unwrap(self) -> T {
         match self {
             Ok(val) => val,
@@ -198,19 +198,19 @@ impl<T, E: std::fmt::Debug> MyResult<T, E> {
 **Examples:**
 
 ```rust
-let success: MyResult<i32, &str> = Ok(42);
+let success: Result0<i32, &str> = Ok(42);
 success.unwrap()  // 42
 
-let failure: MyResult<i32, &str> = Err("oops");
+let failure: Result0<i32, &str> = Err("oops");
 failure.unwrap()  // ❌ Panics: "called unwrap on Err: \"oops\""
 
 // expect provides context
-let result: MyResult<Config, &str> = Err("missing file");
+let result: Result0<Config, &str> = Err("missing file");
 result.expect("Config must be loaded");
 // ❌ Panics: "Config must be loaded: \"missing file\""
 
 // Anti-pattern: checking then unwrapping
-let result: MyResult<i32, &str> = Ok(42);
+let result: Result0<i32, &str> = Ok(42);
 if result.is_ok() {
     let val = result.unwrap();  // Won't panic, but verbose and clunky
     // use val...
@@ -218,7 +218,7 @@ if result.is_ok() {
 // What about the Err case? You still need another if/else!
 
 // Pattern matching is cleaner - extracts value and handles both cases
-let result: MyResult<i32, &str> = Ok(42);
+let result: Result0<i32, &str> = Ok(42);
 match result {
     Ok(val) => { /* use val */ },
     Err(e) => { /* handle error */ }
@@ -233,7 +233,7 @@ if let Ok(val) = result {
 ### unwrap_or and unwrap_or_else
 
 ```rust
-impl<T, E> MyResult<T, E> {
+impl<T, E> Result0<T, E> {
     fn unwrap_or(self, default: T) -> T {
         match self {
             Ok(val) => val,
@@ -253,13 +253,13 @@ impl<T, E> MyResult<T, E> {
 **Examples:**
 
 ```rust
-let success: MyResult<i32, &str> = Ok(10);
+let success: Result0<i32, &str> = Ok(10);
 success.unwrap_or(0)  // 10
 
-let failure: MyResult<i32, &str> = Err("bad");
+let failure: Result0<i32, &str> = Err("bad");
 failure.unwrap_or(0)  // 0
 
-let result: MyResult<i32, &str> = Err("parse error");
+let result: Result0<i32, &str> = Err("parse error");
 let val = result.unwrap_or_else(|e| {
     eprintln!("Error: {}", e);  // ✅ Has access to error!
     0
@@ -287,8 +287,8 @@ let out = result.unwrap_or_else(|_| expensive_default())
 Transform the `Ok` value, leave `Err` unchanged:
 
 ```rust
-impl<T, E> MyResult<T, E> {
-    fn map<U, F: FnOnce(T) -> U>(self, f: F) -> MyResult<U, E> {
+impl<T, E> Result0<T, E> {
+    fn map<U, F: FnOnce(T) -> U>(self, f: F) -> Result0<U, E> {
         match self {
             Ok(x) => Ok(f(x)),
             Err(e) => Err(e),
@@ -300,15 +300,15 @@ impl<T, E> MyResult<T, E> {
 **Examples:**
 
 ```rust
-let success: MyResult<i32, &str> = Ok(5);
+let success: Result0<i32, &str> = Ok(5);
 success.map(|x| x * 2)  // Ok(10)
 
-let failure: MyResult<i32, &str> = Err("bad");
+let failure: Result0<i32, &str> = Err("bad");
 failure.map(|x| x * 2)  // Err("bad") - unchanged!
 
 // Misconception: map transforms both Ok and Err
 // ❌ Wrong! map ONLY transforms Ok values
-let result: MyResult<i32, &str> = Err("error");
+let result: Result0<i32, &str> = Err("error");
 result.map(|x| x.to_string())  // Still Err("error"), not transformed
 
 // Chain transformations
@@ -320,8 +320,8 @@ Ok(5).map(|x| x * 2).map(|x| x + 1)  // Ok(11)
 Transform the `Err` value, leave `Ok` unchanged:
 
 ```rust
-impl<T, E> MyResult<T, E> {
-    fn map_err<F2, O: FnOnce(E) -> F2>(self, op: O) -> MyResult<T, F2> {
+impl<T, E> Result0<T, E> {
+    fn map_err<F2, O: FnOnce(E) -> F2>(self, op: O) -> Result0<T, F2> {
         match self {
             Ok(x) => Ok(x),
             Err(e) => Err(op(e)),
@@ -333,10 +333,10 @@ impl<T, E> MyResult<T, E> {
 **Examples:**
 
 ```rust
-let success: MyResult<i32, &str> = Ok(5);
+let success: Result0<i32, &str> = Ok(5);
 success.map_err(|e| e.to_uppercase())  // Ok(5) - unchanged!
 
-let failure: MyResult<i32, &str> = Err("bad");
+let failure: Result0<i32, &str> = Err("bad");
 failure.map_err(|e| e.to_uppercase())  // Err("BAD")
 
 // map_err ONLY transforms Err values
@@ -346,7 +346,7 @@ Ok(42).map_err(String::from)  // Still Ok(42), not transformed
 #[derive(Debug)]
 enum AppError { IoError(String), ParseError(String) }
 
-let result: MyResult<i32, &str> = Err("file not found");
+let result: Result0<i32, &str> = Err("file not found");
 result.map_err(|e| AppError::IoError(e.to_string()))  // Err(AppError::IoError(...))
 ```
 
@@ -355,8 +355,8 @@ result.map_err(|e| AppError::IoError(e.to_string()))  // Err(AppError::IoError(.
 The most important combinator. Chain operations that might fail:
 
 ```rust
-impl<T, E> MyResult<T, E> {
-    fn and_then<U, F: FnOnce(T) -> MyResult<U, E>>(self, f: F) -> MyResult<U, E> {
+impl<T, E> Result0<T, E> {
+    fn and_then<U, F: FnOnce(T) -> Result0<U, E>>(self, f: F) -> Result0<U, E> {
         match self {
             Ok(x) => f(x),
             Err(e) => Err(e),
@@ -368,7 +368,7 @@ impl<T, E> MyResult<T, E> {
 **Examples:**
 
 ```rust
-fn safe_divide(a: i32, b: i32) -> MyResult<i32, &'static str> {
+fn safe_divide(a: i32, b: i32) -> Result0<i32, &'static str> {
     if b == 0 {
         Err("division by zero")
     } else {
@@ -377,11 +377,11 @@ fn safe_divide(a: i32, b: i32) -> MyResult<i32, &'static str> {
 }
 
 // Misconception: use map for Result-returning functions
-let x: MyResult<i32, &str> = Ok(10);
-// x.map(|n| safe_divide(n, 2))  // ❌ MyResult<MyResult<i32, &str>, &str> - nested!
+let x: Result0<i32, &str> = Ok(10);
+// x.map(|n| safe_divide(n, 2))  // ❌ Result0<Result0<i32, &str>, &str> - nested!
 
 // ✅ Use and_then to avoid nesting
-x.and_then(|n| safe_divide(n, 2))  // MyResult<i32, &str> - flattened
+x.and_then(|n| safe_divide(n, 2))  // Result0<i32, &str> - flattened
 
 // Chain multiple fallible operations
 Ok(20)
@@ -399,18 +399,18 @@ Ok(10)
 Discard the error, convert to `Option`:
 
 ```rust
-impl<T, E> MyResult<T, E> {
-    fn ok(self) -> MyOption<T> {
+impl<T, E> Result0<T, E> {
+    fn ok(self) -> Option0<T> {
         match self {
-            Ok(x) => MyOption::Some(x),
-            Err(_) => MyOption::None,
+            Ok(x) => Option0::Some(x),
+            Err(_) => Option0::None,
         }
     }
 
-    fn err(self) -> MyOption<E> {
+    fn err(self) -> Option0<E> {
         match self {
-            Ok(_) => MyOption::None,
-            Err(e) => MyOption::Some(e),
+            Ok(_) => Option0::None,
+            Err(e) => Option0::Some(e),
         }
     }
 }
@@ -420,10 +420,10 @@ impl<T, E> MyResult<T, E> {
 
 ```rust
 // ok() - Extract success value, discard error type
-let success: MyResult<i32, &str> = Ok(42);
+let success: Result0<i32, &str> = Ok(42);
 success.ok()  // Some(42)
 
-let failure: MyResult<i32, &str> = Err("something went wrong");
+let failure: Result0<i32, &str> = Err("something went wrong");
 failure.ok()  // None - error information lost!
 
 // ✅ Use ok() when you don't care about the error
@@ -432,10 +432,10 @@ let port = parse_port("8080")
     .unwrap_or(3000);  // Use default if parse fails, don't care why
 
 // err() - Extract error value, discard success value
-let success: MyResult<i32, &str> = Ok(42);
+let success: Result0<i32, &str> = Ok(42);
 success.err()  // None
 
-let failure: MyResult<i32, &str> = Err("bad input");
+let failure: Result0<i32, &str> = Err("bad input");
 failure.err()  // Some("bad input")
 
 // Use case: Collecting errors
@@ -449,14 +449,14 @@ errors  // ["error1", "error2"]
 
 ### as_ref - Borrow the Inner Values
 
-Convert `&MyResult<T, E>` to `MyResult<&T, &E>`:
+Convert `&Result0<T, E>` to `Result0<&T, &E>`:
 
 ```rust
-impl<T, E> MyResult<T, E> {
-    fn as_ref(&self) -> MyResult<&T, &E> {
+impl<T, E> Result0<T, E> {
+    fn as_ref(&self) -> Result0<&T, &E> {
         match self {
-            Ok(x) => MyResult::Ok(x),
-            Err(e) => MyResult::Err(e),
+            Ok(x) => Result0::Ok(x),
+            Err(e) => Result0::Err(e),
         }
     }
 }
@@ -466,18 +466,18 @@ impl<T, E> MyResult<T, E> {
 
 ```rust
 // Problem: map consumes the Result
-let result: MyResult<String, String> = Ok(String::from("hello"));
+let result: Result0<String, String> = Ok(String::from("hello"));
 let len = result.map(|s| s.len());
 // println!("{:?}", result);  // ❌ result was moved!
 
 // ✅ Solution: Use as_ref() to borrow
-let result: MyResult<String, String> = Ok(String::from("hello"));
+let result: Result0<String, String> = Ok(String::from("hello"));
 let len = result.as_ref().map(|s| s.len());  // s is &String
 len  // Ok(5)
 println!("{:?}", result);  // ✅ Works! result still valid
 
 // Multiple operations on the same Result
-let data: MyResult<String, &str> = Ok(String::from("test"));
+let data: Result0<String, &str> = Ok(String::from("test"));
 
 let len = data.as_ref().map(|s| s.len());
 let uppercase = data.as_ref().map(|s| s.to_uppercase());
@@ -489,8 +489,8 @@ is_empty  // Ok(false)
 // data is still usable!
 
 // Works with errors too
-let failure: MyResult<i32, String> = Err(String::from("error"));
-let borrowed = failure.as_ref();  // MyResult<&i32, &String>
+let failure: Result0<i32, String> = Err(String::from("error"));
+let borrowed = failure.as_ref();  // Result0<&i32, &String>
 borrowed  // Err(&String::from("error"))
 ```
 
@@ -499,7 +499,7 @@ borrowed  // Err(&String::from("error"))
 Chaining with `and_then` works, but gets verbose:
 
 ```rust
-fn process_config() -> MyResult<Config, Error> {
+fn process_config() -> Result0<Config, Error> {
     read_file("config.txt")
         .and_then(|content| parse_config(&content))
         .and_then(|raw| validate_config(raw))
@@ -569,7 +569,7 @@ Both `and_then` and `?` are **monadic operations** - they both short-circuit on 
 
 ```rust
 // Linear chain:
-fn calculate(input: &str) -> MyResult<i32, &str> {
+fn calculate(input: &str) -> Result0<i32, &str> {
     parse_int(input)
         .and_then(|n| safe_divide(n, 2))
         .and_then(|n| check_positive(n))
@@ -578,7 +578,7 @@ fn calculate(input: &str) -> MyResult<i32, &str> {
 // If any step returns Err, the chain stops and returns that Err
 
 // Nested pattern - same calculation, nested style (like Scala's for-comprehension):
-fn calculate_nested(input: &str) -> MyResult<i32, &str> {
+fn calculate_nested(input: &str) -> Result0<i32, &str> {
     parse_int(input).and_then(|n|
         safe_divide(n, 2).and_then(|n2|
             check_positive(n2).map(|n3| n3 * 10)
@@ -592,7 +592,7 @@ fn calculate_nested(input: &str) -> MyResult<i32, &str> {
 **`?` - Imperative style (statement-based):**
 
 ```rust
-fn calculate(input: &str) -> MyResult<i32, &str> {
+fn calculate(input: &str) -> Result0<i32, &str> {
     let n = parse_int(input)?;           // Returns Err if parse fails
     let n = safe_divide(n, 2)?;          // Returns Err if divide fails
     let n = check_positive(n)?;          // Returns Err if check fails
@@ -606,7 +606,7 @@ Both do the same thing: **stop on first error and propagate it up**.
 **Visualizing `?` short-circuit:**
 
 ```rust
-fn multi_step() -> MyResult<i32, &str> {
+fn multi_step() -> Result0<i32, &str> {
     let a = step1()?;        // Ok(5)  - continues
     let b = step2(a)?;       // Err("failed") - returns immediately
     let c = step3(b)?;       // Never runs
@@ -616,7 +616,7 @@ fn multi_step() -> MyResult<i32, &str> {
 // Returns: Err("failed")
 
 // Expanded to show what happens:
-fn multi_step_expanded() -> MyResult<i32, &str> {
+fn multi_step_expanded() -> Result0<i32, &str> {
     let a = match step1() {
         Ok(val) => val,
         Err(e) => return Err(e),  // Early return
@@ -659,18 +659,18 @@ Converting between them:
 
 ```rust
 // Option -> Result
-impl<T> MyOption<T> {
-    fn ok_or<E>(self, err: E) -> MyResult<T, E> {
+impl<T> Option0<T> {
+    fn ok_or<E>(self, err: E) -> Result0<T, E> {
         match self {
-            MyOption::Some(x) => MyResult::Ok(x),
-            MyOption::None => MyResult::Err(err),
+            Option0::Some(x) => Result0::Ok(x),
+            Option0::None => Result0::Err(err),
         }
     }
 
-    fn ok_or_else<E, F: FnOnce() -> E>(self, f: F) -> MyResult<T, E> {
+    fn ok_or_else<E, F: FnOnce() -> E>(self, f: F) -> Result0<T, E> {
         match self {
-            MyOption::Some(x) => MyResult::Ok(x),
-            MyOption::None => MyResult::Err(f()),
+            Option0::Some(x) => Result0::Ok(x),
+            Option0::None => Result0::Err(f()),
         }
     }
 }
@@ -680,7 +680,7 @@ impl<T> MyOption<T> {
 
 ## Implementation
 
-See the full code in [`src/result.rs`](./src/result.rs) for the complete implementation of `MyResult` with all methods.
+See the full code in [`src/result.rs`](./src/result.rs) for the complete implementation of `Result0` with all methods.
 Also, see the exercises in [02_result.rs](./examples/02_result.rs)
 
 ## Key Takeaways

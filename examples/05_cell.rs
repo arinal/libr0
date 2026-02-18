@@ -1,6 +1,6 @@
 //! Chapter 5: Cell - Exercises
 //!
-//! Complete the TODO items to practice using MyCell for interior mutability.
+//! Complete the TODO items to practice using Cell0 for interior mutability.
 //! Run with: cargo run --example cell
 
 #![allow(unused)]
@@ -8,28 +8,28 @@
 #[macro_use]
 mod common;
 
-use rustlib::cell::MyCell;
+use rustlib::cell::Cell0;
 
 // ============================================================================
-// Exercises - Replace variables with TODOs with the correct MyCell operations
+// Exercises - Replace variables with TODOs with the correct Cell0 operations
 // ============================================================================
 
 fn _01_new_and_get() {
-    let cell = MyCell::new(42);
+    let cell = Cell0::new(42);
     let value = 0; // TODO: get the value from cell
 
     assert_eq!(value, 42);
 }
 
 fn _02_set() {
-    let cell = MyCell::new(10);
+    let cell = Cell0::new(10);
     // TODO: set cell to 20
 
     assert_eq!(cell.get(), 20);
 }
 
 fn _03_shared_mutation() {
-    let cell = MyCell::new(0);
+    let cell = Cell0::new(0);
     let ref1 = &cell;
     let ref2 = &cell;
 
@@ -41,7 +41,7 @@ fn _03_shared_mutation() {
 }
 
 fn _04_replace() {
-    let cell = MyCell::new(String::from("hello"));
+    let cell = Cell0::new(String::from("hello"));
     let old = String::new(); // TODO: replace cell contents with "world"
 
     assert_eq!(old, "hello");
@@ -49,8 +49,8 @@ fn _04_replace() {
 }
 
 fn _05_swap() {
-    let a = MyCell::new(1);
-    let b = MyCell::new(2);
+    let a = Cell0::new(1);
+    let b = Cell0::new(2);
 
     // TODO: swap the values of a and b
 
@@ -59,7 +59,7 @@ fn _05_swap() {
 }
 
 fn _06_take() {
-    let cell = MyCell::new(Some(42));
+    let cell = Cell0::new(Some(42));
     let value: Option<i32> = None; // TODO: take the value from cell
 
     assert_eq!(value, Some(42));
@@ -67,14 +67,14 @@ fn _06_take() {
 }
 
 fn _07_update() {
-    let cell = MyCell::new(5);
+    let cell = Cell0::new(5);
     // TODO: update cell by doubling its value (use update method)
 
     assert_eq!(cell.get(), 10);
 }
 
 fn _08_into_inner() {
-    let cell = MyCell::new(String::from("owned"));
+    let cell = Cell0::new(String::from("owned"));
     let value = String::new(); // TODO: consume cell and extract the value
 
     assert_eq!(value, "owned");
@@ -82,8 +82,8 @@ fn _08_into_inner() {
 }
 
 fn _09_clone() {
-    let cell1 = MyCell::new(42);
-    let cell2 = MyCell::new(0); // TODO: clone cell1
+    let cell1 = Cell0::new(42);
+    let cell2 = Cell0::new(0); // TODO: clone cell1
 
     cell1.set(100);
 
@@ -92,7 +92,7 @@ fn _09_clone() {
 }
 
 fn _10_as_ptr() {
-    let cell = MyCell::new(99);
+    let cell = Cell0::new(99);
     let ptr: *mut i32 = std::ptr::null_mut(); // TODO: get raw pointer from cell
 
     let value = unsafe { *ptr };
@@ -100,7 +100,7 @@ fn _10_as_ptr() {
 }
 
 fn _11_default() {
-    let cell: MyCell<i32> = MyCell::new(0); // TODO: create cell using Default trait
+    let cell: Cell0<i32> = Cell0::new(0); // TODO: create cell using Default trait
 
     assert_eq!(cell.get(), 0);
 }
@@ -110,13 +110,13 @@ fn _11_default() {
 // ============================================================================
 
 struct Counter {
-    count: MyCell<usize>,
+    count: Cell0<usize>,
 }
 
 impl Counter {
     fn new() -> Counter {
         Counter {
-            count: MyCell::new(0),
+            count: Cell0::new(0),
         }
     }
 
@@ -154,17 +154,17 @@ fn _12_counter() {
 // ============================================================================
 
 struct Config {
-    max_retries: MyCell<u32>,
-    timeout_ms: MyCell<u32>,
-    debug_mode: MyCell<bool>,
+    max_retries: Cell0<u32>,
+    timeout_ms: Cell0<u32>,
+    debug_mode: Cell0<bool>,
 }
 
 impl Config {
     fn new() -> Config {
         Config {
-            max_retries: MyCell::new(3),
-            timeout_ms: MyCell::new(1000),
-            debug_mode: MyCell::new(false),
+            max_retries: Cell0::new(3),
+            timeout_ms: Cell0::new(1000),
+            debug_mode: Cell0::new(false),
         }
     }
 
@@ -194,13 +194,13 @@ fn _13_config() {
 // ============================================================================
 
 struct Cache<T> {
-    value: MyCell<Option<T>>,
+    value: Cell0<Option<T>>,
 }
 
 impl<T: Copy> Cache<T> {
     fn new() -> Self {
         Cache {
-            value: MyCell::new(None),
+            value: Cell0::new(None),
         }
     }
 
@@ -245,7 +245,7 @@ fn _14_cache() {
 fn _15_get_mut() {
     // get_mut gives you a real mutable reference
     // But you need &mut Cell for this, not just &Cell
-    let mut cell = MyCell::new(5);
+    let mut cell = Cell0::new(5);
 
     // Direct mutable access - no copying needed
     *cell.get_mut() += 10;
@@ -259,7 +259,7 @@ fn _15_get_mut() {
     assert_eq!(cell.get(), 16);
 
     // Works with non-Copy types too!
-    let mut cell_vec = MyCell::new(vec![1, 2, 3]);
+    let mut cell_vec = Cell0::new(vec![1, 2, 3]);
     cell_vec.get_mut().push(4);
     // Can't use get() here because Vec is not Copy
     // But we can use replace() or into_inner()
@@ -277,7 +277,7 @@ fn _15_get_mut() {
 
 fn main() {
     run_all![
-        "MyCell",
+        "Cell0",
         _01_new_and_get,
         _02_set,
         _03_shared_mutation,

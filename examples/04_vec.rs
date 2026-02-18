@@ -1,6 +1,6 @@
 //! Chapter 4: Vec - Exercises
 //!
-//! Complete the TODO items to practice using MyVec methods.
+//! Complete the TODO items to practice using Vec0 methods.
 //! Run with: cargo run --example vec
 
 #![allow(unused)]
@@ -11,14 +11,14 @@ mod common;
 #[macro_use]
 extern crate rustlib;
 
-use rustlib::vec::MyVec;
+use rustlib::vec::Vec0;
 
 // ============================================================================
-// Exercises - Replace variables with TODOs with the correct MyVec operations
+// Exercises - Replace variables with TODOs with the correct Vec0 operations
 // ============================================================================
 
 fn _01_new_and_push() {
-    let mut vec: MyVec<i32> = MyVec::new();
+    let mut vec: Vec0<i32> = Vec0::new();
     // TODO: push 10, 20, 30 to vec
 
     let result = 0; // TODO: get the length of vec
@@ -29,7 +29,7 @@ fn _01_new_and_push() {
 }
 
 fn _02_with_capacity() {
-    let mut vec: MyVec<i32> = MyVec::new(); // TODO: create vec with capacity 10
+    let mut vec: Vec0<i32> = Vec0::new(); // TODO: create vec with capacity 10
 
     let cap1 = 0; // TODO: get capacity before pushing
 
@@ -43,7 +43,7 @@ fn _02_with_capacity() {
 }
 
 fn _03_pop() {
-    let mut vec = MyVec::new();
+    let mut vec = Vec0::new();
     vec.push(1);
     vec.push(2);
     vec.push(3);
@@ -58,7 +58,7 @@ fn _03_pop() {
 }
 
 fn _04_indexing() {
-    let mut vec = MyVec::new();
+    let mut vec = Vec0::new();
     vec.push(10);
     vec.push(20);
     vec.push(30);
@@ -71,7 +71,7 @@ fn _04_indexing() {
 }
 
 fn _05_insert() {
-    let mut vec = MyVec::new();
+    let mut vec = Vec0::new();
     vec.push(1);
     vec.push(3);
 
@@ -83,7 +83,7 @@ fn _05_insert() {
 }
 
 fn _06_remove() {
-    let mut vec = MyVec::new();
+    let mut vec = Vec0::new();
     vec.push(10);
     vec.push(20);
     vec.push(30);
@@ -97,7 +97,7 @@ fn _06_remove() {
 }
 
 fn _07_clear() {
-    let mut vec = MyVec::new();
+    let mut vec = Vec0::new();
     vec.push(1);
     vec.push(2);
     vec.push(3);
@@ -111,7 +111,7 @@ fn _07_clear() {
 }
 
 fn _08_shrink_to_fit() {
-    let mut vec = MyVec::with_capacity(10);
+    let mut vec = Vec0::with_capacity(10);
     vec.push(1);
     vec.push(2);
 
@@ -122,7 +122,7 @@ fn _08_shrink_to_fit() {
 }
 
 fn _09_as_slice() {
-    let mut vec = MyVec::new();
+    let mut vec = Vec0::new();
     vec.push(1);
     vec.push(2);
     vec.push(3);
@@ -135,7 +135,7 @@ fn _09_as_slice() {
 }
 
 fn _10_deref_coercion() {
-    let mut vec = MyVec::new();
+    let mut vec = Vec0::new();
     vec.push(3);
     vec.push(1);
     vec.push(2);
@@ -148,11 +148,11 @@ fn _10_deref_coercion() {
 }
 
 fn _11_clone() {
-    let mut vec1 = MyVec::new();
+    let mut vec1 = Vec0::new();
     vec1.push(String::from("hello"));
     vec1.push(String::from("world"));
 
-    let vec2: MyVec<String> = MyVec::new(); // TODO: clone vec1
+    let vec2: Vec0<String> = Vec0::new(); // TODO: clone vec1
 
     vec1[0] = String::from("changed");
 
@@ -161,7 +161,7 @@ fn _11_clone() {
 }
 
 fn _12_into_iter() {
-    let mut vec = MyVec::new();
+    let mut vec = Vec0::new();
     vec.push(1);
     vec.push(2);
     vec.push(3);
@@ -175,10 +175,10 @@ fn _12_into_iter() {
 }
 
 fn _13_iter_chain() {
-    let vec = my_vec![1, 2, 3, 4, 5];
+    let vec = vec0![1, 2, 3, 4, 5];
 
     // TODO: use into_iter() with filter and map to get doubled even numbers
-    let result: MyVec<i32> = my_vec![]; // Should be [4, 8, 16]
+    let result: Vec0<i32> = vec0![]; // Should be [4, 8, 16]
 
     assert_eq!(result[0], 4);
     assert_eq!(result[1], 8);
@@ -186,14 +186,14 @@ fn _13_iter_chain() {
 }
 
 fn _14_partial_iteration() {
-    let vec = my_vec![
+    let vec = vec0![
         String::from("a"),
         String::from("b"),
         String::from("c"),
         String::from("d")
     ];
 
-    let mut result: MyVec<String> = my_vec![];
+    let mut result: Vec0<String> = vec0![];
     // TODO: iterate over vec but only take first 2 elements using .take(2)
     // The remaining elements should be automatically dropped
 
@@ -204,9 +204,9 @@ fn _14_partial_iteration() {
 }
 
 fn _15_enumerate() {
-    let vec = my_vec![10, 20, 30];
+    let vec = vec0![10, 20, 30];
 
-    let mut indices: MyVec<usize> = my_vec![];
+    let mut indices: Vec0<usize> = vec0![];
     // TODO: iterate with enumerate() to get (index, value) pairs
     // Push only the indices where value > 15
 
@@ -215,9 +215,9 @@ fn _15_enumerate() {
 }
 
 fn _16_my_vec_macro() {
-    let vec1: MyVec<i32> = MyVec::new(); // TODO: create vec with elements 1, 2, 3 using my_vec! macro
+    let vec1: Vec0<i32> = Vec0::new(); // TODO: create vec with elements 1, 2, 3 using vec0! macro
 
-    let vec2: MyVec<i32> = MyVec::new(); // TODO: create vec with 5 copies of 0 using my_vec! macro
+    let vec2: Vec0<i32> = Vec0::new(); // TODO: create vec with 5 copies of 0 using vec0! macro
 
     assert_eq!(vec1.len(), 3);
     assert_eq!(vec1[1], 2);
@@ -226,7 +226,7 @@ fn _16_my_vec_macro() {
 }
 
 fn _17_growth_strategy() {
-    let mut vec = MyVec::new();
+    let mut vec = Vec0::new();
 
     let cap0 = vec.capacity();
 
@@ -251,20 +251,20 @@ fn _17_growth_strategy() {
 // ============================================================================
 
 struct Buffer<T> {
-    data: MyVec<T>,
+    data: Vec0<T>,
 }
 
 impl<T> Buffer<T> {
     fn new() -> Self {
-        Buffer { data: MyVec::new() }
+        Buffer { data: Vec0::new() }
     }
 
     fn push(&mut self, item: T) {
         self.data.push(item);
     }
 
-    fn drain(&mut self) -> MyVec<T> {
-        let mut new_data = MyVec::new();
+    fn drain(&mut self) -> Vec0<T> {
+        let mut new_data = Vec0::new();
         std::mem::swap(&mut self.data, &mut new_data);
         new_data
     }
@@ -282,7 +282,7 @@ fn _18_real_world() {
     let len = 0; // TODO: get buffer length
     assert_eq!(len, 3);
 
-    let drained: MyVec<String> = MyVec::new(); // TODO: drain the buffer
+    let drained: Vec0<String> = Vec0::new(); // TODO: drain the buffer
 
     assert_eq!(drained.len(), 3);
     assert_eq!(buffer.len(), 0);
@@ -295,7 +295,7 @@ fn _18_real_world() {
 
 fn main() {
     run_all![
-        "MyVec",
+        "Vec0",
         _01_new_and_push,
         _02_with_capacity,
         _03_pop,
