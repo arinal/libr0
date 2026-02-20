@@ -2,6 +2,8 @@
 
 This document demystifies where your Rust data actually lives in memory. We'll visualize the process memory layout and understand the stack, heap, and static data segments.
 
+**Recommended resource:** [cheats.rs/#memory-layout](https://cheats.rs/#memory-layout) provides excellent visual memory layouts for Rust types.
+
 ## The Simple Program
 
 Let's start with a concrete Rust program and trace where everything lives:
@@ -1303,9 +1305,9 @@ let leaked: &'static str = Box::leak(Box::new(s));
 
 ## Further Reading
 
+- [cheats.rs/#memory-layout](https://cheats.rs/#memory-layout) - Visual memory layouts for Rust types
 - **The Rustonomicon**: Memory layout and representation
 - **Rust Performance Book**: Memory allocation strategies
-- **Rust Reference**: Type layout and sizes
 - **Operating Systems textbooks**: Virtual memory, process address space
 
 ---

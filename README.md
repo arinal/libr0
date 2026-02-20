@@ -96,6 +96,17 @@ For low-level concepts (syscalls, process memory, blocking vs non-blocking opera
   - Closure capture mechanics
   - When to use each trait
 
+- **[Memory Layout](./docs/appendix-memory-layout.md)** - Where your data lives
+  - Process memory layout (Stack, Heap, Static data)
+  - Function calls and stack frames
+  - Raw pointers and heap allocation
+  - Memory layout visualizations
+
+- **[Sized](./docs/appendix-sized.md)** - The `Sized` trait
+  - What is `Sized`?
+  - Dynamically sized types
+  - `?Sized` bounds
+
 ### Coming Soon
 
 The following chapters are planned but not yet implemented. See [CLAUDE.md](./CLAUDE.md) for the full roadmap.
