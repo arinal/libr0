@@ -1,0 +1,1216 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Memory Layout - libr0: Building Rust&#x27;s Standard Library from Scratch</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">libr0: Building Rust&#x27;s Standard Library from Scratch</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/arinal/rustlib" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/arinal/rustlib/edit/main/./docs/appendix-memory-layout.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="appendix-memory-layout---where-your-data-lives"><a class="header" href="#appendix-memory-layout---where-your-data-lives">Appendix: Memory Layout - Where Your Data Lives</a></h1>
+<p>This document demystifies where your Rust data actually lives in memory. We'll visualize the process memory layout and understand the stack, heap, and static data segments.</p>
+<p><strong>Recommended resource:</strong> <a href="https://cheats.rs/#memory-layout">cheats.rs/#memory-layout</a> provides excellent visual memory layouts for Rust types.</p>
+<h2 id="the-simple-program"><a class="header" href="#the-simple-program">The Simple Program</a></h2>
+<p>Let's start with a concrete Rust program and trace where everything lives:</p>
+<pre><pre class="playground"><code class="language-rust">// Global/static data - lives in data segment
+static GREETING: &amp;str = "Hello";
+static mut BUFFER: [u8; 10_000] = [0; 10_000];  // 10 KB zero-initialized
+
+fn main() {
+    // Stack: local variables
+    let x = 42;
+    let y = 100;
+
+    // Stack: String struct (24 bytes: ptr + len + cap)
+    // Heap: actual string data "world"
+    let s = String::from("world");
+
+    // Stack: vector struct (24 bytes: ptr + len + cap)
+    // Heap: array data [1, 2, 3, 4, 5]
+    let v = vec![1, 2, 3, 4, 5];
+
+    // Stack: native array - all data lives on stack (20 bytes)
+    let arr = [10, 20, 30, 40, 50];
+
+    // Stack: function call frame
+    // Passing by value (x) and by reference (&amp;s)
+    let doubled = process_data(x, &amp;s);
+
+    println!("{} -&gt; {}", x, doubled);
+}
+
+fn process_data(param_num: i32, param_text: &amp;String) -&gt; i32 {
+    // Stack: new function frame
+    // Arguments passed:
+    // - param_num: COPY of x's value (42) - passed by value
+    // - param_text: pointer to s (on stack) - passed by reference
+    let result = param_num * 2;
+    println!("{}: {}", param_text, result);
+
+    // Return: result is COPIED to caller's stack frame
+    result  // Returns 84
+}</code></pre></pre>
+<p>Now let's see where each piece of data lives in memory.</p>
+<h2 id="process-memory-layout"><a class="header" href="#process-memory-layout">Process Memory Layout</a></h2>
+<p>When your Rust program runs, the operating system gives it a contiguous chunk of virtual memory organized into distinct regions:</p>
+<div style='width:100%; height:400px;'><style type="text/css">svg { width: 100% !important; }</style><svg xmlns="http://www.w3.org/2000/svg" width="568" height="400" class="svgbob"><style>.svgbob line, .svgbob path, .svgbob circle, .svgbob rect, .svgbob polygon {  stroke: var(--fg);  stroke-width: 2;  stroke-opacity: 1;  fill-opacity: 1;  stroke-linecap: round;  stroke-linejoin: miter;}.svgbob text {  white-space: pre;  fill: var(--fg);  font-family: Iosevka Fixed, monospace;  font-size: 14px;}.svgbob rect.backdrop {  stroke: none;  fill: transparent;}.svgbob .broken {  stroke-dasharray: 8;}.svgbob .filled {  fill: black;}.svgbob .bg_filled {  fill: transparent;  stroke-width: 1;}.svgbob .nofill {  fill: transparent;}.svgbob .end_marked_arrow {  marker-end: url(#arrow);}.svgbob .start_marked_arrow {  marker-start: url(#arrow);}.svgbob .end_marked_diamond {  marker-end: url(#diamond);}.svgbob .start_marked_diamond {  marker-start: url(#diamond);}.svgbob .end_marked_circle {  marker-end: url(#circle);}.svgbob .start_marked_circle {  marker-start: url(#circle);}.svgbob .end_marked_open_circle {  marker-end: url(#open_circle);}.svgbob .start_marked_open_circle {  marker-start: url(#open_circle);}.svgbob .end_marked_big_open_circle {  marker-end: url(#big_open_circle);}.svgbob .start_marked_big_open_circle {  marker-start: url(#big_open_circle);}</style><defs><marker id="arrow" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,0 0,4 4,2 0,0"></polygon></marker><marker id="diamond" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,2 2,0 4,2 2,4 0,2"></polygon></marker><marker id="circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="filled"></circle></marker><marker id="open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="bg_filled"></circle></marker><marker id="big_open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="3" class="bg_filled"></circle></marker></defs><rect class="backdrop" x="0" y="0" width="568" height="400"></rect><text x="2" y="12" >High</text><text x="42" y="12" >Memory</text><text x="98" y="12" >Addresses</text><path d="M 184,0 A 16,16 0,0,0 184,16" class="nofill"></path><text x="186" y="12" >0x0000</text><line x1="232" y1="16" x2="240" y2="16" class="solid"></line><text x="242" y="12" >7FFF</text><line x1="272" y1="16" x2="280" y2="16" class="solid"></line><text x="282" y="12" >FFFF</text><line x1="312" y1="16" x2="320" y2="16" class="solid"></line><text x="322" y="12" >FFFF</text><line x1="360" y1="8" x2="368" y2="8" class="solid"></line><text x="378" y="12" >User</text><text x="122" y="44" >STACK</text><path d="M 32,48 A 16,16 0,0,0 32,64" class="nofill"></path><text x="34" y="60" >Function</text><text x="106" y="60" >frames,</text><text x="170" y="60" >local</text><text x="218" y="60" >variables</text><path d="M 288,48 A 16,16 0,0,1 288,64" class="nofill"></path><text x="162" y="92" >↓</text><text x="162" y="156" >↑</text><text x="122" y="188" >HEAP</text><path d="M 32,192 A 16,16 0,0,0 32,208" class="nofill"></path><text x="34" y="204" >Dynamically</text><text x="130" y="204" >allocated:</text><text x="218" y="204" >Box,</text><text x="258" y="204" >Vec,</text><text x="298" y="204" >String</text><path d="M 344,192 A 16,16 0,0,1 344,208" class="nofill"></path><text x="74" y="236" >BSS</text><path d="M 112,224 A 16,16 0,0,0 112,240" class="nofill"></path><text x="114" y="236" >Uninitialized</text><text x="226" y="236" >Data</text><path d="M 256,224 A 16,16 0,0,1 256,240" class="nofill"></path><path d="M 32,240 A 16,16 0,0,0 32,256" class="nofill"></path><text x="34" y="252" >static</text><text x="90" y="252" >mut</text><text x="122" y="252" >with</text><text x="162" y="252" >no</text><text x="186" y="252" >initializer</text><path d="M 272,240 A 16,16 0,0,1 272,256" class="nofill"></path><text x="74" y="284" >DATA</text><path d="M 120,272 A 16,16 0,0,0 120,288" class="nofill"></path><text x="122" y="284" >Initialized</text><text x="218" y="284" >Data</text><path d="M 248,272 A 16,16 0,0,1 248,288" class="nofill"></path><path d="M 32,288 A 16,16 0,0,0 32,304" class="nofill"></path><text x="34" y="300" >static,</text><text x="98" y="300" >const,</text><text x="154" y="300" >string</text><text x="210" y="300" >literals</text><path d="M 272,288 A 16,16 0,0,1 272,304" class="nofill"></path><text x="122" y="332" >TEXT</text><path d="M 168,320 A 16,16 0,0,0 168,336" class="nofill"></path><text x="170" y="332" >Code</text><path d="M 200,320 A 16,16 0,0,1 200,336" class="nofill"></path><path d="M 32,336 A 16,16 0,0,0 32,352" class="nofill"></path><text x="34" y="348" >Your</text><text x="74" y="348" >compiled</text><text x="146" y="348" >functions</text><path d="M 216,336 A 16,16 0,0,1 216,352" class="nofill"></path><text x="2" y="380" >Low</text><text x="34" y="380" >Memory</text><text x="90" y="380" >Addresses</text><path d="M 176,368 A 16,16 0,0,0 176,384" class="nofill"></path><text x="178" y="380" >0x0000</text><line x1="224" y1="384" x2="232" y2="384" class="solid"></line><text x="234" y="380" >0000</text><line x1="264" y1="384" x2="272" y2="384" class="solid"></line><text x="274" y="380" >0000</text><line x1="304" y1="384" x2="312" y2="384" class="solid"></line><text x="314" y="380" >0000</text><path d="M 344,368 A 16,16 0,0,1 344,384" class="nofill"></path><text x="418" y="12" >Space</text><text x="466" y="12" >upper</text><text x="514" y="12" >bound</text><path d="M 552,0 A 16,16 0,0,1 552,16" class="nofill"></path><text x="394" y="44" >←</text><text x="410" y="44" >Grows</text><text x="458" y="44" >downward</text><path d="M 128,112 A 16,16 0,0,0 128,128" class="nofill"></path><text x="130" y="124" >unused</text><text x="186" y="124" >space</text><path d="M 224,112 A 16,16 0,0,1 224,128" class="nofill"></path><text x="394" y="188" >←</text><text x="410" y="188" >Grows</text><text x="458" y="188" >upward</text><g><line x1="4" y1="24" x2="372" y2="24" class="solid"></line><line x1="4" y1="24" x2="4" y2="360" class="solid"></line><line x1="372" y1="24" x2="372" y2="360" class="solid"></line><line x1="4" y1="72" x2="372" y2="72" class="solid"></line><line x1="4" y1="168" x2="372" y2="168" class="solid"></line><line x1="4" y1="216" x2="372" y2="216" class="solid"></line><line x1="4" y1="264" x2="372" y2="264" class="solid"></line><line x1="4" y1="312" x2="372" y2="312" class="solid"></line><line x1="4" y1="360" x2="372" y2="360" class="solid"></line></g></svg></div>
+<p><strong>Key Insight:</strong> The stack and heap grow toward each other!</p>
+<h2 id="lets-trace-our-program"><a class="header" href="#lets-trace-our-program">Let's Trace Our Program</a></h2>
+<p>Now let's see exactly where each piece of data from our example lives.</p>
+<h3 id="step-1-program-starts---static-data-is-loaded"><a class="header" href="#step-1-program-starts---static-data-is-loaded">Step 1: Program Starts - Static Data is Loaded</a></h3>
+<p>Before <code>main()</code> even runs, the OS loads static data into the DATA segment:</p>
+<div style='width:100%; height:560px;'><style type="text/css">svg { width: 100% !important; }</style><svg xmlns="http://www.w3.org/2000/svg" width="376" height="560" class="svgbob"><style>.svgbob line, .svgbob path, .svgbob circle, .svgbob rect, .svgbob polygon {  stroke: var(--fg);  stroke-width: 2;  stroke-opacity: 1;  fill-opacity: 1;  stroke-linecap: round;  stroke-linejoin: miter;}.svgbob text {  white-space: pre;  fill: var(--fg);  font-family: Iosevka Fixed, monospace;  font-size: 14px;}.svgbob rect.backdrop {  stroke: none;  fill: transparent;}.svgbob .broken {  stroke-dasharray: 8;}.svgbob .filled {  fill: black;}.svgbob .bg_filled {  fill: transparent;  stroke-width: 1;}.svgbob .nofill {  fill: transparent;}.svgbob .end_marked_arrow {  marker-end: url(#arrow);}.svgbob .start_marked_arrow {  marker-start: url(#arrow);}.svgbob .end_marked_diamond {  marker-end: url(#diamond);}.svgbob .start_marked_diamond {  marker-start: url(#diamond);}.svgbob .end_marked_circle {  marker-end: url(#circle);}.svgbob .start_marked_circle {  marker-start: url(#circle);}.svgbob .end_marked_open_circle {  marker-end: url(#open_circle);}.svgbob .start_marked_open_circle {  marker-start: url(#open_circle);}.svgbob .end_marked_big_open_circle {  marker-end: url(#big_open_circle);}.svgbob .start_marked_big_open_circle {  marker-start: url(#big_open_circle);}</style><defs><marker id="arrow" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,0 0,4 4,2 0,0"></polygon></marker><marker id="diamond" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,2 2,0 4,2 2,4 0,2"></polygon></marker><marker id="circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="filled"></circle></marker><marker id="open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="bg_filled"></circle></marker><marker id="big_open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="3" class="bg_filled"></circle></marker></defs><rect class="backdrop" x="0" y="0" width="376" height="560"></rect><text x="2" y="12" >High</text><text x="42" y="12" >Memory</text><text x="98" y="12" >Addresses</text><path d="M 184,0 A 16,16 0,0,0 184,16" class="nofill"></path><text x="186" y="12" >0x0000</text><line x1="232" y1="16" x2="240" y2="16" class="solid"></line><text x="242" y="12" >7FFF</text><line x1="272" y1="16" x2="280" y2="16" class="solid"></line><text x="282" y="12" >FFFF</text><line x1="312" y1="16" x2="320" y2="16" class="solid"></line><text x="322" y="12" >FFFF</text><path d="M 352,0 A 16,16 0,0,1 352,16" class="nofill"></path><text x="162" y="44" >STACK</text><path d="M 128,48 A 16,16 0,0,0 128,64" class="nofill"></path><text x="130" y="60" >empty</text><text x="178" y="60" >at</text><text x="202" y="60" >start</text><path d="M 240,48 A 16,16 0,0,1 240,64" class="nofill"></path><path d="M 120,80 A 16,16 0,0,0 120,96" class="nofill"></path><text x="122" y="92" >unused</text><text x="178" y="92" >space</text><path d="M 216,80 A 16,16 0,0,1 216,96" class="nofill"></path><text x="162" y="124" >HEAP</text><path d="M 128,128 A 16,16 0,0,0 128,144" class="nofill"></path><text x="130" y="140" >empty</text><text x="178" y="140" >at</text><text x="202" y="140" >start</text><path d="M 240,128 A 16,16 0,0,1 240,144" class="nofill"></path><text x="74" y="172" >BSS</text><path d="M 112,160 A 16,16 0,0,0 112,176" class="nofill"></path><text x="114" y="172" >Uninitialized</text><text x="226" y="172" >Data</text><path d="M 256,160 A 16,16 0,0,1 256,176" class="nofill"></path><text x="90" y="204" >BUFFER</text><line x1="144" y1="198" x2="152" y2="198" class="solid"></line><line x1="144" y1="202" x2="152" y2="202" class="solid"></line><text x="162" y="204" >[0u8;</text><text x="210" y="204" >10</text><line x1="224" y1="208" x2="232" y2="208" class="solid"></line><text x="234" y="204" >000]</text><text x="90" y="220" >[0][0][0][0]...[0][0][0][0]</text><path d="M 96,224 A 16,16 0,0,0 96,240" class="nofill"></path><text x="98" y="236" >10,000</text><text x="154" y="236" >bytes</text><line x1="200" y1="232" x2="208" y2="232" class="solid"></line><text x="218" y="236" >all</text><text x="250" y="236" >zeros</text><path d="M 288,224 A 16,16 0,0,1 288,240" class="nofill"></path><text x="74" y="268" >DATA</text><path d="M 120,256 A 16,16 0,0,0 120,272" class="nofill"></path><text x="122" y="268" >Initialized</text><text x="218" y="268" >Data</text><path d="M 248,256 A 16,16 0,0,1 248,272" class="nofill"></path><text x="90" y="300" >GREETING</text><text x="114" y="316" >ptr</text><line x1="140" y1="304" x2="140" y2="336" class="broken"></line><text x="114" y="332" >len</text><polygon points="208,340 200,344 208,348" class="filled"></polygon><text x="122" y="380" >TEXT</text><path d="M 168,368 A 16,16 0,0,0 168,384" class="nofill"></path><text x="170" y="380" >Code</text><path d="M 200,368 A 16,16 0,0,1 200,384" class="nofill"></path><text x="2" y="540" >Low</text><text x="34" y="540" >Memory</text><text x="90" y="540" >Addresses</text><path d="M 176,528 A 16,16 0,0,0 176,544" class="nofill"></path><text x="178" y="540" >0x0000</text><line x1="224" y1="544" x2="232" y2="544" class="solid"></line><text x="234" y="540" >0000</text><line x1="264" y1="544" x2="272" y2="544" class="solid"></line><text x="274" y="540" >0000</text><line x1="304" y1="544" x2="312" y2="544" class="solid"></line><text x="314" y="540" >0000</text><path d="M 344,528 A 16,16 0,0,1 344,544" class="nofill"></path><text x="26" y="204" >0x6000:</text><text x="26" y="300" >0x5000:</text><line x1="160" y1="294" x2="168" y2="294" class="solid"></line><line x1="160" y1="298" x2="168" y2="298" class="solid"></line><text x="162" y="316" >0x5000</text><text x="162" y="332" >5</text><text x="26" y="412" >0x1000</text><line x1="76" y1="400" x2="76" y2="432" class="broken"></line><text x="90" y="412" >fn</text><text x="114" y="412" >main</text><text x="170" y="412" >{</text><text x="186" y="412" >...</text><text x="218" y="412" >}</text><text x="26" y="428" >0x2000</text><text x="90" y="428" >fn</text><text x="114" y="428" >process</text><line x1="168" y1="432" x2="176" y2="432" class="solid"></line><text x="178" y="428" >data</text><text x="234" y="428" >{</text><text x="250" y="428" >...</text><text x="282" y="428" >}</text><text x="26" y="444" >...</text><path d="M 88,432 A 16,16 0,0,0 88,448" class="nofill"></path><text x="90" y="444" >Rust</text><text x="130" y="444" >standard</text><text x="202" y="444" >library</text><text x="266" y="444" >functions</text><path d="M 336,432 A 16,16 0,0,1 336,448" class="nofill"></path><text x="26" y="460" >0x3000</text><line x1="76" y1="448" x2="76" y2="496" class="broken"></line><text x="90" y="460" >println!</text><text x="178" y="460" >code</text><text x="26" y="476" >0x4000</text><text x="90" y="476" >std</text><line x1="116" y1="464" x2="116" y2="496" class="broken"></line><line x1="124" y1="464" x2="124" y2="496" class="broken"></line><text x="130" y="476" >alloc::alloc</text><text x="26" y="492" >0x7000</text><text x="90" y="492" >Vec</text><text x="130" y="492" >push</text><path d="M 168,480 A 16,16 0,0,0 168,496" class="nofill"></path><text x="170" y="492" >)</text><text x="178" y="300" >Hello</text><text x="114" y="348" >Hello\0</text><g><line x1="4" y1="24" x2="364" y2="24" class="solid"></line><line x1="4" y1="24" x2="4" y2="520" class="solid"></line><line x1="364" y1="24" x2="364" y2="520" class="solid"></line><line x1="4" y1="72" x2="364" y2="72" class="solid"></line><line x1="4" y1="104" x2="364" y2="104" class="solid"></line><line x1="4" y1="152" x2="364" y2="152" class="solid"></line><line x1="4" y1="248" x2="364" y2="248" class="solid"></line><line x1="4" y1="360" x2="364" y2="360" class="solid"></line><line x1="4" y1="520" x2="364" y2="520" class="solid"></line></g><g><line x1="92" y1="304" x2="92" y2="344" class="solid"></line><line x1="92" y1="312" x2="104" y2="312" class="solid"></line><line x1="92" y1="328" x2="104" y2="328" class="solid"></line><line x1="92" y1="344" x2="104" y2="344" class="solid"></line></g><g><line x1="224" y1="312" x2="236" y2="312" class="solid"></line><line x1="236" y1="312" x2="236" y2="344" class="solid"></line><line x1="208" y1="344" x2="236" y2="344" class="solid"></line></g><g><path d="M 152,400 A 16,16 0,0,0 152,416" class="nofill"></path><path d="M 152,400 A 16,16 0,0,1 152,416" class="nofill"></path></g><g><path d="M 216,416 A 16,16 0,0,0 216,432" class="nofill"></path><path d="M 216,416 A 16,16 0,0,1 216,432" class="nofill"></path></g><g><path d="M 160,448 A 16,16 0,0,0 160,464" class="nofill"></path><path d="M 160,448 A 16,16 0,0,1 160,464" class="nofill"></path></g><g><path d="M 232,464 A 16,16 0,0,0 232,480" class="nofill"></path><path d="M 232,464 A 16,16 0,0,1 232,480" class="nofill"></path></g></svg></div>
+<blockquote>
+<p><strong>Note on addresses:</strong> The stack addresses shown (0x7FFF_FFFF_FFFF) are realistic—they represent the upper canonical address range on x86-64 Linux.
+However, the low addresses (0x1000-0x7000) are simplified examples for clarity. Real addresses on modern systems would be:</p>
+<ul>
+<li><strong>TEXT/DATA/BSS segments:</strong> Around <code>0x5555_5555_0000</code> to <code>0x5555_5556_0000</code> (randomized by ASLR)</li>
+<li><strong>Heap:</strong> Typically starts around <code>0x5555_5556_0000</code> and grows upward</li>
+<li><strong>First 64KB (0x0000-0xFFFF):</strong> Unmapped as null pointer protection—dereferencing causes segfault
+We use simplified addresses in diagrams to keep them readable and focus on concepts rather than implementation details.</li>
+</ul>
+</blockquote>
+<blockquote>
+<p><strong>Why BSS exists:</strong> It's a file size optimization! BSS stores only zeros, so the executable doesn't need to include them.</p>
+<p><strong>Program in file:</strong> <code>static BUFFER: [u8; 1_000_000] = [0; 1_000_000];</code></p>
+<ul>
+<li>BSS: Executable just says "allocate 1 MB of zeros" (~16 bytes metadata)</li>
+<li>Data: Would need to store all 1 million bytes of zeros (~1 MB in file)</li>
+</ul>
+<p><strong>Process in memory:</strong> Both are 1 MB of zeros in memory. The OS allocates and zeroes the BSS memory at load time.</p>
+<p><strong>Result:</strong> Executable with BSS is ~320 KB, with Data would be ~1.3 MB. Same memory usage at runtime, but different file sizes!</p>
+</blockquote>
+<h3 id="step-2-main-executes---local-variables-on-stack"><a class="header" href="#step-2-main-executes---local-variables-on-stack">Step 2: main() Executes - Local Variables on Stack</a></h3>
+<p>When <code>main()</code> is called, the function's <strong>prologue</strong> (compiler-generated instructions at the beginning of the function) creates a stack frame by adjusting the stack pointer (typically <code>sub rsp, N</code> where N is the size needed for local variables). After all local variables are initialized (right before calling <code>process_data(x, &amp;s)</code>), the stack looks like this:</p>
+<div style='width:100%; height:672px;'><style type="text/css">svg { width: 100% !important; }</style><svg xmlns="http://www.w3.org/2000/svg" width="680" height="672" class="svgbob"><style>.svgbob line, .svgbob path, .svgbob circle, .svgbob rect, .svgbob polygon {  stroke: var(--fg);  stroke-width: 2;  stroke-opacity: 1;  fill-opacity: 1;  stroke-linecap: round;  stroke-linejoin: miter;}.svgbob text {  white-space: pre;  fill: var(--fg);  font-family: Iosevka Fixed, monospace;  font-size: 14px;}.svgbob rect.backdrop {  stroke: none;  fill: transparent;}.svgbob .broken {  stroke-dasharray: 8;}.svgbob .filled {  fill: black;}.svgbob .bg_filled {  fill: transparent;  stroke-width: 1;}.svgbob .nofill {  fill: transparent;}.svgbob .end_marked_arrow {  marker-end: url(#arrow);}.svgbob .start_marked_arrow {  marker-start: url(#arrow);}.svgbob .end_marked_diamond {  marker-end: url(#diamond);}.svgbob .start_marked_diamond {  marker-start: url(#diamond);}.svgbob .end_marked_circle {  marker-end: url(#circle);}.svgbob .start_marked_circle {  marker-start: url(#circle);}.svgbob .end_marked_open_circle {  marker-end: url(#open_circle);}.svgbob .start_marked_open_circle {  marker-start: url(#open_circle);}.svgbob .end_marked_big_open_circle {  marker-end: url(#big_open_circle);}.svgbob .start_marked_big_open_circle {  marker-start: url(#big_open_circle);}</style><defs><marker id="arrow" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,0 0,4 4,2 0,0"></polygon></marker><marker id="diamond" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,2 2,0 4,2 2,4 0,2"></polygon></marker><marker id="circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="filled"></circle></marker><marker id="open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="bg_filled"></circle></marker><marker id="big_open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="3" class="bg_filled"></circle></marker></defs><rect class="backdrop" x="0" y="0" width="680" height="672"></rect><rect x="4" y="24" width="272" height="432" class="solid nofill" rx="0"></rect><line x1="216" y1="456" x2="224" y2="456" class="solid"></line><line x1="192" y1="456" x2="200" y2="456" class="solid"></line><text x="42" y="60" >main</text><text x="90" y="60" >&#39;s</text><text x="114" y="60" >stack</text><text x="162" y="60" >frame</text><text x="26" y="92" >[Return</text><text x="90" y="92" >address]</text><text x="26" y="108" >[Saved</text><text x="82" y="108" >registers]</text><text x="26" y="140" >x</text><line x1="36" y1="128" x2="36" y2="160" class="broken"></line><text x="26" y="156" >y</text><text x="50" y="140" >i32</text><text x="50" y="156" >i32</text><line x1="80" y1="134" x2="88" y2="134" class="solid"></line><line x1="80" y1="138" x2="88" y2="138" class="solid"></line><line x1="80" y1="150" x2="88" y2="150" class="solid"></line><line x1="80" y1="154" x2="88" y2="154" class="solid"></line><text x="98" y="140" >42</text><text x="98" y="156" >100</text><text x="26" y="188" >s:</text><text x="50" y="188" >String</text><text x="66" y="204" >ptr</text><line x1="92" y1="192" x2="92" y2="240" class="broken"></line><text x="66" y="220" >len</text><text x="66" y="236" >cap</text><text x="114" y="204" >0x8000</text><text x="114" y="220" >5</text><text x="114" y="236" >5</text><text x="26" y="268" >v:</text><text x="50" y="268" >Vec&lt;i32&gt;</text><text x="66" y="284" >ptr</text><line x1="92" y1="272" x2="92" y2="320" class="broken"></line><text x="114" y="284" >0x8100</text><text x="66" y="300" >len</text><text x="114" y="300" >5</text><text x="66" y="316" >cap</text><text x="114" y="316" >5</text><text x="26" y="348" >arr:</text><text x="66" y="348" >[i32;</text><text x="42" y="364" >[50]</text><text x="42" y="380" >[40]</text><text x="42" y="396" >[30]</text><text x="42" y="412" >[20]</text><text x="42" y="428" >[10]</text><text x="114" y="348" >5]</text><rect x="4" y="520" width="392" height="128" class="solid nofill" rx="0"></rect><line x1="280" y1="520" x2="288" y2="520" class="solid"></line><text x="282" y="588" >↓</text><text x="210" y="604" >0x8000:</text><text x="274" y="604" >[w][o][r][l][d]</text><text x="162" y="620" >bytes:</text><text x="218" y="620" >5</text><text x="234" y="620" >*</text><text x="250" y="620" >4</text><line x1="256" y1="616" x2="264" y2="616" class="solid"></line><text x="266" y="620" >byte</text><text x="306" y="620" >integers</text><path d="M 368,608 A 16,16 0,0,1 368,624" class="nofill"></path><line x1="192" y1="520" x2="200" y2="520" class="solid"></line><text x="194" y="540" >↓</text><text x="26" y="556" >0x8100:</text><text x="90" y="556" >[1][2][3][4][5]</text><text x="34" y="572" >v&#39;s</text><text x="66" y="572" >data</text><path d="M 112,560 A 16,16 0,0,0 112,576" class="nofill"></path><text x="114" y="572" >6</text><text x="130" y="572" >bytes</text><path d="M 168,560 A 16,16 0,0,1 168,576" class="nofill"></path><path d="M 136,608 A 16,16 0,0,0 136,624" class="nofill"></path><text x="138" y="620" >20</text><text x="2" y="12" >STACK</text><path d="M 56,0 A 16,16 0,0,0 56,16" class="nofill"></path><text x="58" y="12" >grows</text><text x="106" y="12" >downward</text><text x="178" y="12" >from</text><text x="218" y="12" >high</text><text x="258" y="12" >addresses</text><path d="M 328,0 A 16,16 0,0,1 328,16" class="nofill"></path><text x="338" y="12" >:</text><text x="2" y="508" >HEAP</text><path d="M 48,496 A 16,16 0,0,0 48,512" class="nofill"></path><text x="50" y="508" >grows</text><text x="98" y="508" >upward</text><path d="M 144,496 A 16,16 0,0,1 144,512" class="nofill"></path><text x="154" y="508" >:</text><text x="314" y="44" >0x7FFF</text><line x1="360" y1="48" x2="368" y2="48" class="solid"></line><text x="370" y="44" >FFFF</text><line x1="400" y1="48" x2="408" y2="48" class="solid"></line><text x="410" y="44" >FFF0</text><path d="M 456,32 A 16,16 0,0,0 456,48" class="nofill"></path><text x="458" y="44" >high</text><text x="498" y="44" >address</text><path d="M 552,32 A 16,16 0,0,1 552,48" class="nofill"></path><text x="298" y="92" >←</text><text x="314" y="92" >Where</text><text x="362" y="92" >to</text><text x="386" y="92" >return</text><text x="442" y="92" >after</text><text x="490" y="92" >main</text><text x="298" y="140" >←</text><text x="298" y="156" >←</text><text x="314" y="140" >Local</text><text x="314" y="156" >Local</text><text x="362" y="140" >variable</text><text x="362" y="156" >variable</text><text x="442" y="140" >4</text><text x="442" y="156" >4</text><text x="458" y="140" >bytes</text><text x="458" y="156" >bytes</text><text x="298" y="188" >←</text><text x="314" y="188" >String</text><text x="370" y="188" >struct</text><path d="M 432,176 A 16,16 0,0,0 432,192" class="nofill"></path><text x="434" y="188" >24</text><text x="322" y="204" >Points</text><text x="378" y="204" >to</text><text x="402" y="204" >heap</text><text x="458" y="188" >bytes</text><path d="M 496,176 A 16,16 0,0,1 496,192" class="nofill"></path><text x="506" y="188" >:</text><text x="298" y="268" >←</text><text x="314" y="268" >Vec</text><text x="346" y="268" >struct</text><text x="322" y="284" >Points</text><text x="378" y="284" >to</text><path d="M 408,256 A 16,16 0,0,0 408,272" class="nofill"></path><text x="410" y="268" >24</text><text x="434" y="268" >bytes</text><path d="M 472,256 A 16,16 0,0,1 472,272" class="nofill"></path><text x="482" y="268" >:</text><text x="402" y="284" >heap</text><text x="298" y="348" >←</text><text x="314" y="348" >Native</text><text x="370" y="348" >array</text><path d="M 424,336 A 16,16 0,0,0 424,352" class="nofill"></path><text x="426" y="348" >20</text><text x="450" y="348" >bytes</text><path d="M 488,336 A 16,16 0,0,1 488,352" class="nofill"></path><text x="498" y="348" >:</text><text x="322" y="364" >All</text><text x="354" y="364" >data</text><text x="394" y="364" >on</text><text x="418" y="364" >stack!</text><text x="322" y="380" >Elements</text><text x="394" y="380" >at</text><text x="418" y="380" >increasing</text><text x="322" y="396" >addresses</text><path d="M 408,384 A 16,16 0,0,0 408,400" class="nofill"></path><text x="410" y="396" >50</text><text x="434" y="396" >highest,</text><text x="322" y="412" >10</text><text x="346" y="412" >lowest</text><path d="M 392,400 A 16,16 0,0,1 392,416" class="nofill"></path><text x="298" y="460" >←</text><text x="314" y="460" >Stack</text><text x="362" y="460" >Pointer</text><path d="M 432,448 A 16,16 0,0,0 432,464" class="nofill"></path><text x="434" y="460" >RSP</text><path d="M 456,448 A 16,16 0,0,1 456,464" class="nofill"></path><text x="474" y="460" >points</text><text x="530" y="460" >here</text><path d="M 576,448 A 16,16 0,0,0 576,464" class="nofill"></path><text x="578" y="460" >low</text><text x="610" y="460" >address</text><path d="M 664,448 A 16,16 0,0,1 664,464" class="nofill"></path><text x="418" y="604" >←</text><text x="434" y="604" >v&#39;s</text><text x="466" y="604" >data</text><g><line x1="168" y1="200" x2="220" y2="200" class="solid"></line><line x1="220" y1="200" x2="220" y2="488" class="solid"></line><line x1="220" y1="488" x2="284" y2="488" class="solid"></line><line x1="284" y1="488" x2="284" y2="576" class="solid"></line></g><g><line x1="168" y1="280" x2="196" y2="280" class="solid"></line><line x1="196" y1="280" x2="196" y2="528" class="solid"></line></g><g><path d="M 80,48 A 16,16 0,0,0 80,64" class="nofill"></path><path d="M 80,48 A 16,16 0,0,1 80,64" class="nofill"></path></g><g><path d="M 440,128 A 16,16 0,0,0 440,144" class="nofill"></path><path d="M 440,144 A 16,16 0,0,0 440,160" class="nofill"></path></g><g><path d="M 496,128 A 16,16 0,0,1 496,144" class="nofill"></path><path d="M 496,144 A 16,16 0,0,1 496,160" class="nofill"></path></g><g><line x1="44" y1="192" x2="44" y2="232" class="solid"></line><line x1="44" y1="200" x2="56" y2="200" class="solid"></line><line x1="44" y1="216" x2="56" y2="216" class="solid"></line><line x1="44" y1="232" x2="56" y2="232" class="solid"></line></g><g><line x1="44" y1="272" x2="44" y2="312" class="solid"></line><line x1="44" y1="280" x2="56" y2="280" class="solid"></line><line x1="44" y1="296" x2="56" y2="296" class="solid"></line><line x1="44" y1="312" x2="56" y2="312" class="solid"></line></g></svg></div>
+<p><strong>Important observations:</strong></p>
+<ol>
+<li><strong><code>x</code> and <code>y</code></strong> are just 4 bytes each, living directly on the stack</li>
+<li><strong><code>s</code> (String)</strong> is 24 bytes on the stack (metadata: pointer, length, capacity)
+<ul>
+<li>The <strong>actual string data</strong> "world" lives on the heap</li>
+</ul>
+</li>
+<li><strong><code>v</code> (Vec)</strong> is 24 bytes on the stack (metadata: pointer, length, capacity)
+<ul>
+<li>The <strong>actual array data</strong> [1,2,3,4,5] lives on the heap</li>
+</ul>
+</li>
+<li><strong><code>arr</code> (native array)</strong> is 20 bytes entirely on the stack (no heap allocation!)
+<ul>
+<li>All 5 integers live directly in the array, no pointer indirection</li>
+</ul>
+</li>
+</ol>
+<h3 id="step-3-calling-process_data---new-stack-frame-and-passing-arguments"><a class="header" href="#step-3-calling-process_data---new-stack-frame-and-passing-arguments">Step 3: Calling process_data() - New Stack Frame and Passing Arguments</a></h3>
+<p>When we call <code>process_data(x, &amp;s)</code>, here's what the CPU actually does (x86-64 calling convention):</p>
+<ol>
+<li><strong>Arguments loaded into registers</strong> (not pushed to stack!):
+<ul>
+<li><code>x</code> (i32, 4 bytes): Loaded into <code>EDI</code> register → becomes <code>param_num</code></li>
+<li><code>&amp;s</code> (&amp;String, 8 bytes): Pointer loaded into <code>RSI</code> register → becomes <code>param_text</code></li>
+<li><strong>There is no param_num or param_text in memory</strong> - they ARE the registers themselves</li>
+</ul>
+</li>
+<li><strong>CALL instruction executes</strong>: Pushes return address onto stack, then jumps to process_data</li>
+<li><strong>Callee (process_data) sets up its stack frame</strong>:
+<ul>
+<li>Saves registers if needed</li>
+<li>Allocates space for local variables</li>
+<li>May spill register arguments to stack (compiler's choice)</li>
+</ul>
+</li>
+</ol>
+<div style='width:100%; height:944px;'><style type="text/css">svg { width: 100% !important; }</style><svg xmlns="http://www.w3.org/2000/svg" width="664" height="944" class="svgbob"><style>.svgbob line, .svgbob path, .svgbob circle, .svgbob rect, .svgbob polygon {  stroke: var(--fg);  stroke-width: 2;  stroke-opacity: 1;  fill-opacity: 1;  stroke-linecap: round;  stroke-linejoin: miter;}.svgbob text {  white-space: pre;  fill: var(--fg);  font-family: Iosevka Fixed, monospace;  font-size: 14px;}.svgbob rect.backdrop {  stroke: none;  fill: transparent;}.svgbob .broken {  stroke-dasharray: 8;}.svgbob .filled {  fill: black;}.svgbob .bg_filled {  fill: transparent;  stroke-width: 1;}.svgbob .nofill {  fill: transparent;}.svgbob .end_marked_arrow {  marker-end: url(#arrow);}.svgbob .start_marked_arrow {  marker-start: url(#arrow);}.svgbob .end_marked_diamond {  marker-end: url(#diamond);}.svgbob .start_marked_diamond {  marker-start: url(#diamond);}.svgbob .end_marked_circle {  marker-end: url(#circle);}.svgbob .start_marked_circle {  marker-start: url(#circle);}.svgbob .end_marked_open_circle {  marker-end: url(#open_circle);}.svgbob .start_marked_open_circle {  marker-start: url(#open_circle);}.svgbob .end_marked_big_open_circle {  marker-end: url(#big_open_circle);}.svgbob .start_marked_big_open_circle {  marker-start: url(#big_open_circle);}</style><defs><marker id="arrow" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,0 0,4 4,2 0,0"></polygon></marker><marker id="diamond" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,2 2,0 4,2 2,4 0,2"></polygon></marker><marker id="circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="filled"></circle></marker><marker id="open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="bg_filled"></circle></marker><marker id="big_open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="3" class="bg_filled"></circle></marker></defs><rect class="backdrop" x="0" y="0" width="664" height="944"></rect><rect x="4" y="24" width="296" height="80" class="solid nofill" rx="0"></rect><text x="26" y="44" >RBP</text><line x1="52" y1="32" x2="52" y2="96" class="broken"></line><text x="26" y="60" >RSP</text><text x="26" y="76" >EDI</text><text x="26" y="92" >RSI</text><text x="74" y="44" >0x7FFF</text><line x1="120" y1="48" x2="128" y2="48" class="solid"></line><text x="130" y="44" >FFFF</text><line x1="160" y1="48" x2="168" y2="48" class="solid"></line><text x="170" y="44" >FF00</text><text x="74" y="60" >0x7FFF</text><line x1="120" y1="64" x2="128" y2="64" class="solid"></line><text x="130" y="60" >FFFF</text><line x1="160" y1="64" x2="168" y2="64" class="solid"></line><text x="170" y="60" >FE00</text><text x="74" y="76" >42</text><line x1="224" y1="80" x2="232" y2="80" class="solid"></line><text x="234" y="76" >num</text><text x="74" y="92" >0x7FFF...</text><line x1="224" y1="96" x2="232" y2="96" class="solid"></line><text x="234" y="92" >text</text><line x1="88" y1="104" x2="96" y2="104" class="solid"></line><rect x="4" y="824" width="376" height="96" class="solid nofill" rx="0"></rect><line x1="192" y1="824" x2="200" y2="824" class="solid"></line><line x1="232" y1="824" x2="240" y2="824" class="solid"></line><text x="234" y="844" >↓</text><text x="218" y="860" >[w][o][r][l][d][</text><line x1="344" y1="848" x2="352" y2="864" class="solid"></line><text x="354" y="860" >0]</text><text x="194" y="876" >↓</text><text x="186" y="892" >[1][2][3][4][5]</text><text x="26" y="860" >0x8000:</text><text x="122" y="892" >0x8100:</text><text x="90" y="860" >world\0</text><text x="2" y="12" >CPU</text><text x="34" y="12" >REGISTERS</text><path d="M 120,0 A 16,16 0,0,0 120,16" class="nofill"></path><text x="122" y="12" >not</text><text x="154" y="12" >in</text><text x="178" y="12" >memory!</text><path d="M 232,0 A 16,16 0,0,1 232,16" class="nofill"></path><text x="242" y="12" >:</text><text x="2" y="140" >STACK:</text><line x1="104" y1="136" x2="112" y2="136" class="solid"></line><line x1="120" y1="136" x2="128" y2="136" class="solid"></line><line x1="136" y1="136" x2="144" y2="136" class="solid"></line><line x1="152" y1="136" x2="160" y2="136" class="solid"></line><line x1="168" y1="136" x2="176" y2="136" class="solid"></line><line x1="184" y1="136" x2="192" y2="136" class="solid"></line><line x1="200" y1="136" x2="208" y2="136" class="solid"></line><text x="26" y="268" >x</text><line x1="36" y1="256" x2="36" y2="288" class="broken"></line><text x="50" y="268" >i32</text><line x1="80" y1="262" x2="88" y2="262" class="solid"></line><line x1="80" y1="266" x2="88" y2="266" class="solid"></line><text x="98" y="268" >42</text><text x="26" y="284" >y</text><text x="50" y="284" >i32</text><line x1="80" y1="278" x2="88" y2="278" class="solid"></line><line x1="80" y1="282" x2="88" y2="282" class="solid"></line><text x="98" y="284" >100</text><text x="26" y="300" >[padding</text><line x1="96" y1="296" x2="104" y2="296" class="broken"></line><text x="106" y="300" >24</text><text x="130" y="300" >bytes]</text><text x="26" y="316" >s:</text><text x="50" y="316" >String</text><text x="114" y="316" >←</text><line x1="120" y1="312" x2="128" y2="312" class="solid"></line><line x1="136" y1="312" x2="144" y2="312" class="solid"></line><line x1="152" y1="312" x2="160" y2="312" class="solid"></line><line x1="168" y1="312" x2="176" y2="312" class="solid"></line><line x1="184" y1="312" x2="192" y2="312" class="solid"></line><line x1="200" y1="312" x2="208" y2="312" class="solid"></line><text x="66" y="332" >ptr</text><line x1="92" y1="320" x2="92" y2="368" class="broken"></line><text x="114" y="332" >0x8000</text><text x="66" y="348" >len</text><text x="114" y="348" >5</text><text x="66" y="364" >cap</text><text x="114" y="364" >5</text><text x="26" y="636" >[Return</text><text x="90" y="636" >address</text><text x="154" y="636" >to</text><text x="178" y="636" >main]</text><text x="26" y="652" >[Saved</text><text x="82" y="652" >RBP</text><line x1="112" y1="646" x2="120" y2="646" class="solid"></line><line x1="112" y1="650" x2="120" y2="650" class="solid"></line><text x="130" y="652" >0x7FFF</text><line x1="176" y1="656" x2="184" y2="656" class="solid"></line><text x="186" y="652" >FFFF</text><line x1="216" y1="656" x2="224" y2="656" class="solid"></line><text x="226" y="652" >FF00]</text><line x1="196" y1="656" x2="196" y2="704" class="solid"></line><line x1="236" y1="656" x2="236" y2="704" class="solid"></line><path d="M 32,704 A 16,16 0,0,0 32,720" class="nofill"></path><text x="34" y="716" >param</text><line x1="72" y1="720" x2="80" y2="720" class="solid"></line><text x="82" y="716" >num</text><line x1="112" y1="704" x2="104" y2="720" class="solid"></line><text x="114" y="716" >param</text><line x1="152" y1="720" x2="160" y2="720" class="solid"></line><text x="162" y="716" >text</text><text x="202" y="716" >NOT</text><text x="234" y="716" >here!</text><path d="M 272,704 A 16,16 0,0,1 272,720" class="nofill"></path><line x1="196" y1="720" x2="196" y2="864" class="solid"></line><line x1="236" y1="720" x2="236" y2="832" class="solid"></line><text x="2" y="812" >HEAP:</text><text x="322" y="44" >Base</text><text x="362" y="44" >pointer</text><path d="M 432,32 A 16,16 0,0,0 432,48" class="nofill"></path><text x="434" y="44" >main&#39;s</text><text x="490" y="44" >frame</text><text x="538" y="44" >base</text><path d="M 568,32 A 16,16 0,0,1 568,48" class="nofill"></path><text x="322" y="60" >Stack</text><text x="370" y="60" >pointer</text><path d="M 440,48 A 16,16 0,0,0 440,64" class="nofill"></path><text x="442" y="60" >current</text><text x="506" y="60" >top</text><path d="M 528,48 A 16,16 0,0,1 528,64" class="nofill"></path><text x="322" y="76" >Arguments</text><text x="402" y="76" >passed</text><text x="458" y="76" >via</text><text x="490" y="76" >registers!</text><text x="322" y="92" >Points</text><text x="378" y="92" >to</text><text x="402" y="92" >s</text><text x="418" y="92" >on</text><text x="442" y="92" >stack</text><text x="322" y="108" >These</text><text x="370" y="108" >are</text><text x="402" y="108" >NOT</text><text x="434" y="108" >in</text><text x="458" y="108" >stack</text><text x="506" y="108" >memory</text><text x="322" y="156" >←</text><text x="338" y="156" >main</text><text x="394" y="156" >pushed</text><text x="450" y="156" >first</text><text x="338" y="172" >0x7FFF</text><line x1="384" y1="176" x2="392" y2="176" class="solid"></line><text x="394" y="172" >FFFF</text><line x1="424" y1="176" x2="432" y2="176" class="solid"></line><text x="434" y="172" >FFF0</text><path d="M 504,144 A 16,16 0,0,0 504,160" class="nofill"></path><text x="506" y="156" >higher</text><text x="562" y="156" >address</text><path d="M 616,144 A 16,16 0,0,1 616,160" class="nofill"></path><text x="42" y="188" >main</text><text x="90" y="188" >&#39;s</text><text x="114" y="188" >stack</text><text x="162" y="188" >frame</text><line x1="220" y1="176" x2="220" y2="192" class="solid"></line><text x="26" y="220" >[Return</text><text x="90" y="220" >address</text><text x="154" y="220" >to</text><text x="26" y="236" >[Saved</text><text x="82" y="236" >main&#39;s</text><text x="138" y="236" >RBP]</text><text x="178" y="220" >OS]</text><line x1="220" y1="208" x2="220" y2="224" class="solid"></line><text x="322" y="236" >←</text><text x="338" y="236" >RBP</text><text x="370" y="236" >points</text><text x="426" y="236" >here</text><path d="M 472,224 A 16,16 0,0,0 472,240" class="nofill"></path><text x="474" y="236" >0x7FFF</text><line x1="520" y1="240" x2="528" y2="240" class="solid"></line><text x="530" y="236" >FFFF</text><line x1="560" y1="240" x2="568" y2="240" class="solid"></line><text x="570" y="236" >FF00</text><path d="M 600,224 A 16,16 0,0,1 600,240" class="nofill"></path><line x1="220" y1="240" x2="220" y2="256" class="solid"></line><text x="322" y="268" >←</text><text x="322" y="284" >←</text><text x="322" y="300" >←</text><text x="322" y="316" >←</text><text x="338" y="268" >at</text><text x="362" y="268" >[rbp</text><line x1="392" y1="264" x2="400" y2="264" class="solid"></line><text x="402" y="268" >4]</text><text x="338" y="284" >at</text><text x="362" y="284" >[rbp</text><line x1="392" y1="280" x2="400" y2="280" class="solid"></line><text x="402" y="284" >8]</text><text x="338" y="300" >Compiler</text><text x="410" y="300" >adds</text><text x="450" y="300" >padding</text><text x="514" y="300" >for</text><text x="546" y="300" >alignment</text><text x="338" y="316" >at</text><text x="362" y="316" >[rbp</text><line x1="392" y1="312" x2="400" y2="312" class="solid"></line><text x="402" y="316" >32]</text><path d="M 440,304 A 16,16 0,0,0 440,320" class="nofill"></path><text x="442" y="316" >aligned</text><text x="506" y="316" >to</text><text x="530" y="316" >8</text><line x1="536" y1="312" x2="544" y2="312" class="solid"></line><text x="546" y="316" >byte</text><text x="586" y="316" >boundary</text><path d="M 648,304 A 16,16 0,0,1 648,320" class="nofill"></path><line x1="220" y1="272" x2="220" y2="288" class="solid"></line><text x="26" y="396" >v:</text><text x="50" y="396" >Vec&lt;i32&gt;</text><text x="66" y="412" >ptr</text><line x1="92" y1="400" x2="92" y2="448" class="broken"></line><text x="114" y="412" >0x8100</text><text x="66" y="428" >len</text><text x="114" y="428" >5</text><text x="66" y="444" >cap</text><text x="114" y="444" >5</text><text x="26" y="476" >arr:</text><text x="66" y="476" >[i32;</text><text x="42" y="492" >[50]</text><text x="42" y="508" >[40]</text><text x="42" y="524" >[30]</text><text x="42" y="540" >[20]</text><text x="42" y="556" >[10]</text><text x="114" y="476" >5]</text><text x="26" y="588" >doubled:</text><text x="98" y="588" >i32</text><line x1="128" y1="582" x2="136" y2="582" class="solid"></line><line x1="128" y1="586" x2="136" y2="586" class="solid"></line><text x="146" y="588" >???</text><text x="322" y="588" >←</text><text x="338" y="588" >Space</text><text x="386" y="588" >for</text><text x="418" y="588" >return</text><text x="474" y="588" >value</text><path d="M 528,576 A 16,16 0,0,0 528,592" class="nofill"></path><text x="530" y="588" >not</text><text x="562" y="588" >set</text><text x="594" y="588" >yet</text><path d="M 616,576 A 16,16 0,0,1 616,592" class="nofill"></path><text x="322" y="636" >←</text><text x="322" y="652" >←</text><text x="322" y="668" >←</text><text x="322" y="684" >←</text><text x="338" y="636" >process</text><line x1="392" y1="640" x2="400" y2="640" class="solid"></line><text x="402" y="636" >data</text><text x="450" y="636" >&#39;s</text><text x="474" y="636" >stack</text><text x="522" y="636" >frame</text><text x="426" y="652" >saved</text><text x="474" y="652" >it</text><text x="498" y="652" >here</text><text x="338" y="668" >process</text><line x1="392" y1="672" x2="400" y2="672" class="solid"></line><text x="402" y="668" >data&#39;s</text><text x="458" y="668" >RBP</text><text x="490" y="668" >points</text><text x="338" y="684" >Local</text><text x="386" y="684" >variable</text><text x="458" y="684" >at</text><text x="482" y="684" >[rbp</text><line x1="512" y1="680" x2="520" y2="680" class="solid"></line><text x="522" y="684" >4]</text><text x="546" y="668" >HERE</text><text x="26" y="684" >result:</text><text x="90" y="684" >i32</text><line x1="120" y1="678" x2="128" y2="678" class="solid"></line><line x1="120" y1="682" x2="128" y2="682" class="solid"></line><text x="138" y="684" >84</text><text x="322" y="716" >←</text><text x="338" y="716" >Arguments</text><text x="418" y="716" >are</text><text x="450" y="716" >in</text><text x="474" y="716" >REGISTERS,</text><text x="562" y="716" >not</text><text x="594" y="716" >stack!</text><text x="26" y="748" >[allocated</text><text x="114" y="748" >space]</text><text x="322" y="748" >←</text><text x="450" y="748" >allocated</text><text x="530" y="748" >this</text><text x="322" y="780" >←</text><text x="338" y="780" >RSP</text><text x="370" y="780" >points</text><text x="426" y="780" >here</text><path d="M 472,768 A 16,16 0,0,0 472,784" class="nofill"></path><text x="474" y="780" >0x7FFF</text><line x1="520" y1="784" x2="528" y2="784" class="solid"></line><text x="530" y="780" >FFFF</text><line x1="560" y1="784" x2="568" y2="784" class="solid"></line><text x="570" y="780" >FE00</text><path d="M 600,768 A 16,16 0,0,1 600,784" class="nofill"></path><text x="338" y="652" >push rbp</text><text x="338" y="748" >sub rsp, 16</text><g><text x="170" y="76">←</text><text x="186" y="76">param</text></g><g><text x="170" y="92">←</text><text x="186" y="92">param</text></g><g><line x1="92" y1="96" x2="92" y2="136" class="solid"></line><line x1="92" y1="136" x2="96" y2="136" class="solid"></line></g><g><line x1="216" y1="136" x2="220" y2="136" class="solid"></line><line x1="220" y1="136" x2="220" y2="160" class="solid"></line></g><g><line x1="4" y1="152" x2="300" y2="152" class="solid"></line><line x1="4" y1="152" x2="4" y2="776" class="solid"></line><line x1="300" y1="152" x2="300" y2="776" class="solid"></line><line x1="4" y1="616" x2="300" y2="616" class="solid"></line><line x1="4" y1="776" x2="192" y2="776" class="solid"></line><line x1="200" y1="776" x2="300" y2="776" class="solid"></line></g><g><line x1="220" y1="304" x2="220" y2="312" class="solid"></line><line x1="216" y1="312" x2="220" y2="312" class="solid"></line></g><g><line x1="44" y1="320" x2="44" y2="360" class="solid"></line><line x1="44" y1="328" x2="56" y2="328" class="solid"></line><line x1="44" y1="344" x2="56" y2="344" class="solid"></line><line x1="44" y1="360" x2="56" y2="360" class="solid"></line></g><g><line x1="176" y1="328" x2="236" y2="328" class="solid"></line><line x1="236" y1="328" x2="236" y2="640" class="solid"></line></g><g><line x1="176" y1="408" x2="196" y2="408" class="solid"></line><line x1="196" y1="408" x2="196" y2="624" class="solid"></line></g><g><path d="M 376,144 A 16,16 0,0,0 376,160" class="nofill"></path><path d="M 376,144 A 16,16 0,0,1 376,160" class="nofill"></path></g><g><path d="M 80,176 A 16,16 0,0,0 80,192" class="nofill"></path><path d="M 80,176 A 16,16 0,0,1 80,192" class="nofill"></path></g><g><line x1="44" y1="400" x2="44" y2="440" class="solid"></line><line x1="44" y1="408" x2="56" y2="408" class="solid"></line><line x1="44" y1="424" x2="56" y2="424" class="solid"></line><line x1="44" y1="440" x2="56" y2="440" class="solid"></line></g><g><path d="M 440,624 A 16,16 0,0,0 440,640" class="nofill"></path><path d="M 440,624 A 16,16 0,0,1 440,640" class="nofill"></path></g></svg></div>
+<p><strong>Key observations about arguments and returns:</strong></p>
+<ol>
+<li>
+<p><strong><code>param_num</code> and <code>param_text</code> are in CPU REGISTERS, not in memory!</strong></p>
+<ul>
+<li><code>param_num</code> (value 42) lives in the EDI register</li>
+<li><code>param_text</code> (pointer to s) lives in the RSI register</li>
+<li>They are NOT stored on the stack (unless the compiler decides to spill them later)</li>
+</ul>
+</li>
+<li>
+<p><strong>Pass by value vs by reference both use registers</strong>:</p>
+<ul>
+<li>Pass by value (<code>x</code>): The value 42 is copied into EDI register</li>
+<li>Pass by reference (<code>&amp;s</code>): The pointer to s (address on stack) is copied into RSI register</li>
+</ul>
+</li>
+<li>
+<p><strong><code>doubled</code> variable</strong> in main's frame has space allocated but isn't set yet - it will receive the return value</p>
+</li>
+<li>
+<p><strong>Stack frames stack up</strong> - process_data's frame sits on top of main's frame</p>
+</li>
+<li>
+<p><strong>The heap data doesn't move</strong> - only stack frames are created/destroyed</p>
+</li>
+<li>
+<p><strong><code>arr</code> stays on the stack</strong> in main's frame - native arrays don't involve heap</p>
+</li>
+</ol>
+<p><strong>How arguments are actually passed (x86-64 System V ABI):</strong></p>
+<pre><code class="language-asm">; Conceptual assembly for: let doubled = process_data(x, &amp;s);
+
+mov    edi, DWORD PTR [rbp-4]    ; Load x (42), located at rbp-4 into EDI register
+lea    rsi, [rbp-32]             ; Load address of s into RSI register (pointer to s on stack)
+call   process_data              ; CALL pushes return address, jumps to function
+</code></pre>
+<p>Inside <code>process_data</code></p>
+<pre><code class="language-asm">
+; Arguments are in registers: EDI = 42, RSI = pointer to s
+
+; Function prologue - setting up stack frame:
+push   rbp                       ; Save caller's base pointer
+mov    rbp, rsp                  ; Set up our base pointer
+sub    rsp, 16                   ; Allocate space for local variables (result, etc.)
+
+; Now we can execute the function body:
+; let result = param_num * 2;
+mov    eax, edi                  ; Load param_num (42) into EAX
+shl    eax, 1                    ; Multiply by 2 (shift left) -&gt; EAX = 84
+mov    DWORD PTR [rbp-4], eax    ; Store result on stack
+
+; ... println! call happens here ...
+
+; Return preparation:
+mov    eax, DWORD PTR [rbp-4]    ; Load result (84) into EAX (return register)
+
+; Function epilogue - cleanup:
+add    rsp, 16                   ; Deallocate local variables
+pop    rbp                       ; Restore caller's base pointer
+ret                              ; Return to caller (pops return address, jumps back)
+</code></pre>
+<p><strong>Key points:</strong></p>
+<ol>
+<li>
+<p><strong>Arguments go into registers first</strong> (not pushed to stack):</p>
+<ul>
+<li>First 6 integer/pointer arguments use: RDI, RSI, RDX, RCX, R8, R9</li>
+<li>Our i32 uses EDI (lower 32 bits of RDI)</li>
+<li>Our &amp;String uses RSI (just a single pointer, 8 bytes)</li>
+</ul>
+</li>
+<li>
+<p><strong>CALL instruction</strong> pushes return address onto stack automatically</p>
+</li>
+<li>
+<p><strong>Compiler may spill to stack</strong> if:</p>
+<ul>
+<li>Register needed for other operations</li>
+<li>Function has too many arguments (7+ integers)</li>
+<li>Debugging is enabled (makes variables inspectable)</li>
+</ul>
+</li>
+<li>
+<p><strong>Pass by value vs by reference</strong> both use registers - the difference is what's copied:</p>
+<ul>
+<li><strong>By value (<code>x</code>)</strong>: The actual value (42) is copied into EDI</li>
+<li><strong>By reference (<code>&amp;s</code>)</strong>: Only the pointer to s (8 bytes) is copied into RSI, pointing to s on the stack</li>
+</ul>
+</li>
+</ol>
+<h3 id="step-4-process_data-returns---value-copied-back-and-stack-frame-destroyed"><a class="header" href="#step-4-process_data-returns---value-copied-back-and-stack-frame-destroyed">Step 4: process_data() Returns - Value Copied Back and Stack Frame Destroyed</a></h3>
+<p>When <code>process_data()</code> returns, two things happen:</p>
+<ol>
+<li><strong>Return value is copied</strong>: The value in <code>result</code> (84) is <strong>copied</strong> to <code>doubled</code> in main's frame (using CPU register or direct memory copy)</li>
+<li><strong>Stack frame is popped</strong>: process_data's entire frame is destroyed</li>
+</ol>
+<div style='width:100%; height:672px;'><style type="text/css">svg { width: 100% !important; }</style><svg xmlns="http://www.w3.org/2000/svg" width="608" height="672" class="svgbob"><style>.svgbob line, .svgbob path, .svgbob circle, .svgbob rect, .svgbob polygon {  stroke: var(--fg);  stroke-width: 2;  stroke-opacity: 1;  fill-opacity: 1;  stroke-linecap: round;  stroke-linejoin: miter;}.svgbob text {  white-space: pre;  fill: var(--fg);  font-family: Iosevka Fixed, monospace;  font-size: 14px;}.svgbob rect.backdrop {  stroke: none;  fill: transparent;}.svgbob .broken {  stroke-dasharray: 8;}.svgbob .filled {  fill: black;}.svgbob .bg_filled {  fill: transparent;  stroke-width: 1;}.svgbob .nofill {  fill: transparent;}.svgbob .end_marked_arrow {  marker-end: url(#arrow);}.svgbob .start_marked_arrow {  marker-start: url(#arrow);}.svgbob .end_marked_diamond {  marker-end: url(#diamond);}.svgbob .start_marked_diamond {  marker-start: url(#diamond);}.svgbob .end_marked_circle {  marker-end: url(#circle);}.svgbob .start_marked_circle {  marker-start: url(#circle);}.svgbob .end_marked_open_circle {  marker-end: url(#open_circle);}.svgbob .start_marked_open_circle {  marker-start: url(#open_circle);}.svgbob .end_marked_big_open_circle {  marker-end: url(#big_open_circle);}.svgbob .start_marked_big_open_circle {  marker-start: url(#big_open_circle);}</style><defs><marker id="arrow" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,0 0,4 4,2 0,0"></polygon></marker><marker id="diamond" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,2 2,0 4,2 2,4 0,2"></polygon></marker><marker id="circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="filled"></circle></marker><marker id="open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="bg_filled"></circle></marker><marker id="big_open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="3" class="bg_filled"></circle></marker></defs><rect class="backdrop" x="0" y="0" width="608" height="672"></rect><rect x="4" y="24" width="288" height="464" class="solid nofill" rx="0"></rect><line x1="192" y1="488" x2="200" y2="488" class="solid"></line><line x1="224" y1="488" x2="232" y2="488" class="solid"></line><text x="42" y="60" >main</text><text x="90" y="60" >&#39;s</text><text x="114" y="60" >stack</text><text x="162" y="60" >frame</text><text x="26" y="92" >[Return</text><text x="90" y="92" >address</text><text x="154" y="92" >to</text><text x="26" y="108" >[Saved</text><text x="82" y="108" >registers]</text><text x="178" y="92" >OS]</text><text x="26" y="140" >x</text><line x1="36" y1="128" x2="36" y2="160" class="broken"></line><text x="26" y="156" >y</text><text x="50" y="140" >i32</text><text x="50" y="156" >i32</text><line x1="80" y1="134" x2="88" y2="134" class="solid"></line><line x1="80" y1="138" x2="88" y2="138" class="solid"></line><line x1="80" y1="150" x2="88" y2="150" class="solid"></line><line x1="80" y1="154" x2="88" y2="154" class="solid"></line><text x="98" y="140" >42</text><text x="98" y="156" >100</text><text x="26" y="188" >s:</text><text x="50" y="188" >String</text><text x="66" y="204" >ptr</text><line x1="92" y1="192" x2="92" y2="240" class="broken"></line><text x="66" y="220" >len</text><text x="66" y="236" >cap</text><text x="114" y="204" >0x8000</text><text x="114" y="220" >5</text><text x="114" y="236" >5</text><text x="26" y="268" >v:</text><text x="50" y="268" >Vec&lt;i32&gt;</text><text x="66" y="284" >ptr</text><line x1="92" y1="272" x2="92" y2="320" class="broken"></line><text x="114" y="284" >0x8100</text><text x="66" y="300" >len</text><text x="114" y="300" >5</text><text x="66" y="316" >cap</text><text x="114" y="316" >5</text><text x="26" y="348" >arr:</text><text x="66" y="348" >[i32;</text><text x="42" y="364" >[50]</text><text x="42" y="380" >[40]</text><text x="42" y="396" >[30]</text><text x="42" y="412" >[20]</text><text x="42" y="428" >[10]</text><text x="114" y="348" >5]</text><text x="26" y="460" >doubled:</text><text x="98" y="460" >i32</text><line x1="128" y1="454" x2="136" y2="454" class="solid"></line><line x1="128" y1="458" x2="136" y2="458" class="solid"></line><text x="146" y="460" >84</text><rect x="4" y="552" width="360" height="96" class="solid nofill" rx="0"></rect><line x1="192" y1="552" x2="200" y2="552" class="solid"></line><line x1="328" y1="552" x2="336" y2="552" class="solid"></line><text x="194" y="572" >↓</text><text x="330" y="572" >↓</text><text x="194" y="588" >[w][o][r][l][d][</text><line x1="320" y1="576" x2="328" y2="592" class="solid"></line><text x="330" y="588" >0]</text><text x="26" y="588" >0x8000:</text><text x="26" y="620" >0x8100:</text><text x="90" y="620" >[1][2][3][4][5]</text><text x="90" y="588" >world\0</text><text x="2" y="12" >STACK:</text><text x="2" y="540" >HEAP:</text><text x="314" y="460" >←</text><text x="330" y="460" >Return</text><text x="386" y="460" >value</text><text x="434" y="460" >COPIED</text><text x="490" y="460" >here</text><path d="M 536,448 A 16,16 0,0,0 536,464" class="nofill"></path><text x="538" y="460" >4</text><text x="554" y="460" >bytes</text><path d="M 592,448 A 16,16 0,0,1 592,464" class="nofill"></path><g><line x1="176" y1="200" x2="228" y2="200" class="solid"></line><line x1="228" y1="200" x2="228" y2="520" class="solid"></line><line x1="228" y1="520" x2="332" y2="520" class="solid"></line><line x1="332" y1="520" x2="332" y2="560" class="solid"></line></g><g><line x1="176" y1="280" x2="196" y2="280" class="solid"></line><line x1="196" y1="280" x2="196" y2="560" class="solid"></line></g><g><path d="M 80,48 A 16,16 0,0,0 80,64" class="nofill"></path><path d="M 80,48 A 16,16 0,0,1 80,64" class="nofill"></path></g><g><line x1="44" y1="192" x2="44" y2="232" class="solid"></line><line x1="44" y1="200" x2="56" y2="200" class="solid"></line><line x1="44" y1="216" x2="56" y2="216" class="solid"></line><line x1="44" y1="232" x2="56" y2="232" class="solid"></line></g><g><line x1="44" y1="272" x2="44" y2="312" class="solid"></line><line x1="44" y1="280" x2="56" y2="280" class="solid"></line><line x1="44" y1="296" x2="56" y2="296" class="solid"></line><line x1="44" y1="312" x2="56" y2="312" class="solid"></line></g></svg></div>
+<p><strong>Key observations about returns:</strong></p>
+<ol>
+<li><strong>Return value is copied</strong>: The 4 bytes of <code>result</code> are copied (typically via CPU register like <code>RAX</code> on x86-64, then to stack)</li>
+<li><strong>process_data's stack frame is gone</strong>: All local variables (param_num, param_text, result) are destroyed</li>
+<li><strong>The heap data remains untouched</strong>: Only stack frames change, heap is unaffected</li>
+<li><strong>doubled now has the value 84</strong>: Ready to be used by main</li>
+</ol>
+<p><strong>How return values work:</strong></p>
+<ul>
+<li><strong>Small values</strong> (like i32, 4 bytes): Returned via CPU register (RAX on x86-64), then copied to destination</li>
+<li><strong>Larger values</strong> (like structs): Caller pre-allocates space, callee writes directly to it</li>
+<li><strong>Owned heap types</strong> (like Vec, String): Only the metadata is copied (24 bytes), heap data stays put</li>
+</ul>
+<h3 id="step-5-main-ends---cleanup"><a class="header" href="#step-5-main-ends---cleanup">Step 5: main() Ends - Cleanup</a></h3>
+<p>When <code>main()</code> returns, <code>s</code> and <code>v</code> go out of scope. Their <code>Drop</code> implementations run:</p>
+<ol>
+<li><strong><code>s</code> is dropped</strong>: Calls <code>dealloc()</code> to free the heap memory at 0x8000</li>
+<li><strong><code>v</code> is dropped</strong>: Calls <code>dealloc()</code> to free the heap memory at 0x8100</li>
+<li><strong>main's stack frame is popped</strong>: All local variables disappear</li>
+</ol>
+<pre><code>STACK: (empty)
+
+HEAP: (freed)
+  0x8000: (deallocated)
+  0x8100: (deallocated)
+
+DATA Segment: (still there)
+  0x5000: GREETING = "Hello"
+
+BSS Segment: (still there)
+  0x6000: COUNTER = 0
+</code></pre>
+<h2 id="memory-regions-in-detail"><a class="header" href="#memory-regions-in-detail">Memory Regions in Detail</a></h2>
+<h3 id="the-stack"><a class="header" href="#the-stack">The Stack</a></h3>
+<p><strong>What lives here:</strong></p>
+<p>Before we categorize by type, let's ask: <strong>Which of these types live on the stack?</strong></p>
+<ul>
+<li>Primitives: <code>i32</code>, <code>f64</code>, <code>bool</code>, <code>char</code>?</li>
+<li>Enums?</li>
+<li>Structs?</li>
+<li>Arrays: <code>[T; N]</code>?</li>
+<li>Pointers: <code>&amp;T</code>, <code>&amp;mut T</code>, <code>*const T</code>, <code>*mut T</code>?</li>
+<li>Smart pointers: <code>String</code>, <code>Vec</code>, <code>Box</code> (which are actually just structs)?</li>
+</ul>
+<p>You might think: "Primitives live on stack, arrays live on heap..."</p>
+<p><strong>But actually, the type doesn't matter.</strong> Here's the simple rule:</p>
+<p><strong>The Rule: All local variables (declared with <code>let</code>) live on the stack.</strong></p>
+<p>Let's test this. Which of these live on the stack?</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let x: i32 = 0;
+
+struct Number {
+    n: i32
+}
+
+let arr: [i32; 3] = [1, 2, 3];
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Answer: The values declared with <code>let</code> live on stack.</strong></p>
+<ul>
+<li><code>x</code> lives on stack (it's a local variable)</li>
+<li><code>struct Number { n: i32 }</code> is just a type definition - doesn't live anywhere!</li>
+<li><code>arr</code> lives on stack (it's a local variable)</li>
+</ul>
+<p>When we create an <em>instance</em> of <code>Number</code> with <code>let</code>, that's when it gets memory:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let num = Number { n: 42 };  // num lives on stack, so field n (as part of num) lives on stack
+<span class="boring">}</span></code></pre></pre>
+<p><strong>No matter the type, if it's a local variable, it lives on the stack:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let result = Ok(42);           // enum on stack (including its data)
+let n: i32 = 5;                // primitive on stack
+let ref_n: &amp;i32 = &amp;n;          // reference (pointer) on stack, points to n (also on stack)
+let p_n: *const i32 = &amp;n;      // raw pointer on stack, points to n (also on stack)
+<span class="boring">}</span></code></pre></pre>
+<blockquote>
+<p><strong>Note:</strong> Pointers are bridges between stack and heap. They can point to stack (like <code>ref_n</code> above) or to heap (like Vec's internal <code>ptr</code>). We'll explore heap allocation in detail later.</p>
+</blockquote>
+<p><strong>What about <code>String</code>, <code>Vec</code>, <code>Box</code>?</strong></p>
+<p>These are also just structs! Let's see what <code>Vec</code> actually is:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct Vec&lt;T&gt; {
+    ptr: *mut T,  // pointer to heap data
+    len: usize,   // length
+    cap: usize,   // capacity
+}
+
+let number = Number { n: 42 };  // number on stack, field n on stack
+let v = Vec::new();             // v (the struct) on stack
+                                // ptr is null/dangling, len=0, cap=0
+v.push(1);                      // FIRST push calls alloc()!
+                                // Now ptr points to heap, len=1, cap=4 (typically)
+v.push(2);                      // adds to heap, len=2, cap=4
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Key insight:</strong> The <code>Vec</code> struct itself always lives on stack. Its fields (<code>ptr</code>, <code>len</code>, <code>cap</code>) always live on stack. But <code>ptr</code> only points to heap <strong>after the first allocation</strong> (which happens during the first <code>push()</code> that needs capacity).</p>
+<ul>
+<li>After <code>Vec::new()</code>: ptr is null (or dangling), no heap allocation yet</li>
+<li>After first <code>push(1)</code>: ptr points to heap (alloc() was called), heap data exists</li>
+</ul>
+<p><strong>Stack memory layout:</strong></p>
+<div style='width:100%; height:208px;'><style type="text/css">svg { width: 100% !important; }</style><svg xmlns="http://www.w3.org/2000/svg" width="704" height="208" class="svgbob"><style>.svgbob line, .svgbob path, .svgbob circle, .svgbob rect, .svgbob polygon {  stroke: var(--fg);  stroke-width: 2;  stroke-opacity: 1;  fill-opacity: 1;  stroke-linecap: round;  stroke-linejoin: miter;}.svgbob text {  white-space: pre;  fill: var(--fg);  font-family: Iosevka Fixed, monospace;  font-size: 14px;}.svgbob rect.backdrop {  stroke: none;  fill: transparent;}.svgbob .broken {  stroke-dasharray: 8;}.svgbob .filled {  fill: black;}.svgbob .bg_filled {  fill: transparent;  stroke-width: 1;}.svgbob .nofill {  fill: transparent;}.svgbob .end_marked_arrow {  marker-end: url(#arrow);}.svgbob .start_marked_arrow {  marker-start: url(#arrow);}.svgbob .end_marked_diamond {  marker-end: url(#diamond);}.svgbob .start_marked_diamond {  marker-start: url(#diamond);}.svgbob .end_marked_circle {  marker-end: url(#circle);}.svgbob .start_marked_circle {  marker-start: url(#circle);}.svgbob .end_marked_open_circle {  marker-end: url(#open_circle);}.svgbob .start_marked_open_circle {  marker-start: url(#open_circle);}.svgbob .end_marked_big_open_circle {  marker-end: url(#big_open_circle);}.svgbob .start_marked_big_open_circle {  marker-start: url(#big_open_circle);}</style><defs><marker id="arrow" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,0 0,4 4,2 0,0"></polygon></marker><marker id="diamond" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,2 2,0 4,2 2,4 0,2"></polygon></marker><marker id="circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="filled"></circle></marker><marker id="open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="bg_filled"></circle></marker><marker id="big_open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="3" class="bg_filled"></circle></marker></defs><rect class="backdrop" x="0" y="0" width="704" height="208"></rect><text x="2" y="12" >Stack:</text><text x="18" y="44" >number:</text><text x="82" y="44" >Number</text><text x="34" y="60" >n:</text><text x="58" y="60" >42</text><text x="18" y="92" >v:</text><text x="42" y="92" >Vec&lt;i32&gt;</text><text x="34" y="108" >ptr</text><line x1="60" y1="96" x2="60" y2="144" class="broken"></line><text x="82" y="108" >0x1000</text><text x="34" y="124" >len</text><text x="82" y="124" >2</text><text x="34" y="140" >cap</text><text x="82" y="140" >4</text><polygon points="240,180 248,184 240,188" class="filled"></polygon><text x="258" y="60" >4</text><text x="274" y="60" >bytes</text><text x="258" y="108" >8</text><text x="274" y="108" >bytes</text><text x="258" y="124" >8</text><text x="274" y="124" >bytes</text><text x="258" y="140" >8</text><text x="274" y="140" >bytes</text><text x="258" y="156" >Total:</text><text x="314" y="156" >24</text><path d="M 328,96 A 16,16 0,0,0 328,112" class="nofill"></path><text x="330" y="108" >pointer</text><path d="M 384,96 A 16,16 0,0,1 384,112" class="nofill"></path><text x="338" y="156" >bytes</text><text x="386" y="156" >on</text><text x="410" y="156" >stack</text><text x="258" y="188" >Heap</text><text x="298" y="188" >at</text><text x="322" y="188" >0x1000:</text><text x="386" y="188" >[1][2]</text><path d="M 456,176 A 16,16 0,0,0 456,192" class="nofill"></path><text x="458" y="188" >8</text><text x="474" y="188" >bytes</text><text x="522" y="188" >+</text><text x="538" y="188" >capacity</text><text x="610" y="188" >for</text><text x="642" y="188" >2</text><text x="658" y="188" >more</text><path d="M 688,176 A 16,16 0,0,1 688,192" class="nofill"></path><g><line x1="4" y1="24" x2="236" y2="24" class="solid"></line><line x1="4" y1="24" x2="4" y2="152" class="solid"></line><line x1="236" y1="24" x2="236" y2="152" class="solid"></line><line x1="4" y1="72" x2="236" y2="72" class="solid"></line><line x1="4" y1="152" x2="236" y2="152" class="solid"></line></g><g><line x1="144" y1="104" x2="188" y2="104" class="solid"></line><line x1="188" y1="104" x2="188" y2="184" class="solid"></line><line x1="188" y1="184" x2="240" y2="184" class="solid"></line></g></svg></div>
+<p>We'll explore heap and allocation in more detail in the next section.</p>
+<p><strong>Summary:</strong></p>
+<p><strong>Your local variables (you create these):</strong></p>
+<ul>
+<li><strong>The Rule</strong>: Everything declared with <code>let</code> in a function lives on stack - type doesn't matter</li>
+<li>Primitives: <code>i32</code>, <code>f64</code>, <code>bool</code>, <code>char</code></li>
+<li>Structs: entire struct including all fields</li>
+<li>Enums: including their variant data</li>
+<li>Arrays: <code>[T; N]</code> - all elements inline</li>
+<li>Pointers: <code>&amp;T</code>, <code>&amp;mut T</code>, <code>*const T</code>, <code>*mut T</code> - the pointer itself (8 bytes)</li>
+<li>Smart pointer structs: <code>String</code>, <code>Vec</code>, <code>Box</code> - the struct metadata on stack, the data they point to on heap</li>
+</ul>
+<p><strong>Compiler-managed (you don't interact with these):</strong></p>
+<ul>
+<li>Function parameters (passed via registers, may be spilled to stack)</li>
+<li>Return addresses (managed via <code>CALL</code>/<code>RET</code> instructions)</li>
+<li>Saved registers (managed via <code>PUSH</code>/<code>POP</code> instructions)</li>
+</ul>
+<p><strong>Characteristics:</strong></p>
+<ul>
+<li><strong>Automatic management</strong>: Variables automatically disappear when they go out of scope. The CPU has built-in stack instructions (<code>PUSH</code>, <code>POP</code>, <code>CALL</code>, <code>RET</code>) and a dedicated stack pointer register (<code>RSP</code> on x86-64) that make stack operations trivial.</li>
+<li><strong>Fast allocation</strong>: Just move the stack pointer (one CPU instruction: <code>sub rsp, 16</code> to allocate 16 bytes)</li>
+<li><strong>Fixed size</strong>: Typically 2-8 MB (OS-dependent)</li>
+<li><strong>LIFO (Last In, First Out)</strong>: Like a stack of plates</li>
+<li><strong>Grows downward</strong>: From high addresses to low addresses</li>
+</ul>
+<p><strong>Example:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn example() {
+    let x = 42;        // Allocate 4 bytes on stack
+    let y = vec![1];   // Allocate 24 bytes on stack (Vec metadata)
+}  // Stack pointer moves back, x and y are gone
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Stack overflow</strong> happens when you use too much stack space:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn infinite_recursion() {
+    let huge = [0u8; 1_000_000];  // 1 MB per call!
+    infinite_recursion();         // Each call adds another frame
+}
+// Eventually: stack overflow!
+<span class="boring">}</span></code></pre></pre>
+<h3 id="raw-pointers"><a class="header" href="#raw-pointers">Raw Pointers</a></h3>
+<p><strong>References: De-abstracting the abstraction</strong></p>
+<p>First, let's understand what references actually are. Despite all the Rust jargon about "borrowing" and "lifetimes", references are just <strong>pointers</strong> - plain old memory addresses.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let mut x: i32 = 42;          // x lives on stack (4 bytes)
+let x_ref: &amp;i32 = &amp;x;         // x_ref is a pointer to x (8 bytes on 64-bit)
+println!("x is at address: {:p}", x_ref);  // Prints something like: 0x00007ffc1234abcd
+
+// Can't have both immutable and mutable references at the same time:
+let x_mut_ref: &amp;mut i32 = &amp;mut x;  // ❌ Error: x_ref is still in scope
+<span class="boring">}</span></code></pre></pre>
+<p>You can think a reference as a safe pointer guaranteed by the compiler.</p>
+<p><strong>What's in memory :</strong></p>
+<div style='width:100%; height:176px;'><style type="text/css">svg { width: 100% !important; }</style><svg xmlns="http://www.w3.org/2000/svg" width="776" height="176" class="svgbob"><style>.svgbob line, .svgbob path, .svgbob circle, .svgbob rect, .svgbob polygon {  stroke: var(--fg);  stroke-width: 2;  stroke-opacity: 1;  fill-opacity: 1;  stroke-linecap: round;  stroke-linejoin: miter;}.svgbob text {  white-space: pre;  fill: var(--fg);  font-family: Iosevka Fixed, monospace;  font-size: 14px;}.svgbob rect.backdrop {  stroke: none;  fill: transparent;}.svgbob .broken {  stroke-dasharray: 8;}.svgbob .filled {  fill: black;}.svgbob .bg_filled {  fill: transparent;  stroke-width: 1;}.svgbob .nofill {  fill: transparent;}.svgbob .end_marked_arrow {  marker-end: url(#arrow);}.svgbob .start_marked_arrow {  marker-start: url(#arrow);}.svgbob .end_marked_diamond {  marker-end: url(#diamond);}.svgbob .start_marked_diamond {  marker-start: url(#diamond);}.svgbob .end_marked_circle {  marker-end: url(#circle);}.svgbob .start_marked_circle {  marker-start: url(#circle);}.svgbob .end_marked_open_circle {  marker-end: url(#open_circle);}.svgbob .start_marked_open_circle {  marker-start: url(#open_circle);}.svgbob .end_marked_big_open_circle {  marker-end: url(#big_open_circle);}.svgbob .start_marked_big_open_circle {  marker-start: url(#big_open_circle);}</style><defs><marker id="arrow" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,0 0,4 4,2 0,0"></polygon></marker><marker id="diamond" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,2 2,0 4,2 2,4 0,2"></polygon></marker><marker id="circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="filled"></circle></marker><marker id="open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="bg_filled"></circle></marker><marker id="big_open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="3" class="bg_filled"></circle></marker></defs><rect class="backdrop" x="0" y="0" width="776" height="176"></rect><text x="2" y="12" >Stack</text><path d="M 56,0 A 16,16 0,0,0 56,16" class="nofill"></path><text x="58" y="12" >User</text><text x="98" y="12" >Space</text><line x1="144" y1="8" x2="152" y2="8" class="solid"></line><text x="162" y="12" >lower</text><text x="210" y="12" >canonical</text><text x="290" y="12" >addresses</text><text x="370" y="12" >start</text><text x="418" y="12" >with</text><text x="226" y="44" >x:</text><text x="250" y="44" >i32</text><line x1="280" y1="38" x2="288" y2="38" class="solid"></line><line x1="280" y1="42" x2="288" y2="42" class="solid"></line><text x="298" y="44" >42</text><text x="226" y="60" >[0x00][0x00][0x00][0x2A]</text><text x="226" y="108" >x</text><line x1="232" y1="112" x2="240" y2="112" class="solid"></line><text x="242" y="108" >ref:</text><text x="282" y="108" >&amp;i32</text><text x="226" y="124" >[0x00][0x00][0x7F][0xFF]</text><text x="226" y="140" >[0xFF][0xFF][0xFF][0x00]</text><text x="458" y="12" >0x0000</text><path d="M 504,0 A 16,16 0,0,1 504,16" class="nofill"></path><text x="514" y="12" >:</text><line x1="12" y1="32" x2="12" y2="72" class="solid end_marked_open_circle"></line><text x="2" y="76" >L</text><line x1="12" y1="76" x2="12" y2="144" class="solid"></line><text x="18" y="76" >w</text><text x="10" y="156" >↓</text><text x="26" y="44" >0x0000</text><line x1="72" y1="48" x2="80" y2="48" class="solid"></line><text x="82" y="44" >7FFF</text><line x1="112" y1="48" x2="120" y2="48" class="solid"></line><text x="122" y="44" >FFFF</text><line x1="152" y1="48" x2="160" y2="48" class="solid"></line><text x="162" y="44" >FF00</text><text x="34" y="76" >to</text><text x="58" y="76" >high</text><text x="26" y="108" >0x0000</text><line x1="72" y1="112" x2="80" y2="112" class="solid"></line><text x="82" y="108" >7FFF</text><line x1="112" y1="112" x2="120" y2="112" class="solid"></line><text x="122" y="108" >FFFF</text><line x1="152" y1="112" x2="160" y2="112" class="solid"></line><text x="162" y="108" >FF04</text><text x="458" y="124" >Contains</text><path d="M 472,128 A 16,16 0,0,0 472,144" class="nofill"></path><text x="474" y="140" >points</text><text x="530" y="124" >address:</text><text x="530" y="140" >to</text><text x="554" y="140" >x</text><path d="M 560,128 A 16,16 0,0,1 560,144" class="nofill"></path><text x="602" y="124" >0x0000</text><line x1="648" y1="128" x2="656" y2="128" class="solid"></line><text x="658" y="124" >7FFF</text><line x1="688" y1="128" x2="696" y2="128" class="solid"></line><text x="698" y="124" >FFFF</text><line x1="728" y1="128" x2="736" y2="128" class="solid"></line><text x="738" y="124" >FF00</text><g><line x1="204" y1="24" x2="444" y2="24" class="solid"></line><line x1="204" y1="24" x2="204" y2="152" class="solid"></line><line x1="444" y1="24" x2="444" y2="152" class="solid"></line><line x1="204" y1="72" x2="444" y2="72" class="solid"></line><line x1="204" y1="152" x2="444" y2="152" class="solid"></line></g></svg></div>
+<p><strong>Key points about references:</strong></p>
+<ol>
+<li><strong>References are pointers</strong>: <code>&amp;i32</code> is just an 8-byte address (on 64-bit systems)</li>
+<li><strong>They point to existing data</strong>: <code>x_ref</code> contains the address <code>0x0000_7FFF_FFFF_FF00</code> which is where <code>x</code> lives</li>
+<li><strong>Borrow checker enforces rules at compile time</strong>:
+<ul>
+<li>You can have many <code>&amp;T</code> (immutable refs) OR one <code>&amp;mut T</code> (mutable ref)</li>
+<li>But NOT both at the same time</li>
+</ul>
+</li>
+<li><strong>References are always valid</strong>: Compiler guarantees the pointed-to data exists</li>
+</ol>
+<p><strong>Mutable references work the same way:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let mut y: i32 = 100;
+let y_mut_ref: &amp;mut i32 = &amp;mut y;
+*y_mut_ref = 200;  // Dereference and modify
+// y is now 200
+<span class="boring">}</span></code></pre></pre>
+<div style='width:100%; height:160px;'><style type="text/css">svg { width: 100% !important; }</style><svg xmlns="http://www.w3.org/2000/svg" width="648" height="160" class="svgbob"><style>.svgbob line, .svgbob path, .svgbob circle, .svgbob rect, .svgbob polygon {  stroke: var(--fg);  stroke-width: 2;  stroke-opacity: 1;  fill-opacity: 1;  stroke-linecap: round;  stroke-linejoin: miter;}.svgbob text {  white-space: pre;  fill: var(--fg);  font-family: Iosevka Fixed, monospace;  font-size: 14px;}.svgbob rect.backdrop {  stroke: none;  fill: transparent;}.svgbob .broken {  stroke-dasharray: 8;}.svgbob .filled {  fill: black;}.svgbob .bg_filled {  fill: transparent;  stroke-width: 1;}.svgbob .nofill {  fill: transparent;}.svgbob .end_marked_arrow {  marker-end: url(#arrow);}.svgbob .start_marked_arrow {  marker-start: url(#arrow);}.svgbob .end_marked_diamond {  marker-end: url(#diamond);}.svgbob .start_marked_diamond {  marker-start: url(#diamond);}.svgbob .end_marked_circle {  marker-end: url(#circle);}.svgbob .start_marked_circle {  marker-start: url(#circle);}.svgbob .end_marked_open_circle {  marker-end: url(#open_circle);}.svgbob .start_marked_open_circle {  marker-start: url(#open_circle);}.svgbob .end_marked_big_open_circle {  marker-end: url(#big_open_circle);}.svgbob .start_marked_big_open_circle {  marker-start: url(#big_open_circle);}</style><defs><marker id="arrow" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,0 0,4 4,2 0,0"></polygon></marker><marker id="diamond" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,2 2,0 4,2 2,4 0,2"></polygon></marker><marker id="circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="filled"></circle></marker><marker id="open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="bg_filled"></circle></marker><marker id="big_open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="3" class="bg_filled"></circle></marker></defs><rect class="backdrop" x="0" y="0" width="648" height="160"></rect><text x="2" y="12" >Stack:</text><text x="26" y="44" >y:</text><text x="50" y="44" >i32</text><line x1="80" y1="38" x2="88" y2="38" class="solid"></line><line x1="80" y1="42" x2="88" y2="42" class="solid"></line><text x="98" y="44" >100</text><text x="26" y="76" >y</text><line x1="32" y1="80" x2="40" y2="80" class="solid"></line><text x="42" y="76" >mut</text><line x1="64" y1="80" x2="72" y2="80" class="solid"></line><text x="74" y="76" >ref:</text><text x="114" y="76" >&amp;mut</text><text x="154" y="76" >i32</text><text x="26" y="92" >[pointer</text><text x="98" y="92" >to</text><text x="122" y="92" >y]</text><text x="266" y="44" >0x0000</text><line x1="312" y1="48" x2="320" y2="48" class="solid"></line><text x="322" y="44" >7FFF</text><line x1="352" y1="48" x2="360" y2="48" class="solid"></line><text x="362" y="44" >FFFF</text><line x1="392" y1="48" x2="400" y2="48" class="solid"></line><text x="402" y="44" >FF10</text><path d="M 448,32 A 16,16 0,0,0 448,48" class="nofill"></path><text x="450" y="44" >initially</text><text x="530" y="44" >100,</text><text x="570" y="44" >then</text><text x="610" y="44" >200</text><path d="M 632,32 A 16,16 0,0,1 632,48" class="nofill"></path><text x="266" y="76" >0x0000</text><line x1="312" y1="80" x2="320" y2="80" class="solid"></line><text x="322" y="76" >7FFF</text><line x1="352" y1="80" x2="360" y2="80" class="solid"></line><text x="362" y="76" >FFFF</text><line x1="392" y1="80" x2="400" y2="80" class="solid"></line><text x="402" y="76" >FF14</text><path d="M 448,64 A 16,16 0,0,0 448,80" class="nofill"></path><text x="450" y="76" >8</text><text x="466" y="76" >bytes</text><path d="M 504,64 A 16,16 0,0,1 504,80" class="nofill"></path><text x="266" y="92" >Contains:</text><text x="346" y="92" >0x0000</text><line x1="392" y1="96" x2="400" y2="96" class="solid"></line><text x="402" y="92" >7FFF</text><line x1="432" y1="96" x2="440" y2="96" class="solid"></line><text x="442" y="92" >FFFF</text><line x1="472" y1="96" x2="480" y2="96" class="solid"></line><text x="482" y="92" >FF10</text><text x="34" y="140" >*y</text><line x1="48" y1="144" x2="56" y2="144" class="solid"></line><text x="58" y="140" >mut</text><line x1="80" y1="144" x2="88" y2="144" class="solid"></line><text x="90" y="140" >ref</text><line x1="120" y1="134" x2="128" y2="134" class="solid"></line><line x1="120" y1="138" x2="128" y2="138" class="solid"></line><text x="138" y="140" >200</text><text x="242" y="140" >Writes</text><text x="298" y="140" >through</text><text x="362" y="140" >the</text><text x="394" y="140" >pointer</text><g><line x1="4" y1="24" x2="244" y2="24" class="solid"></line><line x1="4" y1="24" x2="4" y2="104" class="solid"></line><line x1="244" y1="24" x2="244" y2="104" class="solid"></line><line x1="4" y1="56" x2="244" y2="56" class="solid"></line><line x1="4" y1="104" x2="244" y2="104" class="solid"></line></g><g><line x1="152" y1="88" x2="220" y2="88" class="solid"></line><line x1="220" y1="88" x2="220" y2="136" class="solid"></line><line x1="176" y1="136" x2="220" y2="136" class="solid"></line></g></svg></div>
+<p><strong>References vs Raw Pointers:</strong></p>
+<ul>
+<li><strong>References (<code>&amp;T</code>, <code>&amp;mut T</code>)</strong>: Safe, borrow-checked, always valid</li>
+<li><strong>Raw pointers (<code>*const T</code>, <code>*mut T</code>)</strong>: Unsafe, no checking, may be invalid</li>
+</ul>
+<p>Let's see raw pointers next:</p>
+<p><strong>Raw pointers come in two types, mirroring safe references:</strong></p>
+<ol>
+<li><strong><code>*const T</code></strong> - Read-only raw pointer, like <code>&amp;T</code> but without safety guarantees</li>
+<li><strong><code>*mut T</code></strong> - Mutable raw pointer, like <code>&amp;mut T</code> but without safety guarantees</li>
+</ol>
+<p><strong>What safety guarantees are removed?</strong></p>
+<p>With safe references (<code>&amp;T</code>, <code>&amp;mut T</code>), the compiler guarantees:</p>
+<ul>
+<li>✅ Always points to valid, initialized data</li>
+<li>✅ Properly aligned for the type</li>
+<li>✅ Won't outlive the data it points to (lifetime checking)</li>
+<li>✅ Exclusive access for <code>&amp;mut T</code> (no aliasing mutable references)</li>
+</ul>
+<p>With raw pointers (<code>*const T</code>, <code>*mut T</code>), <strong>you</strong> must ensure:</p>
+<ul>
+<li>❌ May point to invalid/uninitialized data</li>
+<li>❌ May be misaligned</li>
+<li>❌ May outlive the data (dangling pointer)</li>
+<li>❌ Multiple <code>*mut T</code> can exist to same location (you must prevent data races)</li>
+</ul>
+<p><strong>Can raw pointers point to arbitrary addresses like in C?</strong></p>
+<p>Yes! Unlike references, raw pointers can be created from arbitrary addresses:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Point to GPU's VRAM framebuffer at a specific address
+// Example: NVIDIA GeForce GTX 1650's prefetchable memory region (from lspci)
+// Memory at c0000000 (64-bit, prefetchable) [size=256M]
+let framebuffer: *mut u32 = 0xC000_0000 as *mut u32;
+
+// Each pixel is a 32-bit color value (RGBA format)
+// Pixel at position (x=100, y=50) in a 1920x1080 screen
+let pixel_offset = (50 * 1920) + 100;  // y * width + x
+let pixel_ptr = unsafe { framebuffer.add(pixel_offset) };
+
+unsafe {
+    // Write a red pixel: 0xFF0000FF (RGBA: Red=255, Green=0, Blue=0, Alpha=255)
+    *pixel_ptr = 0xFF0000FF;  // Boom! A red dot appears on screen
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>This example won't actually work</strong> because the virtual address 0xC000_0000 in your process's
+address space is <strong>not mapped</strong> to anything. While the GPU framebuffer exists at physical address
+0xC000_0000, your process doesn't have a page table entry mapping the virtual address 0xC000_0000
+to that physical location. Dereferencing it causes a page fault → segmentation fault.</p>
+<blockquote>
+<p><strong>Note:</strong> Attempting to mmap this physical address region (e.g., via <code>/dev/mem</code>) will be
+<strong>rejected by the kernel</strong>. Modern Linux kernels have <code>CONFIG_STRICT_DEVMEM</code> enabled, which
+prevents mapping memory regions already claimed by device drivers. Since the GPU driver (nvidia,
+nouveau, amdgpu, etc.) has registered this PCI BAR region, direct userspace access is blocked.
+Additionally, the display server (Wayland/X11) has exclusive control via the DRM subsystem.</p>
+<p>This pattern works in: kernel drivers (which own the hardware), embedded systems without a
+display server, or bare-metal environments. This example demonstrates raw pointers' ability
+to reference arbitrary addresses - essential for hardware interaction and systems programming.</p>
+</blockquote>
+<p>This is <strong>extremely dangerous</strong> but necessary for:</p>
+<ul>
+<li>Embedded systems (memory-mapped hardware)</li>
+<li>Operating system development</li>
+<li>Interfacing with C libraries</li>
+<li>Performance-critical code with manual memory management</li>
+</ul>
+<p><strong>Key difference from safe references:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let mut y: i32 = 42;
+
+// ❌ Safe references: Can't have multiple mutable refs
+let y_ref1 = &amp;mut y;
+let y_ref2 = &amp;mut y;  // ERROR: cannot borrow as mutable more than once
+
+// ✅ Raw pointers: Can have multiple mutable pointers
+let y_ptr1: *mut i32 = &amp;mut y;
+let y_ptr2: *mut i32 = &amp;mut y;
+let y_ptr3: *mut i32 = &amp;mut y;  // All OK! (but unsafe to use)
+
+unsafe {
+    *y_ptr1 = 100;  // Write 100 to y
+    *y_ptr2 = 200;  // Overwrite with 200
+    *y_ptr3 = 300;  // Overwrite with 300 (last write wins)
+
+    // All three pointers point to the same location, so they all read 300
+    println!("y_ptr1, y_ptr2, y_ptr3: {}, {}, {}", *y_ptr1, *y_ptr2, *y_ptr3);
+    // Output: y_ptr1, y_ptr2, y_ptr3: 300, 300, 300
+}
+
+println!("y is now: {}", y);  // Prints: 300
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Why this is dangerous:</strong> With multiple <code>*mut</code> pointers, you can create data races and undefined behavior - the compiler won't stop you!</p>
+<p><strong>Pointers to heap data:</strong></p>
+<p>So far, all our pointer examples pointed to stack data (like <code>&amp;x</code> where <code>x</code> is on the stack) or arbitrary addresses. But how do pointers point to heap-allocated data? The answer: <strong>allocation</strong>.</p>
+<p>To allocate memory on the heap, we use <code>std::alloc::alloc()</code> which returns a raw pointer to the allocated memory:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::alloc::{alloc, dealloc, Layout};
+
+unsafe {
+    // 1. Define the memory layout: we want space for 3 i32s (12 bytes)
+    let layout = Layout::array::&lt;i32&gt;(3).unwrap();
+
+    // 2. Allocate memory on the heap (alloc is unsafe!)
+    let ptr: *mut i32 = alloc(layout) as *mut i32;
+
+    // 3. Check if allocation succeeded (alloc returns null on failure)
+    if ptr.is_null() {
+        panic!("Allocation failed!");
+    }
+
+    // 4. Now ptr points to heap! We can write to it
+    *ptr = 42;
+    println!("Value at heap: {}", *ptr);  // Prints: 42
+
+    // 5. Remember we allocated space for 3 i32s, so we can treat ptr like an array of 3
+    *ptr.add(0) = 1;  // Write 1 at index 0 (first i32)
+    *ptr.add(1) = 2;  // Write 2 at index 1 (second i32)
+    *ptr.add(2) = 3;  // Write 3 at index 2 (third i32)
+
+    // 6. What happens if we write beyond our allocation?
+    // *ptr.add(3) = 4;  // ⚠️ UNDEFINED BEHAVIOR! We only allocated 3 i32s (indices 0-2)
+
+    // 7. Read the values back
+    println!("Heap data: {}, {}, {}", *ptr.add(0), *ptr.add(1), *ptr.add(2));
+    // Output: Heap data: 1, 2, 3
+
+    // 8. We MUST manually deallocate when done!
+    dealloc(ptr as *mut u8, layout);
+    // After dealloc, ptr is now a dangling pointer - using it is undefined behavior!
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Wait, primitives on the heap?</strong></p>
+<p>Many people think primitives like <code>i32</code> always live on the stack. But that's not true! We just allocated three <code>i32</code>s <strong>on the heap</strong> using <code>alloc()</code>. The location of data (stack vs heap) isn't determined by the type - it's determined by <strong>how you allocate it</strong>:</p>
+<ul>
+<li><code>let x: i32 = 42;</code> → <code>x</code> lives on <strong>stack</strong> (local variable)</li>
+<li><code>alloc(Layout::new::&lt;i32&gt;())</code> → returns pointer to <strong>heap</strong> (manual allocation)</li>
+</ul>
+<p>In our example, the three <code>i32</code> values (1, 2, 3) are sitting on the heap at addresses 0x5555_8000_0000, 0x5555_8000_0004, and 0x5555_8000_0008. They're heap-allocated primitives!</p>
+<p><strong>What happens if we write beyond our allocation?</strong></p>
+<p>Writing to <code>*ptr.add(3)</code> is <strong>undefined behavior</strong> - we only allocated 3 i32s (indices 0-2). Writing to index 3 is out-of-bounds and could:</p>
+<ul>
+<li><strong>Corrupt other heap data</strong> - overwrite someone else's allocation</li>
+<li><strong>Trigger a segfault</strong> - if <code>ptr+12</code> isn't in valid memory</li>
+<li><strong>Appear to work</strong> - but corrupt memory silently</li>
+<li><strong>Cause mysterious bugs later</strong> - when the corrupted data is used</li>
+</ul>
+<p><strong>Important:</strong> This won't cause a compilation error! Inside <code>unsafe</code> blocks, the compiler trusts you completely. It won't check bounds, validate pointers, or prevent undefined behavior. That's your responsibility now.</p>
+<p>Unlike <code>Vec</code>, raw pointers don't do bounds checking! <code>Vec</code> would panic on <code>vec[3]</code> if <code>len=3</code>, but raw pointers trust you completely. This is why manual memory management is dangerous.</p>
+<p><strong>Memory layout:</strong></p>
+<p>After *ptr.add(2) = 3, the heap looks like this:</p>
+<div style='width:100%; height:192px;'><style type="text/css">svg { width: 100% !important; }</style><svg xmlns="http://www.w3.org/2000/svg" width="800" height="192" class="svgbob"><style>.svgbob line, .svgbob path, .svgbob circle, .svgbob rect, .svgbob polygon {  stroke: var(--fg);  stroke-width: 2;  stroke-opacity: 1;  fill-opacity: 1;  stroke-linecap: round;  stroke-linejoin: miter;}.svgbob text {  white-space: pre;  fill: var(--fg);  font-family: Iosevka Fixed, monospace;  font-size: 14px;}.svgbob rect.backdrop {  stroke: none;  fill: transparent;}.svgbob .broken {  stroke-dasharray: 8;}.svgbob .filled {  fill: black;}.svgbob .bg_filled {  fill: transparent;  stroke-width: 1;}.svgbob .nofill {  fill: transparent;}.svgbob .end_marked_arrow {  marker-end: url(#arrow);}.svgbob .start_marked_arrow {  marker-start: url(#arrow);}.svgbob .end_marked_diamond {  marker-end: url(#diamond);}.svgbob .start_marked_diamond {  marker-start: url(#diamond);}.svgbob .end_marked_circle {  marker-end: url(#circle);}.svgbob .start_marked_circle {  marker-start: url(#circle);}.svgbob .end_marked_open_circle {  marker-end: url(#open_circle);}.svgbob .start_marked_open_circle {  marker-start: url(#open_circle);}.svgbob .end_marked_big_open_circle {  marker-end: url(#big_open_circle);}.svgbob .start_marked_big_open_circle {  marker-start: url(#big_open_circle);}</style><defs><marker id="arrow" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,0 0,4 4,2 0,0"></polygon></marker><marker id="diamond" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,2 2,0 4,2 2,4 0,2"></polygon></marker><marker id="circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="filled"></circle></marker><marker id="open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="bg_filled"></circle></marker><marker id="big_open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="3" class="bg_filled"></circle></marker></defs><rect class="backdrop" x="0" y="0" width="800" height="192"></rect><rect x="292" y="136" width="48" height="32" class="solid nofill" rx="0"></rect><text x="314" y="156" >4</text><text x="2" y="12" >Stack</text><path d="M 56,0 A 16,16 0,0,0 56,16" class="nofill"></path><text x="58" y="12" >0x7FFF</text><line x1="104" y1="16" x2="112" y2="16" class="solid"></line><text x="114" y="12" >FFFF</text><line x1="144" y1="16" x2="152" y2="16" class="solid"></line><text x="154" y="12" >FF00</text><path d="M 184,0 A 16,16 0,0,1 184,16" class="nofill"></path><text x="306" y="12" >Heap</text><path d="M 352,0 A 16,16 0,0,0 352,16" class="nofill"></path><text x="354" y="12" >0x5555</text><line x1="400" y1="16" x2="408" y2="16" class="solid"></line><text x="410" y="12" >8000</text><line x1="440" y1="16" x2="448" y2="16" class="solid"></line><text x="450" y="12" >0000</text><path d="M 480,0 A 16,16 0,0,1 480,16" class="nofill"></path><path d="M 288,16 A 16,16 0,0,0 288,32" class="nofill"></path><text x="290" y="28" >12</text><text x="314" y="28" >bytes</text><text x="362" y="28" >total:</text><text x="418" y="28" >3</text><text x="434" y="28" >×4</text><line x1="456" y1="24" x2="464" y2="24" class="solid"></line><text x="466" y="28" >byte</text><text x="314" y="60" >1</text><text x="314" y="92" >2</text><text x="314" y="124" >3</text><text x="506" y="28" >i32s</text><path d="M 536,16 A 16,16 0,0,1 536,32" class="nofill"></path><text x="58" y="60" >0x5555</text><line x1="104" y1="64" x2="112" y2="64" class="solid"></line><text x="114" y="60" >8000</text><line x1="144" y1="64" x2="152" y2="64" class="solid"></line><text x="154" y="60" >0000</text><line x1="200" y1="56" x2="272" y2="56" class="solid"></line><polygon points="272,52 280,56 272,60" class="filled"></polygon><text x="2" y="60" >ptr</text><text x="266" y="92" >+4</text><text x="266" y="124" >+8</text><text x="258" y="156" >+12</text><text x="354" y="156" >*ptr.add</text><path d="M 424,144 A 16,16 0,0,0 424,160" class="nofill"></path><text x="426" y="156" >3</text><path d="M 432,144 A 16,16 0,0,1 432,160" class="nofill"></path><line x1="448" y1="150" x2="456" y2="150" class="solid"></line><line x1="448" y1="154" x2="456" y2="154" class="solid"></line><text x="466" y="156" >4</text><text x="482" y="156" >changed</text><text x="546" y="156" >this,</text><text x="594" y="156" >which</text><text x="642" y="156" >is</text><text x="666" y="156" >not</text><text x="698" y="156" >owned</text><text x="746" y="156" >by</text><text x="770" y="156" >us!</text><g><line x1="292" y1="40" x2="340" y2="40" class="solid"></line><line x1="292" y1="40" x2="292" y2="64" class="solid"></line><line x1="340" y1="40" x2="340" y2="64" class="solid"></line></g><g><line x1="292" y1="72" x2="340" y2="72" class="solid"></line><line x1="292" y1="72" x2="292" y2="96" class="solid"></line><line x1="340" y1="72" x2="340" y2="96" class="solid"></line></g><g><line x1="292" y1="104" x2="340" y2="104" class="solid"></line><line x1="292" y1="104" x2="292" y2="128" class="solid"></line><line x1="340" y1="104" x2="340" y2="128" class="solid"></line></g><g><line x1="36" y1="40" x2="212" y2="40" class="solid"></line><line x1="36" y1="40" x2="36" y2="72" class="solid"></line><line x1="212" y1="40" x2="212" y2="48" class="solid"></line><line x1="36" y1="72" x2="212" y2="72" class="solid"></line><line x1="212" y1="64" x2="212" y2="72" class="solid"></line></g></svg></div>
+<p><strong>Key points:</strong></p>
+<ol>
+<li><strong><code>alloc()</code> returns a pointer to heap memory</strong> - the allocated bytes live on the heap</li>
+<li><strong>Manual deallocation is required</strong> - forgetting <code>dealloc()</code> causes a memory leak</li>
+<li><strong>After <code>dealloc()</code>, the pointer is dangling</strong> - using it causes undefined behavior</li>
+<li><strong>This is extremely unsafe</strong> - you must ensure:
+<ul>
+<li>The layout matches what you allocated</li>
+<li>You don't use the pointer after dealloc</li>
+<li>You don't call dealloc twice on the same pointer</li>
+</ul>
+</li>
+</ol>
+<p><strong>Smart pointers do this for you:</strong></p>
+<p>Types like <code>Vec</code>, <code>String</code>, and <code>Box</code> internally use <code>alloc()</code> and <code>dealloc()</code>, but they:</p>
+<ul>
+<li>Call <code>alloc()</code> automatically when you create them</li>
+<li>Store the pointer in a struct on the stack</li>
+<li>Call <code>dealloc()</code> automatically in their <code>Drop</code> implementation</li>
+<li>Prevent you from using dangling pointers (via the borrow checker)</li>
+</ul>
+<h3 id="the-heap"><a class="header" href="#the-heap">The Heap</a></h3>
+<p><strong>What lives here:</strong></p>
+<p>Since we now know about allocation, what lives here is anything that was allocated on the heap. Heap allocation needs two components:</p>
+<ul>
+<li>A raw pointer (to track where the allocation is)</li>
+<li>Allocation management (calling <code>alloc()</code> and <code>dealloc()</code>)</li>
+</ul>
+<p>Rather than asking "which types live on the heap?", we should ask: <strong>which Rust standard library types manage heap allocations internally?</strong></p>
+<p>These types have a raw pointer field and call <code>alloc()</code>/<code>dealloc()</code>:</p>
+<ul>
+<li><code>Box&lt;T&gt;</code> - the <code>T</code> value lives on heap</li>
+<li><code>Vec&lt;T&gt;</code> - the array of <code>T</code> elements lives on heap</li>
+<li><code>String</code> - the character data lives on heap</li>
+<li><code>HashMap&lt;K, V&gt;</code> - the buckets and entries live on heap</li>
+<li><code>Rc&lt;T&gt;</code> / <code>Arc&lt;T&gt;</code> - the <code>T</code> value lives on heap</li>
+</ul>
+<p><strong>Important:</strong> Types like <code>Option&lt;T&gt;</code>, <code>Result&lt;T, E&gt;</code>, <code>Cell&lt;T&gt;</code>, and <code>RefCell&lt;T&gt;</code> don't allocate on the heap by themselves. They're just wrappers around <code>T</code>:</p>
+<ul>
+<li><code>Option&lt;i32&gt;</code> - entirely on stack (just an enum)</li>
+<li><code>Option&lt;Box&lt;i32&gt;&gt;</code> - Box's pointer on stack, the <code>i32</code> on heap (because of <code>Box</code>, not <code>Option</code>)</li>
+<li><code>RefCell&lt;Vec&lt;i32&gt;&gt;</code> - RefCell and Vec metadata on stack, Vec's array data on heap (because of <code>Vec</code>, not <code>RefCell</code>)</li>
+</ul>
+<p><strong>How to know if a type allocates on the heap:</strong></p>
+<p>Use "Go to Definition" in your IDE (or check the Rust standard library docs) to inspect the type's internal structure. If you see pointer fields like <code>*mut T</code>, that type manages heap allocations:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Go to Definition on Option&lt;T&gt; shows:
+pub enum Option&lt;T&gt; {
+    None,
+    Some(T), // ← Just contains T directly, no pointer!
+}
+
+// Go to Definition on Box&lt;T&gt; shows:
+pub struct Box&lt;T&gt; {
+    ptr: NonNull&lt;T&gt;,  // ← Let's Go to Definition on NonNull&lt;T&gt; to see what it is!
+}
+pub struct NonNull&lt;T&gt; {
+    pointer: *const T, // ← Pointer, so Box&lt;T&gt; manages heap allocation
+}
+
+// Go to Definition on RefCell&lt;T&gt; shows:
+pub struct RefCell&lt;T&gt; {
+    borrow: Cell&lt;BorrowFlag&gt;,
+    value: UnsafeCell&lt;T&gt;,  // ← Let's Go to Definition on UnsafeCell&lt;T&gt; to see what it is!
+}
+pub struct UnsafeCell&lt;T&gt; {
+    value: T,  // ← Just contains T directly, no pointer!
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>The rule:</strong> If the type has a pointer field (<code>*mut T</code>, <code>*const T</code>, <code>NonNull&lt;T&gt;</code>), it manages heap allocation. Otherwise, it's just a wrapper that lives on the stack.</p>
+<p><strong>Characteristics:</strong></p>
+<ul>
+<li><strong>Manual management</strong>: You allocate/deallocate (Rust does this for you via <code>Drop</code>)</li>
+<li><strong>Slower allocation</strong>: Requires finding a free block (complex algorithms)</li>
+<li><strong>Large size</strong>: Typically gigabytes (depends on available RAM)</li>
+</ul>
+<p><strong>Example:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn example() {
+    // Stack: 24 bytes (Vec metadata)
+    // Heap: 400 bytes (100 * 4-byte integers)
+    let v = vec![0; 100];
+
+    // Stack: 24 bytes (String metadata)
+    // Heap: Variable (depends on string length)
+    let s = String::from("hello");
+
+    // Stack: 8 bytes (Box pointer)
+    // Heap: 4 bytes (i32)
+    let b = Box::new(42);
+}  // Drop is called, heap memory is freed
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Heap allocation is expensive:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Allocates once, then grows as needed (reallocating)
+let mut v = Vec::new();
+for i in 0..1000 {
+    v.push(i);  // Might allocate/reallocate
+}
+
+// Pre-allocate: only allocates once
+let mut v = Vec::with_capacity(1000);
+for i in 0..1000 {
+    v.push(i);  // No allocation needed
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="static-data-data-segment"><a class="header" href="#static-data-data-segment">Static Data (DATA Segment)</a></h3>
+<p><strong>What lives here:</strong></p>
+<ul>
+<li><code>static</code> variables</li>
+<li><code>const</code> values (inlined, but literals live here)</li>
+<li>String literals (<code>"hello"</code>)</li>
+<li>Binary data embedded at compile time</li>
+</ul>
+<p><strong>Characteristics:</strong></p>
+<ul>
+<li><strong>Loaded at program start</strong>: Burned into the executable</li>
+<li><strong>Lives forever</strong>: Never deallocated (program lifetime)</li>
+<li><strong>Fixed size</strong>: Known at compile time</li>
+<li><strong>Read-only or read-write</strong>: Depends on whether it's <code>static</code> or <code>static mut</code></li>
+</ul>
+<p><strong>Example:</strong></p>
+<pre><pre class="playground"><code class="language-rust">static GREETING: &amp;str = "Hello, world!";  // DATA segment
+const MAX: i32 = 100;                     // Inlined (no memory allocated)
+
+fn main() {
+    println!("{}", GREETING);  // Uses data from DATA segment
+    let x = MAX;               // Constant inlined: let x = 100;
+}</code></pre></pre>
+<p><strong>String literals are special:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let s1 = "hello";  // Points to DATA segment
+let s2 = "hello";  // Points to SAME location in DATA segment!
+assert_eq!(s1.as_ptr(), s2.as_ptr());  // Same address!
+
+let s3 = String::from("hello");  // Allocates on heap (different address)
+<span class="boring">}</span></code></pre></pre>
+<h2 id="visualizing-types"><a class="header" href="#visualizing-types">Visualizing Types</a></h2>
+<p>Let's see where different types memory layout:</p>
+<h3 id="simple-types-copy"><a class="header" href="#simple-types-copy">Simple Types (Copy)</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let x: i32 = 42;
+let y: bool = true;
+let z: f64 = 3.14;
+
+Stack:
+┌──────────────┐
+│ x: i32 = 42  │  4 bytes
+│ y: bool = 1  │  1 byte (+ padding)
+│ z: f64 = ... │  8 bytes
+└──────────────┘
+
+Heap: (nothing)
+<span class="boring">}</span></code></pre></pre>
+<h3 id="arrays-fixed-size"><a class="header" href="#arrays-fixed-size">Arrays (Fixed Size)</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let arr: [i32; 5] = [1, 2, 3, 4, 5];
+
+Stack:
+┌──────────────────────────┐
+│ arr: [i32; 5]            │
+│   [1][2][3][4][5]        │  20 bytes
+└──────────────────────────┘
+
+Heap: (nothing)
+<span class="boring">}</span></code></pre></pre>
+<h3 id="string"><a class="header" href="#string">String</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let s = String::from("hello");
+
+Stack:                      Heap:
+┌──────────────────┐       ┌──────────────────┐
+│ s: String        │       │                  │
+│   ptr ──────────────────&gt;│ [h][e][l][l][o]  │
+│   len: 5         │       │  5 bytes         │
+│   cap: 5         │       │                  │
+└──────────────────┘       └──────────────────┘
+    24 bytes                   5 bytes (+ capacity)
+<span class="boring">}</span></code></pre></pre>
+<h3 id="vec"><a class="header" href="#vec">Vec</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let v = vec![1, 2, 3];
+
+Stack:                      Heap:
+┌──────────────────┐       ┌──────────────────┐
+│ v: Vec&lt;i32&gt;      │       │                  │
+│   ptr ──────────────────&gt;│ [1][2][3]        │
+│   len: 3         │       │  12 bytes        │
+│   cap: 3         │       │                  │
+└──────────────────┘       └──────────────────┘
+    24 bytes                   12 bytes
+<span class="boring">}</span></code></pre></pre>
+<h3 id="box"><a class="header" href="#box">Box</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let b = Box::new(42);
+
+Stack:                      Heap:
+┌──────────────────┐       ┌──────┐
+│ b: Box&lt;i32&gt;      │       │      │
+│   ptr ──────────────────&gt;│  42  │
+└──────────────────┘       │      │
+    8 bytes                └──────┘
+                            4 bytes
+<span class="boring">}</span></code></pre></pre>
+<h3 id="nested-types"><a class="header" href="#nested-types">Nested Types</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let v: Vec&lt;String&gt; = vec![
+    String::from("hello"),
+    String::from("world"),
+];
+
+Stack:                          Heap:
+┌────────────────────┐         ┌─────────────────────────────────────────┐
+│ v: Vec&lt;String&gt;     │         │  String 0:                              │
+│   ptr ─────────────────────&gt; │    ├─ ptr  ──┐                          │
+│   len: 2           │         │    ├─ len: 5 │  (24 bytes)              │
+│   cap: 2           │         │    └─ cap: 5 │                          │
+└────────────────────┘         │              │                          │
+                               │  String 1:   │                          │
+                               │    ├─ ptr  ──┼──┐                       │
+                               │    ├─ len: 5 │  │  (24 bytes)           │
+                               │    └─ cap: 5 │  │                       │
+                               │              ↓  │                       │
+                               │   "hello"  [h][e│[l][l][o] (5 bytes)    │
+                               │                 ↓                       │
+                               │       "world"  [w][o][r][l][d] (5 bytes)│
+                               └─────────────────────────────────────────┘
+
+- Stack: 24 bytes (Vec metadata)
+- Heap: 48 bytes (2 × String metadata: 2 × 24 bytes) + 10 bytes (string data)
+- Total heap: 58 bytes
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Three levels of indirection!</strong></p>
+<ol>
+<li><code>v</code> points to array of <code>String</code>s</li>
+<li>Each <code>String</code> points to its character data</li>
+<li>All on the heap</li>
+</ol>
+<h2 id="common-misconceptions"><a class="header" href="#common-misconceptions">Common Misconceptions</a></h2>
+<h3 id="misconception-1-vec-allocates-on-the-stack"><a class="header" href="#misconception-1-vec-allocates-on-the-stack">Misconception #1: "Vec allocates on the stack"</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let v = Vec::new();
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Wrong mental model:</strong></p>
+<div style='width:100%; height:96px;'><style type="text/css">svg { width: 100% !important; }</style><svg xmlns="http://www.w3.org/2000/svg" width="424" height="96" class="svgbob"><style>.svgbob line, .svgbob path, .svgbob circle, .svgbob rect, .svgbob polygon {  stroke: var(--fg);  stroke-width: 2;  stroke-opacity: 1;  fill-opacity: 1;  stroke-linecap: round;  stroke-linejoin: miter;}.svgbob text {  white-space: pre;  fill: var(--fg);  font-family: Iosevka Fixed, monospace;  font-size: 14px;}.svgbob rect.backdrop {  stroke: none;  fill: transparent;}.svgbob .broken {  stroke-dasharray: 8;}.svgbob .filled {  fill: black;}.svgbob .bg_filled {  fill: transparent;  stroke-width: 1;}.svgbob .nofill {  fill: transparent;}.svgbob .end_marked_arrow {  marker-end: url(#arrow);}.svgbob .start_marked_arrow {  marker-start: url(#arrow);}.svgbob .end_marked_diamond {  marker-end: url(#diamond);}.svgbob .start_marked_diamond {  marker-start: url(#diamond);}.svgbob .end_marked_circle {  marker-end: url(#circle);}.svgbob .start_marked_circle {  marker-start: url(#circle);}.svgbob .end_marked_open_circle {  marker-end: url(#open_circle);}.svgbob .start_marked_open_circle {  marker-start: url(#open_circle);}.svgbob .end_marked_big_open_circle {  marker-end: url(#big_open_circle);}.svgbob .start_marked_big_open_circle {  marker-start: url(#big_open_circle);}</style><defs><marker id="arrow" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,0 0,4 4,2 0,0"></polygon></marker><marker id="diamond" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,2 2,0 4,2 2,4 0,2"></polygon></marker><marker id="circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="filled"></circle></marker><marker id="open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="bg_filled"></circle></marker><marker id="big_open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="3" class="bg_filled"></circle></marker></defs><rect class="backdrop" x="0" y="0" width="424" height="96"></rect><rect x="4" y="24" width="168" height="48" class="solid nofill" rx="0"></rect><text x="18" y="44" >v:</text><text x="42" y="44" >Vec&lt;i32&gt;</text><text x="34" y="60" >[data</text><text x="82" y="60" >goes</text><text x="122" y="60" >here]</text><text x="2" y="12" >Stack:</text><text x="194" y="60" >←</text><text x="210" y="60" >NO!</text><text x="242" y="60" >Data</text><text x="282" y="60" >doesn&#39;t</text><text x="346" y="60" >live</text><text x="386" y="60" >here</text></svg></div>
+<p><strong>Correct mental model:</strong></p>
+<div style='width:100%; height:128px;'><style type="text/css">svg { width: 100% !important; }</style><svg xmlns="http://www.w3.org/2000/svg" width="464" height="128" class="svgbob"><style>.svgbob line, .svgbob path, .svgbob circle, .svgbob rect, .svgbob polygon {  stroke: var(--fg);  stroke-width: 2;  stroke-opacity: 1;  fill-opacity: 1;  stroke-linecap: round;  stroke-linejoin: miter;}.svgbob text {  white-space: pre;  fill: var(--fg);  font-family: Iosevka Fixed, monospace;  font-size: 14px;}.svgbob rect.backdrop {  stroke: none;  fill: transparent;}.svgbob .broken {  stroke-dasharray: 8;}.svgbob .filled {  fill: black;}.svgbob .bg_filled {  fill: transparent;  stroke-width: 1;}.svgbob .nofill {  fill: transparent;}.svgbob .end_marked_arrow {  marker-end: url(#arrow);}.svgbob .start_marked_arrow {  marker-start: url(#arrow);}.svgbob .end_marked_diamond {  marker-end: url(#diamond);}.svgbob .start_marked_diamond {  marker-start: url(#diamond);}.svgbob .end_marked_circle {  marker-end: url(#circle);}.svgbob .start_marked_circle {  marker-start: url(#circle);}.svgbob .end_marked_open_circle {  marker-end: url(#open_circle);}.svgbob .start_marked_open_circle {  marker-start: url(#open_circle);}.svgbob .end_marked_big_open_circle {  marker-end: url(#big_open_circle);}.svgbob .start_marked_big_open_circle {  marker-start: url(#big_open_circle);}</style><defs><marker id="arrow" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,0 0,4 4,2 0,0"></polygon></marker><marker id="diamond" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,2 2,0 4,2 2,4 0,2"></polygon></marker><marker id="circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="filled"></circle></marker><marker id="open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="bg_filled"></circle></marker><marker id="big_open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="3" class="bg_filled"></circle></marker></defs><rect class="backdrop" x="0" y="0" width="464" height="128"></rect><rect x="204" y="24" width="88" height="64" class="solid nofill" rx="0"></rect><path d="M 224,48 A 16,16 0,0,0 224,64" class="nofill"></path><text x="226" y="60" >data</text><path d="M 256,48 A 16,16 0,0,1 256,64" class="nofill"></path><text x="2" y="12" >Stack:</text><text x="18" y="44" >v:</text><text x="42" y="44" >Vec&lt;i32&gt;</text><text x="34" y="60" >ptr</text><line x1="64" y1="56" x2="176" y2="56" class="solid"></line><polygon points="176,52 184,56 176,60" class="filled"></polygon><text x="34" y="76" >len</text><line x1="60" y1="64" x2="60" y2="96" class="broken"></line><text x="74" y="76" >0</text><text x="34" y="92" >cap</text><text x="74" y="92" >0</text><text x="210" y="12" >Heap:</text><text x="314" y="60" >←</text><text x="330" y="60" >Data</text><text x="370" y="60" >lives</text><text x="418" y="60" >here!</text><g><line x1="4" y1="24" x2="124" y2="24" class="solid"></line><line x1="4" y1="24" x2="4" y2="104" class="solid"></line><line x1="124" y1="24" x2="124" y2="48" class="solid"></line><line x1="124" y1="64" x2="124" y2="104" class="solid"></line><line x1="4" y1="104" x2="124" y2="104" class="solid"></line></g></svg></div>
+<h3 id="misconception-2-string-is-just-text"><a class="header" href="#misconception-2-string-is-just-text">Misconception #2: "String is just text"</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let s = String::from("hello");
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Wrong:</strong>
+"s is the text 'hello'"</p>
+<p><strong>Correct:</strong>
+"s is a struct containing a pointer to the text 'hello' on the heap"</p>
+<pre><code>Stack: s = { ptr: 0x1000, len: 5, cap: 5 }  (24 bytes)
+Heap:  0x1000 = "hello"                     (5 bytes)
+</code></pre>
+<h3 id="misconception-3-box-makes-things-bigger"><a class="header" href="#misconception-3-box-makes-things-bigger">Misconception #3: "Box makes things bigger"</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let x = 42;           // 4 bytes
+let b = Box::new(42); // How many bytes?
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Answer:</strong> <code>b</code> is 8 bytes (just a pointer), but total memory usage is 12 bytes (8 + 4).</p>
+<p><strong>However:</strong> Boxing can actually <strong>save stack space</strong> for large types:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let huge = [0u8; 1_000_000];        // 1 MB on stack! Dangerous!
+let boxed = Box::new([0u8; 1_000_000]); // 8 bytes on stack, 1 MB on heap
+<span class="boring">}</span></code></pre></pre>
+<h3 id="misconception-4-all-heap-allocations-are-slow"><a class="header" href="#misconception-4-all-heap-allocations-are-slow">Misconception #4: "All heap allocations are slow"</a></h3>
+<p>Not all heap operations allocate:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let mut v = Vec::with_capacity(100);  // ✅ One allocation
+
+for i in 0..50 {
+    v.push(i);  // ✅ No allocation - within capacity
+}
+
+v.push(51);  // ✅ Still no allocation
+v.push(52);  // ✅ Still no allocation
+// ... up to 100 elements, still no allocation
+
+v.push(101);  // ❌ NOW we reallocate (capacity exceeded)
+<span class="boring">}</span></code></pre></pre>
+<p>Pre-allocating capacity is a common optimization!</p>
+<h2 id="performance-implications"><a class="header" href="#performance-implications">Performance Implications</a></h2>
+<h3 id="stack-operations-fast"><a class="header" href="#stack-operations-fast">Stack Operations (Fast)</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn stack_test() {
+    let x = 42;        // ~1 CPU cycle (just move stack pointer)
+    let y = x;         // ~1 CPU cycle (copy 4 bytes)
+}  // ~1 CPU cycle (move stack pointer back)
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Cost:</strong> ~3 CPU cycles</p>
+<h3 id="heap-operations-slow"><a class="header" href="#heap-operations-slow">Heap Operations (Slow)</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn heap_test() {
+    let x = Box::new(42);  // ~100 CPU cycles (call allocator)
+    let y = x;             // ~1 CPU cycle (copy 8-byte pointer)
+}  // ~100 CPU cycles (call deallocator)
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Cost:</strong> ~200 CPU cycles</p>
+<p><strong>100x slower!</strong> But remember:</p>
+<ul>
+<li>This is microseconds, not seconds</li>
+<li>Sometimes you need the heap (dynamic size, large data, shared ownership)</li>
+<li>The real cost is in <strong>many allocations</strong>, not just one</li>
+</ul>
+<h3 id="optimization-tips"><a class="header" href="#optimization-tips">Optimization Tips</a></h3>
+<ol>
+<li><strong>Pre-allocate collections:</strong></li>
+</ol>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Bad: multiple allocations
+let mut v = Vec::new();
+for i in 0..1000 { v.push(i); }
+
+// Good: one allocation
+let mut v = Vec::with_capacity(1000);
+for i in 0..1000 { v.push(i); }
+<span class="boring">}</span></code></pre></pre>
+<ol start="2">
+<li><strong>Use <code>&amp;str</code> instead of <code>String</code> when possible:</strong></li>
+</ol>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Bad: allocates on heap
+fn greet(name: String) {
+    println!("Hello, {}", name);
+}
+
+// Good: no allocation
+fn greet(name: &amp;str) {
+    println!("Hello, {}", name);
+}
+<span class="boring">}</span></code></pre></pre>
+<ol start="3">
+<li><strong>Use <code>[T; N]</code> instead of <code>Vec&lt;T&gt;</code> for fixed-size data:</strong></li>
+</ol>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Bad: heap allocation
+let v = vec![0; 10];
+
+// Good: stack allocation
+let arr = [0; 10];
+<span class="boring">}</span></code></pre></pre>
+<ol start="4">
+<li><strong>Avoid cloning when borrowing works:</strong></li>
+</ol>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Bad: clones the string (heap allocation)
+fn process(s: String) {
+    println!("{}", s);
+}
+let s = String::from("hello");
+process(s.clone());
+
+// Good: borrows (no allocation)
+fn process(s: &amp;str) {
+    println!("{}", s);
+}
+process(&amp;s);
+<span class="boring">}</span></code></pre></pre>
+<h2 id="memory-leaks"><a class="header" href="#memory-leaks">Memory Leaks</a></h2>
+<p>Rust prevents many memory leaks, but they're still possible:</p>
+<h3 id="safe-memory-leak-reference-cycles"><a class="header" href="#safe-memory-leak-reference-cycles">Safe Memory Leak (Reference Cycles)</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::rc::Rc;
+use std::cell::RefCell;
+
+struct Node {
+    next: Option&lt;Rc&lt;RefCell&lt;Node&gt;&gt;&gt;,
+}
+
+let a = Rc::new(RefCell::new(Node { next: None }));
+let b = Rc::new(RefCell::new(Node { next: Some(Rc::clone(&amp;a)) }));
+a.borrow_mut().next = Some(Rc::clone(&amp;b));
+
+// Memory leak! a and b reference each other
+// Neither will ever be dropped (reference count never reaches 0)
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Solution:</strong> Use <code>Weak</code> references to break cycles.</p>
+<h3 id="intentional-memory-leak"><a class="header" href="#intentional-memory-leak">Intentional Memory Leak</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let s = String::from("hello");
+let leaked: &amp;'static str = Box::leak(Box::new(s));
+// s is now leaked - memory will never be freed
+// But we got a 'static reference!
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Use case:</strong> Creating <code>'static</code> data at runtime (rare).</p>
+<h2 id="key-takeaways"><a class="header" href="#key-takeaways">Key Takeaways</a></h2>
+<ol>
+<li><strong>Stack is automatic</strong> - variables disappear when out of scope</li>
+<li><strong>Heap is manual</strong> - you allocate/deallocate (Rust automates via <code>Drop</code>)</li>
+<li><strong>Stack is fast</strong> - just move a pointer</li>
+<li><strong>Heap is flexible</strong> - dynamic size, outlives scope</li>
+<li><strong>String/Vec/Box are smart pointers</strong> - metadata on stack, data on heap</li>
+<li><strong>Static data lives forever</strong> - loaded at program start</li>
+<li><strong>Use stack by default</strong> - only heap allocate when necessary</li>
+<li><strong>Pre-allocate when possible</strong> - avoid repeated reallocations</li>
+</ol>
+<h2 id="further-reading"><a class="header" href="#further-reading">Further Reading</a></h2>
+<ul>
+<li><a href="https://cheats.rs/#memory-layout">cheats.rs/#memory-layout</a> - Visual memory layouts for Rust types</li>
+<li><strong>The Rustonomicon</strong>: Memory layout and representation</li>
+<li><strong>Rust Performance Book</strong>: Memory allocation strategies</li>
+<li><strong>Operating Systems textbooks</strong>: Virtual memory, process address space</li>
+</ul>
+<hr />
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../docs/appendix-closures.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../docs/appendix-sized.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../docs/appendix-closures.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../docs/appendix-sized.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

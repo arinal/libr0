@@ -1,0 +1,845 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Cell - libr0: Building Rust&#x27;s Standard Library from Scratch</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">libr0: Building Rust&#x27;s Standard Library from Scratch</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/arinal/rustlib" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/arinal/rustlib/edit/main/./docs/05-cell.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="chapter-5-cell---interior-mutability"><a class="header" href="#chapter-5-cell---interior-mutability">Chapter 5: Cell - Interior Mutability</a></h1>
+<p>You want to track how many times a value gets accessed. Simple, right? Add a counter, increment it on every read. But Rust says no:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct Stats {
+    value: i32,
+    access_counter: usize,
+}
+
+impl Stats {
+    fn get_value(&amp;self) -&gt; i32 {
+        self.access_counter += 1;  // ❌ can't mutate through &amp;self
+        self.value
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p>The problem? <code>get_value</code> takes <code>&amp;self</code> (shared reference), but you need <code>&amp;mut self</code> to change <code>access_counter</code>.</p>
+<p><strong>"Just use <code>&amp;mut self</code> then!"</strong></p>
+<p>Can't. That would be terrible:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn get_value(&amp;mut self) -&gt; i32 {  // Now requires &amp;mut self
+    self.access_counter += 1;
+    self.value
+}
+
+// This breaks:
+let stats = Stats { value: 42, access_counter: 0 };
+let r1 = &amp;stats;
+let r2 = &amp;stats;
+let v1 = r1.get_value();  // ❌ can't call get_value on &amp;Stats
+let v2 = r2.get_value();  // Need &amp;mut, can't have multiple readers!
+<span class="boring">}</span></code></pre></pre>
+<p>You just killed multiple readers. The whole point of <code>&amp;self</code> is that many readers can coexist. But now you can't read without exclusive access, all because of a silly counter.</p>
+<p>The counter is just <strong>bookkeeping</strong>. It's not the meaningful data. The meaningful data (<code>value</code>) never changes. You want the struct to be <strong>logically immutable</strong> (value doesn't change) but <strong>physically mutable</strong> (counter does change).</p>
+<h2 id="the-unsafe-escape-hatch"><a class="header" href="#the-unsafe-escape-hatch">The Unsafe Escape Hatch</a></h2>
+<p>Fine. Let's use raw pointers:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn get_value(&amp;self) -&gt; i32 {
+    unsafe {
+        let counter_ptr = &amp;self.access_counter as *const usize as *mut usize;
+        *counter_ptr += 1;
+    }
+    self.value
+}
+<span class="boring">}</span></code></pre></pre>
+<p>This works. You mutate through a shared reference by casting away the constness. But this is a common pattern. You'll need it for counters, caches, lazy initialization—anywhere you want interior mutability. Every time you write this unsafe code again, you're making a promise to Rust: "Trust me, this is safe." You verify it once in Stats. Then again in Cache. Then in LazyCell. Then in RefCount. Exhausting.</p>
+<h2 id="enter-cell-the-safe-wrapper"><a class="header" href="#enter-cell-the-safe-wrapper">Enter Cell: The Safe Wrapper</a></h2>
+<p>What if someone already wrote that unsafe code, verified it's sound, and wrapped it in a safe API? Then you'd never think about it again:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::cell::Cell;
+
+struct Stats {
+    value: i32,
+    access_counter: Cell&lt;usize&gt;,  // ✅ Wrapped in Cell!
+}
+
+impl Stats {
+    fn get_value(&amp;self) -&gt; i32 {
+        // Mutate through &amp;self - totally safe!
+        self.access_counter.set(self.access_counter.get() + 1);
+        self.value
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p>Done. No unsafe. No mental overhead. Just works.</p>
+<p><strong>That's <code>Cell</code></strong>: a safe wrapper for interior mutability. It lets you mutate data through a shared reference without violating Rust's safety guarantees.
+There are also other types for interior mutability for different use cases: <code>RefCell</code>, <code>Mutex</code>, etc that we'll cover later.</p>
+<h2 id="how-cell-stays-safe"><a class="header" href="#how-cell-stays-safe">How Cell Stays Safe</a></h2>
+<p>Let's try building a naive <code>ClumsyCell</code> that gives you references:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::cell::UnsafeCell;
+
+struct ClumsyCell&lt;T&gt; {
+    value: UnsafeCell&lt;T&gt;,
+}
+
+impl&lt;T&gt; ClumsyCell&lt;T&gt; {
+    fn new(value: T) -&gt; Self {
+        ClumsyCell { value: UnsafeCell::new(value) }
+    }
+
+    fn get_ref(&amp;self) -&gt; &amp;T {
+        unsafe { &amp;*self.value.get() }
+    }
+
+    fn set(&amp;self, value: T) {
+        unsafe { *self.value.get() = value; }
+    }
+}
+
+// This compiles! But it's unsound.
+let cell = ClumsyCell::new(5);
+let r1: &amp;i32 = cell.get_ref();     // Get reference to inner value
+
+println!("{}", r1);  // Reads 5
+cell.set(10);        // Mutate through &amp;cell
+println!("{}", r1);  // DANGER: r1 still exists but value changed!
+                     // r1 is supposed to be immutable, but the data it points to changed
+<span class="boring">}</span></code></pre></pre>
+<p>The problem: <code>r1</code> is an immutable reference, but the value it points to changed. That's exactly what Rust's borrow checker prevents. <code>ClumsyCell</code> bypassed it with <code>unsafe</code>, breaking Rust's safety guarantees.</p>
+<p><strong>Real Cell's solution: never give you a reference to the inner value.</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let cell = Cell::new(5);
+cell.set(10);           // ✅ Replace the value
+let value = cell.get(); // ✅ Get a COPY of the value (requires T: Copy)
+<span class="boring">}</span></code></pre></pre>
+<p>No references = no aliasing violations. You can't have a reference to something that might change, because you never get a reference at all. Only copies.</p>
+<p>This is why <strong>Cell only works with <code>Copy</code> types</strong> (for <code>get()</code>). Can't copy out a <code>String</code> or <code>Vec</code>. For those, you need <code>RefCell</code> (next chapter).</p>
+<p><strong>What Cell gives you:</strong></p>
+<ul>
+<li><strong>get()</strong>: Copy the value out (requires <code>T: Copy</code>)</li>
+<li><strong>set()</strong>: Replace the value entirely</li>
+<li><strong>replace()</strong>: Swap values, return the old one</li>
+<li><strong>take()</strong>: Take the value, leave <code>Default::default()</code> behind</li>
+</ul>
+<p>All through <code>&amp;Cell&lt;T&gt;</code>, not <code>&amp;mut Cell&lt;T&gt;</code>. That's the magic.</p>
+<h2 id="motivation-when-you-need-to-mutate-through-shared-references"><a class="header" href="#motivation-when-you-need-to-mutate-through-shared-references">Motivation: When You Need to Mutate Through Shared References</a></h2>
+<p>When the struct is <strong>mostly read-only</strong> (<code>value</code> never changes), but a <strong>minor field</strong> (<code>access_count</code>) needs to change. Making the entire struct mutable just for this tracking would be too awkward and restrictive.</p>
+<p>This is <strong>logical vs physical constness</strong>:</p>
+<ul>
+<li><strong>Logically const</strong>: The meaningful data (<code>value</code>) doesn't change</li>
+<li><strong>Physically mutable</strong>: Internal bookkeeping (<code>access_count</code>) does change</li>
+</ul>
+<p><strong>Solution:</strong> Use interior mutability for the counter while keeping <code>&amp;self</code>. This lets you mutate the minor parts (bookkeeping, caches, counters) without requiring <code>&amp;mut self</code> for the whole struct.</p>
+<p>All interior mutability types are wrappers around <code>UnsafeCell</code> (which we'll explore next). Rust provides safe wrappers that handle the unsafe operations for you. We'll implement these wrappers (<code>Cell</code>, <code>RefCell</code>) later in this chapter to understand how they work.</p>
+<div class="table-wrapper"><table><thead><tr><th>Type</th><th>Check</th><th>Best for</th></tr></thead><tbody>
+<tr><td><code>Cell&lt;T&gt;</code></td><td>None (Copy semantics)</td><td>Simple <code>Copy</code> types</td></tr>
+<tr><td><code>RefCell&lt;T&gt;</code></td><td>Runtime</td><td>Any type, single-threaded</td></tr>
+<tr><td><code>Mutex&lt;T&gt;</code></td><td>Runtime + blocking</td><td>Any type, multi-threaded</td></tr>
+<tr><td><code>RwLock&lt;T&gt;</code></td><td>Runtime + blocking</td><td>Read-heavy, multi-threaded</td></tr>
+<tr><td><code>Atomic*</code></td><td>Hardware</td><td>Primitive integers, multi-threaded</td></tr>
+</tbody></table>
+</div>
+<p>This chapter covers <code>Cell</code>. We'll cover <code>RefCell</code> in the next chapter.</p>
+<h2 id="unsafecell-the-foundation"><a class="header" href="#unsafecell-the-foundation">UnsafeCell: The Foundation</a></h2>
+<p>Every interior mutability type is built on <code>UnsafeCell&lt;T&gt;</code>. It's the <strong>only</strong> way to get mutability through a shared reference in Rust.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::cell::UnsafeCell;
+
+let cell = UnsafeCell::new(5);
+let ptr: *mut i32 = cell.get();  // Returns raw mutable pointer
+
+// UNSAFE: We must ensure no aliasing
+unsafe {
+    *ptr = 10;
+}
+<span class="boring">}</span></code></pre></pre>
+<p><code>UnsafeCell</code> is unsafe because:</p>
+<ul>
+<li>It gives you a <code>*mut T</code> from an <code>&amp;UnsafeCell&lt;T&gt;</code></li>
+<li><strong>You</strong> are responsible for ensuring no data races or aliasing violations</li>
+<li>The compiler can't help you</li>
+</ul>
+<p>That's why we have safe wrappers like <code>Cell</code> and <code>RefCell</code>.</p>
+<h3 id="can-we-implement-our-own-unsafecell"><a class="header" href="#can-we-implement-our-own-unsafecell">Can We Implement Our Own UnsafeCell?</a></h3>
+<p><strong>No.</strong> <code>UnsafeCell</code> is a <strong>compiler intrinsic</strong> - it's deeply integrated into Rust's type system.</p>
+<p>Here's what it conceptually looks like:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[repr(transparent)]
+pub struct UnsafeCell&lt;T&gt; {
+    value: T,
+}
+
+impl&lt;T&gt; UnsafeCell&lt;T&gt; {
+    pub fn new(value: T) -&gt; UnsafeCell&lt;T&gt; {
+        UnsafeCell { value }
+    }
+
+    pub fn get(&amp;self) -&gt; *mut T {
+        &amp;self.value as *const T as *mut T
+    }
+
+    pub fn into_inner(self) -&gt; T {
+        self.value
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>But this naive implementation is wrong!</strong> The compiler treats <code>UnsafeCell</code> specially:</p>
+<ol>
+<li><strong>Disables certain optimizations</strong> - The compiler won't assume immutability through <code>&amp;UnsafeCell&lt;T&gt;</code></li>
+<li><strong>Allows interior mutability</strong> - Without <code>UnsafeCell</code>, getting <code>*mut T</code> from <code>&amp;T</code> is undefined behavior</li>
+<li><strong>Memory model implications</strong> - Tells LLVM that mutations can happen through shared references</li>
+</ol>
+<p>If you tried this with a regular struct, the compiler might:</p>
+<ul>
+<li>Optimize away your writes (assumes <code>&amp;T</code> means immutable)</li>
+<li>Reorder operations incorrectly</li>
+<li>Generate incorrect code</li>
+</ul>
+<p><strong>Example of why it matters:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Regular struct - WRONG!
+struct NotUnsafeCell&lt;T&gt; {
+    value: T,
+}
+
+impl&lt;T&gt; NotUnsafeCell&lt;T&gt; {
+    fn get(&amp;self) -&gt; *mut T {
+        &amp;self.value as *const T as *mut T
+    }
+}
+
+let x = NotUnsafeCell { value: 5 };
+let ptr = x.get();
+
+// Compiler sees &amp;x (shared ref) and might assume x.value never changes
+let a = x.value;  // Reads 5
+unsafe { *ptr = 10; }  // Mutate through pointer - UB!
+let b = x.value;  // Compiler might optimize this to still be 5!
+<span class="boring">}</span></code></pre></pre>
+<p>With the real <code>UnsafeCell</code>, the compiler knows mutation can happen and won't make those assumptions.</p>
+<p><strong>Does Rust have a <code>volatile</code> keyword?</strong></p>
+<p>No. In C/C++, <code>volatile</code> tells the compiler "don't optimize reads/writes to this variable." Rust doesn't have a <code>volatile</code> keyword, but instead provides:</p>
+<ul>
+<li><strong><code>UnsafeCell</code></strong>: For interior mutability (single-threaded mutation through shared references)</li>
+<li><strong><code>std::ptr::read_volatile</code> / <code>write_volatile</code></strong>: Unsafe functions for cases where you need volatile semantics (e.g., memory-mapped I/O, hardware registers)</li>
+<li><strong>Atomics</strong>: For thread-safe mutation with proper synchronization</li>
+</ul>
+<p><code>UnsafeCell</code> is not the same as <code>volatile</code> - it just tells the compiler "this can be mutated through shared references," while volatile prevents <em>all</em> optimizations. Most Rust code uses <code>UnsafeCell</code> (via <code>Cell</code>, <code>RefCell</code>, etc.), not volatile operations.</p>
+<p><strong>Bottom line:</strong> You <strong>must</strong> use <code>std::cell::UnsafeCell</code>. It's the only sound way to implement interior mutability.</p>
+<h2 id="what-is-cell"><a class="header" href="#what-is-cell">What is Cell?</a></h2>
+<p><code>Cell&lt;T&gt;</code> is a safe wrapper around <code>UnsafeCell&lt;T&gt;</code> for <strong>Copy types</strong>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::cell::Cell;
+
+let cell = Cell::new(5);
+cell.set(10);           // Mutate through shared reference!
+let value = cell.get(); // Get a COPY of the value
+<span class="boring">}</span></code></pre></pre>
+<p>Key insight: <code>Cell</code> never gives you a reference to the inner value. It only lets you:</p>
+<ul>
+<li><strong>get</strong>: Copy the value out</li>
+<li><strong>set</strong>: Replace the value entirely</li>
+</ul>
+<p>This is safe because you can't have a reference to something that might change - you only ever have copies.</p>
+<p><strong>What happens when references escape?</strong></p>
+<p>If Cell gave you a reference, you'd have:</p>
+<ol>
+<li>Multiple <code>&amp;Cell</code> (shared references to the Cell itself) ✓ Allowed</li>
+<li>A <code>&amp;T</code> (reference to the inner value) ✓ Should be valid</li>
+<li>But Cell can mutate through <code>&amp;self</code>! ✗ Breaks Rust's aliasing rules!</li>
+</ol>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Hypothetical broken Cell with get_ref:
+let cell = Cell::new(5);
+let r1: &amp;i32 = cell.get_ref();     // Get reference to inner value
+
+println!("{}", r1);  // Reads 5
+cell.set(10);        // Mutate through &amp;self
+println!("{}", r1);  // DANGER: r1 still pointing to the value inside the cell!
+                     // In Rust with UB, optimizer might assume still 5!
+                     // While it's actually 10
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Visualizing the problem:</strong></p>
+<div style='width:100%; height:320px;'><style type="text/css">svg { width: 100% !important; }</style><svg xmlns="http://www.w3.org/2000/svg" width="608" height="320" class="svgbob"><style>.svgbob line, .svgbob path, .svgbob circle, .svgbob rect, .svgbob polygon {  stroke: var(--fg);  stroke-width: 2;  stroke-opacity: 1;  fill-opacity: 1;  stroke-linecap: round;  stroke-linejoin: miter;}.svgbob text {  white-space: pre;  fill: var(--fg);  font-family: Iosevka Fixed, monospace;  font-size: 14px;}.svgbob rect.backdrop {  stroke: none;  fill: transparent;}.svgbob .broken {  stroke-dasharray: 8;}.svgbob .filled {  fill: black;}.svgbob .bg_filled {  fill: transparent;  stroke-width: 1;}.svgbob .nofill {  fill: transparent;}.svgbob .end_marked_arrow {  marker-end: url(#arrow);}.svgbob .start_marked_arrow {  marker-start: url(#arrow);}.svgbob .end_marked_diamond {  marker-end: url(#diamond);}.svgbob .start_marked_diamond {  marker-start: url(#diamond);}.svgbob .end_marked_circle {  marker-end: url(#circle);}.svgbob .start_marked_circle {  marker-start: url(#circle);}.svgbob .end_marked_open_circle {  marker-end: url(#open_circle);}.svgbob .start_marked_open_circle {  marker-start: url(#open_circle);}.svgbob .end_marked_big_open_circle {  marker-end: url(#big_open_circle);}.svgbob .start_marked_big_open_circle {  marker-start: url(#big_open_circle);}</style><defs><marker id="arrow" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,0 0,4 4,2 0,0"></polygon></marker><marker id="diamond" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,2 2,0 4,2 2,4 0,2"></polygon></marker><marker id="circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="filled"></circle></marker><marker id="open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="bg_filled"></circle></marker><marker id="big_open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="3" class="bg_filled"></circle></marker></defs><rect class="backdrop" x="0" y="0" width="608" height="320"></rect><rect x="4" y="24" width="120" height="80" class="solid nofill" rx="0"></rect><rect x="20" y="56" width="88" height="32" class="solid nofill" rx="0"></rect><text x="34" y="76" >value:</text><text x="90" y="76" >5</text><text x="18" y="44" >Cell&lt;i32&gt;</text><rect x="4" y="152" width="120" height="80" class="solid nofill" rx="0"></rect><rect x="20" y="184" width="88" height="32" class="solid nofill" rx="0"></rect><text x="34" y="204" >value:</text><text x="90" y="204" >10</text><text x="18" y="172" >Cell&lt;i32&gt;</text><text x="2" y="12" >Step</text><text x="42" y="12" >1:</text><text x="66" y="12" >cell.get</text><line x1="128" y1="16" x2="136" y2="16" class="solid"></line><text x="138" y="12" >ref</text><text x="186" y="12" >returns</text><text x="250" y="12" >a</text><text x="266" y="12" >reference</text><polygon points="144,68 136,72 144,76" class="filled"></polygon><line x1="144" y1="72" x2="184" y2="72" class="solid"></line><text x="194" y="76" >r1:</text><text x="226" y="76" >&amp;i32</text><text x="266" y="76" >points</text><text x="322" y="76" >here</text><text x="194" y="92" >Remember,</text><text x="274" y="92" >&amp;i32</text><text x="314" y="92" >is</text><text x="338" y="92" >immutable!</text><text x="2" y="140" >Step</text><text x="42" y="140" >2:</text><text x="66" y="140" >cell.set</text><path d="M 136,128 A 16,16 0,0,0 136,144" class="nofill"></path><text x="138" y="140" >10</text><path d="M 152,128 A 16,16 0,0,1 152,144" class="nofill"></path><text x="170" y="140" >changes</text><text x="234" y="140" >the</text><text x="266" y="140" >value</text><polygon points="144,196 136,200 144,204" class="filled"></polygon><line x1="144" y1="200" x2="184" y2="200" class="solid"></line><text x="194" y="204" >r1:</text><text x="194" y="220" >But</text><text x="194" y="236" >The</text><text x="226" y="204" >&amp;i32</text><text x="266" y="204" >STILL</text><text x="314" y="204" >points</text><text x="226" y="220" >r1</text><text x="250" y="220" >is</text><text x="274" y="220" >supposed</text><text x="346" y="220" >to</text><text x="226" y="236" >data</text><text x="266" y="236" >it</text><text x="290" y="236" >points</text><text x="346" y="236" >to</text><text x="370" y="204" >here!</text><text x="370" y="220" >be</text><text x="394" y="220" >immutable!</text><text x="370" y="236" >changed!</text><text x="2" y="268" >BROKEN:</text><text x="66" y="268" >r1</text><text x="90" y="268" >points</text><text x="146" y="268" >into</text><text x="186" y="268" >Cell&#39;s</text><text x="2" y="284" >This</text><text x="42" y="284" >violates</text><text x="114" y="284" >Rust&#39;s</text><text x="170" y="284" >aliasing</text><text x="2" y="300" >to</text><text x="26" y="300" >data</text><text x="66" y="300" >that&#39;s</text><text x="122" y="300" >being</text><text x="170" y="300" >mutated.</text><text x="242" y="268" >memory,</text><text x="306" y="268" >and</text><text x="338" y="268" >that</text><text x="378" y="268" >memory</text><text x="434" y="268" >can</text><text x="466" y="268" >be</text><text x="490" y="268" >mutated.</text><text x="242" y="284" >rules:</text><text x="298" y="284" >you</text><text x="330" y="284" >have</text><text x="370" y="284" >an</text><text x="394" y="284" >immutable</text><text x="474" y="284" >reference</text><path d="M 560,272 A 16,16 0,0,0 560,288" class="nofill"></path><text x="562" y="284" >&amp;i32</text><path d="M 592,272 A 16,16 0,0,1 592,288" class="nofill"></path><g><path d="M 168,0 A 16,16 0,0,0 168,16" class="nofill"></path><path d="M 168,0 A 16,16 0,0,1 168,16" class="nofill"></path></g></svg></div>
+<p>The problem: <code>r1</code> is supposed to be immutable, but the value it points to changed!</p>
+<p><strong>How Cell avoids this:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// The real Cell
+let cell = Cell::new(5);
+let n: i32 = cell.get();  // n is a COPY of the value, not a reference
+
+println!("{}", n);  // Reads 5
+cell.set(10);       // Mutate through &amp;self
+println!("{}", n);  // Still reads 5, because n is a copy, not a reference!
+<span class="boring">}</span></code></pre></pre>
+<div style='width:100%; height:384px;'><style type="text/css">svg { width: 100% !important; }</style><svg xmlns="http://www.w3.org/2000/svg" width="616" height="384" class="svgbob"><style>.svgbob line, .svgbob path, .svgbob circle, .svgbob rect, .svgbob polygon {  stroke: var(--fg);  stroke-width: 2;  stroke-opacity: 1;  fill-opacity: 1;  stroke-linecap: round;  stroke-linejoin: miter;}.svgbob text {  white-space: pre;  fill: var(--fg);  font-family: Iosevka Fixed, monospace;  font-size: 14px;}.svgbob rect.backdrop {  stroke: none;  fill: transparent;}.svgbob .broken {  stroke-dasharray: 8;}.svgbob .filled {  fill: black;}.svgbob .bg_filled {  fill: transparent;  stroke-width: 1;}.svgbob .nofill {  fill: transparent;}.svgbob .end_marked_arrow {  marker-end: url(#arrow);}.svgbob .start_marked_arrow {  marker-start: url(#arrow);}.svgbob .end_marked_diamond {  marker-end: url(#diamond);}.svgbob .start_marked_diamond {  marker-start: url(#diamond);}.svgbob .end_marked_circle {  marker-end: url(#circle);}.svgbob .start_marked_circle {  marker-start: url(#circle);}.svgbob .end_marked_open_circle {  marker-end: url(#open_circle);}.svgbob .start_marked_open_circle {  marker-start: url(#open_circle);}.svgbob .end_marked_big_open_circle {  marker-end: url(#big_open_circle);}.svgbob .start_marked_big_open_circle {  marker-start: url(#big_open_circle);}</style><defs><marker id="arrow" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,0 0,4 4,2 0,0"></polygon></marker><marker id="diamond" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,2 2,0 4,2 2,4 0,2"></polygon></marker><marker id="circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="filled"></circle></marker><marker id="open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="bg_filled"></circle></marker><marker id="big_open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="3" class="bg_filled"></circle></marker></defs><rect class="backdrop" x="0" y="0" width="616" height="384"></rect><rect x="4" y="24" width="120" height="80" class="solid nofill" rx="0"></rect><rect x="20" y="56" width="88" height="32" class="solid nofill" rx="0"></rect><text x="34" y="76" >value:</text><text x="90" y="76" >5</text><text x="18" y="44" >Cell&lt;i32&gt;</text><rect x="4" y="152" width="120" height="80" class="solid nofill" rx="0"></rect><rect x="20" y="184" width="88" height="32" class="solid nofill" rx="0"></rect><text x="34" y="204" >value:</text><text x="90" y="204" >5</text><text x="18" y="172" >Cell&lt;i32&gt;</text><rect x="228" y="184" width="40" height="32" class="solid nofill" rx="0"></rect><text x="242" y="204" >5</text><rect x="4" y="280" width="120" height="80" class="solid nofill" rx="0"></rect><rect x="20" y="312" width="88" height="32" class="solid nofill" rx="0"></rect><text x="34" y="332" >value:10</text><text x="18" y="300" >Cell&lt;i32&gt;</text><rect x="228" y="312" width="40" height="32" class="solid nofill" rx="0"></rect><text x="242" y="332" >5</text><text x="2" y="12" >Initial</text><text x="66" y="12" >state:</text><text x="146" y="76" >←</text><text x="162" y="76" >Value</text><text x="210" y="76" >lives</text><text x="258" y="76" >inside</text><text x="314" y="76" >Cell</text><text x="2" y="140" >cell.get</text><line x1="88" y1="136" x2="96" y2="136" class="solid"></line><text x="106" y="140" >Returns</text><text x="170" y="140" >a</text><text x="186" y="140" >COPY:</text><text x="162" y="188" >copy</text><line x1="136" y1="200" x2="208" y2="200" class="solid"></line><polygon points="208,196 216,200 208,204" class="filled"></polygon><text x="290" y="204" >←</text><text x="306" y="204" >Copy</text><text x="346" y="204" >created</text><text x="306" y="220" >no</text><text x="330" y="220" >reference</text><text x="410" y="204" >in</text><text x="410" y="220" >to</text><text x="434" y="204" >new</text><text x="466" y="204" >memory</text><text x="522" y="204" >location</text><text x="434" y="220" >Cell&#39;s</text><text x="490" y="220" >internal</text><text x="562" y="220" >value!</text><text x="2" y="268" >cell.set</text><path d="M 72,256 A 16,16 0,0,0 72,272" class="nofill"></path><text x="74" y="268" >10</text><path d="M 88,256 A 16,16 0,0,1 88,272" class="nofill"></path><line x1="104" y1="264" x2="112" y2="264" class="solid"></line><text x="122" y="268" >REPLACES</text><text x="194" y="268" >the</text><text x="226" y="268" >value:</text><text x="290" y="332" >←</text><text x="306" y="332" >Old</text><text x="338" y="332" >value</text><text x="386" y="332" >still</text><text x="434" y="332" >5</text><g><path d="M 72,128 A 16,16 0,0,0 72,144" class="nofill"></path><path d="M 72,128 A 16,16 0,0,1 72,144" class="nofill"></path></g></svg></div>
+<p><strong>Key insight</strong>: You never get <code>&amp;i32</code> or <code>&amp;mut i32</code> pointing to the value inside Cell's box. Only copies come out. The inner value never escapes as a reference.</p>
+<h2 id="building-our-own-cell"><a class="header" href="#building-our-own-cell">Building Our Own Cell</a></h2>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::cell::UnsafeCell;
+
+pub struct Cell0&lt;T&gt; {
+    value: UnsafeCell&lt;T&gt;,
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="new---create-a-cell"><a class="header" href="#new---create-a-cell">new - Create a Cell</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;T&gt; Cell0&lt;T&gt; {
+    pub fn new(value: T) -&gt; Cell0&lt;T&gt; {
+        Cell0 {
+            value: UnsafeCell::new(value),
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="get---copy-the-value-out"><a class="header" href="#get---copy-the-value-out">get - Copy the Value Out</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;T: Copy&gt; Cell0&lt;T&gt; {
+    pub fn get(&amp;self) -&gt; T {
+        // SAFETY: We only copy the value out, never give a reference
+        unsafe { *self.value.get() }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p>Note the <code>T: Copy</code> bound. This is crucial - we can only implement <code>get</code> for <code>Copy</code> types because we need to return a copy, not a reference.</p>
+<h3 id="set---replace-the-value"><a class="header" href="#set---replace-the-value">set - Replace the Value</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;T&gt; Cell0&lt;T&gt; {
+    pub fn set(&amp;self, value: T) {
+        // SAFETY: We replace the entire value atomically (single-threaded)
+        unsafe {
+            *self.value.get() = value;
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p>Notice <code>set</code> doesn't require <code>Copy</code> - we're replacing the value, not reading it.</p>
+<h3 id="replace---set-and-return-old-value"><a class="header" href="#replace---set-and-return-old-value">replace - Set and Return Old Value</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;T&gt; Cell0&lt;T&gt; {
+    pub fn replace(&amp;self, value: T) -&gt; T {
+        // SAFETY: We swap values without creating references
+        unsafe {
+            std::mem::replace(&amp;mut *self.value.get(), value)
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="take---take-the-value-leave-default"><a class="header" href="#take---take-the-value-leave-default">take - Take the Value, Leave Default</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;T: Default&gt; Cell0&lt;T&gt; {
+    pub fn take(&amp;self) -&gt; T {
+        self.replace(T::default())
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="into_inner---consume-cell-get-value"><a class="header" href="#into_inner---consume-cell-get-value">into_inner - Consume Cell, Get Value</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;T&gt; Cell0&lt;T&gt; {
+    pub fn into_inner(self) -&gt; T {
+        self.value.into_inner()
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="get_mut---common-confusion-about-getting-references-from-cell"><a class="header" href="#get_mut---common-confusion-about-getting-references-from-cell">get_mut - Common Confusion About Getting References from Cell</a></h3>
+<p><strong>Common confusion:</strong> "Can Cell give me a reference to its inner value?"</p>
+<p><strong>Short answer:</strong> No, not through <code>&amp;Cell</code>. That's the whole point of Cell - it can't give out references.</p>
+<p>But Cell does have a <code>get_mut</code> method that returns <code>&amp;mut T</code>. Here's the catch:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Note: Separate impl block with ?Sized
+impl&lt;T: ?Sized&gt; Cell0&lt;T&gt; {
+    pub fn get_mut(&amp;mut self) -&gt; &amp;mut T {  // Takes &amp;mut self!
+        self.value.get_mut()
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>The key insight:</strong> <code>get_mut</code> requires <code>&amp;mut self</code>, not <code>&amp;self</code>.</p>
+<p>This is just regular Rust borrowing - nothing special. The compiler catches it at compile time because <code>get_mut</code> takes <code>&amp;mut self</code>.</p>
+<p>This means you need <strong>exclusive mutable access</strong> to the Cell itself. At that point, you don't need interior mutability at all - Rust already knows at compile-time that you have exclusive access!</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let mut cell = Cell0::new(5);  // Note: mut cell
+*cell.get_mut() += 1;           // Direct mutable access
+assert_eq!(cell.get(), 6);
+<span class="boring">}</span></code></pre></pre>
+<p><strong>The compiler enforces normal borrow rules:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let mut cell = Cell0::new(5);
+let r1 = cell.get_mut();  // First mutable borrow
+let r2 = cell.get_mut();  // ❌ Error: cannot borrow `cell` as mutable more than once
+
+// Error message:
+// cannot borrow `cell` as mutable more than once at a time
+// first mutable borrow occurs here
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Why this defeats Cell's purpose:</strong></p>
+<div style='width:100%; height:96px;'><style type="text/css">svg { width: 100% !important; }</style><svg xmlns="http://www.w3.org/2000/svg" width="536" height="96" class="svgbob"><style>.svgbob line, .svgbob path, .svgbob circle, .svgbob rect, .svgbob polygon {  stroke: var(--fg);  stroke-width: 2;  stroke-opacity: 1;  fill-opacity: 1;  stroke-linecap: round;  stroke-linejoin: miter;}.svgbob text {  white-space: pre;  fill: var(--fg);  font-family: Iosevka Fixed, monospace;  font-size: 14px;}.svgbob rect.backdrop {  stroke: none;  fill: transparent;}.svgbob .broken {  stroke-dasharray: 8;}.svgbob .filled {  fill: black;}.svgbob .bg_filled {  fill: transparent;  stroke-width: 1;}.svgbob .nofill {  fill: transparent;}.svgbob .end_marked_arrow {  marker-end: url(#arrow);}.svgbob .start_marked_arrow {  marker-start: url(#arrow);}.svgbob .end_marked_diamond {  marker-end: url(#diamond);}.svgbob .start_marked_diamond {  marker-start: url(#diamond);}.svgbob .end_marked_circle {  marker-end: url(#circle);}.svgbob .start_marked_circle {  marker-start: url(#circle);}.svgbob .end_marked_open_circle {  marker-end: url(#open_circle);}.svgbob .start_marked_open_circle {  marker-start: url(#open_circle);}.svgbob .end_marked_big_open_circle {  marker-end: url(#big_open_circle);}.svgbob .start_marked_big_open_circle {  marker-start: url(#big_open_circle);}</style><defs><marker id="arrow" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,0 0,4 4,2 0,0"></polygon></marker><marker id="diamond" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,2 2,0 4,2 2,4 0,2"></polygon></marker><marker id="circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="filled"></circle></marker><marker id="open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="bg_filled"></circle></marker><marker id="big_open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="3" class="bg_filled"></circle></marker></defs><rect class="backdrop" x="0" y="0" width="536" height="96"></rect><text x="2" y="12" >Cell&#39;s</text><text x="58" y="12" >point:</text><text x="170" y="12" >&amp;Cell&lt;T&gt;</text><line x1="248" y1="8" x2="264" y2="8" class="solid"></line><text x="266" y="12" >set</text><line x1="304" y1="8" x2="320" y2="8" class="solid"></line><polygon points="320,4 328,8 320,12" class="filled"></polygon><text x="346" y="12" >mutate</text><text x="402" y="12" >through</text><text x="466" y="12" >&amp;self</text><path d="M 360,16 A 16,16 0,0,0 360,32" class="nofill"></path><text x="362" y="28" >interior</text><text x="434" y="28" >mutability</text><path d="M 512,16 A 16,16 0,0,1 512,32" class="nofill"></path><text x="2" y="60" >get</text><line x1="24" y1="64" x2="32" y2="64" class="solid"></line><text x="34" y="60" >mut:</text><text x="130" y="60" >&amp;mut</text><text x="170" y="60" >Cell&lt;T&gt;</text><line x1="240" y1="56" x2="256" y2="56" class="solid"></line><text x="258" y="60" >get</text><line x1="280" y1="64" x2="288" y2="64" class="solid"></line><text x="290" y="60" >mut</text><line x1="328" y1="56" x2="344" y2="56" class="solid"></line><polygon points="344,52 352,56 344,60" class="filled"></polygon><text x="370" y="60" >&amp;mut</text><text x="410" y="60" >T</text><path d="M 384,64 A 16,16 0,0,0 384,80" class="nofill"></path><text x="386" y="76" >normal</text><text x="442" y="76" >mutability</text><path d="M 520,64 A 16,16 0,0,1 520,80" class="nofill"></path><g><path d="M 296,0 A 16,16 0,0,0 296,16" class="nofill"></path><path d="M 296,0 A 16,16 0,0,1 296,16" class="nofill"></path></g><g><path d="M 320,48 A 16,16 0,0,0 320,64" class="nofill"></path><path d="M 320,48 A 16,16 0,0,1 320,64" class="nofill"></path></g></svg></div>
+<p>If you have <code>&amp;mut Cell</code>, you could've just used <code>T</code> directly:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Why use Cell if you have &amp;mut anyway?
+struct Config {
+    value: Cell&lt;i32&gt;,  // Uses Cell...
+}
+
+impl Config {
+    fn update(&amp;mut self) {  // ...but needs &amp;mut self?
+        *self.value.get_mut() += 1;  // Could've just used i32!
+    }
+}
+
+// More natural - no Cell needed:
+struct Config {
+    value: i32,  // Just use i32 directly
+}
+
+impl Config {
+    fn update(&amp;mut self) {
+        self.value += 1;  // Simpler!
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>When would you actually use get_mut?</strong></p>
+<p>Rarely. The only real use case is when you have a <code>Cell&lt;T&gt;</code> where <code>T</code> is not <code>Copy</code>, and you happen to have exclusive access to the Cell. At that point, <code>get_mut</code> lets you modify <code>T</code> in place without moving it out.</p>
+<p>But this is uncommon - Cell exists precisely so you DON'T need <code>&amp;mut</code>.</p>
+<h2 id="cell-in-practice-simple-examples"><a class="header" href="#cell-in-practice-simple-examples">Cell in Practice: Simple Examples</a></h2>
+<p><strong>Example 1: Counter</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::cell::Cell;
+
+struct HitCounter {
+    count: Cell&lt;usize&gt;,
+}
+
+impl HitCounter {
+    fn new() -&gt; Self {
+        HitCounter { count: Cell::new(0) }
+    }
+
+    fn record_hit(&amp;self) {
+        self.count.set(self.count.get() + 1);
+    }
+
+    fn get_count(&amp;self) -&gt; usize {
+        self.count.get()
+    }
+}
+
+// Usage
+let counter = HitCounter::new();
+counter.record_hit();  // count: 0 -&gt; 1
+counter.record_hit();  // count: 1 -&gt; 2
+counter.record_hit();  // count: 2 -&gt; 3
+counter.get_count()    // 3
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Example 2: Toggle Flag</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct Toggle {
+    state: Cell&lt;bool&gt;,
+}
+
+impl Toggle {
+    fn new() -&gt; Self {
+        Toggle { state: Cell::new(false) }
+    }
+
+    fn toggle(&amp;self) {
+        self.state.set(!self.state.get());
+    }
+
+    fn is_on(&amp;self) -&gt; bool {
+        self.state.get()
+    }
+}
+
+// Usage
+let toggle = Toggle::new();
+toggle.is_on()   // false
+toggle.toggle();
+toggle.is_on()   // true
+toggle.toggle();
+toggle.is_on()   // false
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Example 3: Lazy Initialization</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct LazyValue {
+    initialized: Cell&lt;bool&gt;,
+    value: Cell&lt;i32&gt;,
+}
+
+impl LazyValue {
+    fn new() -&gt; Self {
+        LazyValue {
+            initialized: Cell::new(false),
+            value: Cell::new(0),
+        }
+    }
+
+    fn get_or_init(&amp;self, compute: impl FnOnce() -&gt; i32) -&gt; i32 {
+        if !self.initialized.get() {
+            let val = compute();
+            self.value.set(val);
+            self.initialized.set(true);
+        }
+        self.value.get()
+    }
+}
+
+// Usage
+let lazy = LazyValue::new();
+let result1 = lazy.get_or_init(|| 42);  // Computes: 42
+let result2 = lazy.get_or_init(|| 99);  // Returns cached: 42
+<span class="boring">}</span></code></pre></pre>
+<p>All these examples mutate state through <code>&amp;self</code> (shared reference) - impossible without <code>Cell</code>!</p>
+<h2 id="cell-and-thread-safety-send-and-sync"><a class="header" href="#cell-and-thread-safety-send-and-sync">Cell and Thread Safety: Send and Sync</a></h2>
+<p><code>Cell&lt;T&gt;</code> is <strong>not thread-safe</strong>. It can be used in a single thread, but cannot be safely shared between threads.</p>
+<p><strong>Quick overview:</strong></p>
+<p>Rust has two special marker traits for thread safety:</p>
+<ul>
+<li><strong><code>Send</code></strong>: A type can be transferred between threads (moved to another thread)</li>
+<li><strong><code>Sync</code></strong>: A type can be shared between threads (multiple threads can have <code>&amp;T</code>)</li>
+</ul>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Cell&lt;T&gt; is Send (can be moved between threads)
+let cell = Cell::new(42);
+std::thread::spawn(move || {
+    cell.set(100);  // ✅ OK - moved to this thread
+});
+
+// Cell&lt;T&gt; is NOT Sync (cannot be shared between threads)
+let cell = Cell::new(42);
+std::thread::spawn(|| {
+    cell.set(100);  // ❌ Cell is not Sync
+});
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Why is Cell not Sync?</strong></p>
+<p>If two threads could share <code>&amp;Cell&lt;T&gt;</code>, they could both call <code>set()</code> simultaneously:</p>
+<ol>
+<li>Thread 1: <code>cell.set(10)</code></li>
+<li>Thread 2: <code>cell.set(20)</code></li>
+<li><strong>Data race!</strong> Both write to the same memory without synchronization</li>
+</ol>
+<p><strong>Hypothetical example if Cell was Sync (this won't compile!):</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::cell::Cell;
+use std::thread;
+
+// Imagine Cell&lt;T&gt; was Sync (it's not!)
+let counter = Cell::new(0);
+
+// Try to share it between threads (won't compile)
+let handle1 = thread::spawn(|| {
+    for _ in 0..1000 {
+        counter.set(counter.get() + 1);  // Thread 1 increments
+    }
+});
+
+let handle2 = thread::spawn(|| {
+    for _ in 0..1000 {
+        counter.set(counter.get() + 1);  // Thread 2 increments
+    }
+});
+
+handle1.join().unwrap();
+handle2.join().unwrap();
+
+// Expected: 2000
+// Actual: Could be anything! (if data races were allowed)
+// Both threads read, modify, write with no synchronization
+println!("{}", counter.get());  // Undefined behavior!
+<span class="boring">}</span></code></pre></pre>
+<p><code>Cell</code> provides no internal synchronization, so it's unsafe for concurrent access. For thread-safe interior mutability, use:</p>
+<ul>
+<li><strong><code>Mutex&lt;T&gt;</code></strong> or <strong><code>RwLock&lt;T&gt;</code></strong> - Provides locking</li>
+<li><strong>Atomics</strong> (<code>AtomicUsize</code>, <code>AtomicBool</code>, etc.) - Hardware-level synchronization</li>
+</ul>
+<p><strong>Note:</strong> <code>Send</code> and <code>Sync</code> are covered in depth in a later chapter on concurrency. For now, just remember: <code>Cell</code> = single-threaded only.</p>
+<h2 id="the-complete-implementation"><a class="header" href="#the-complete-implementation">The Complete Implementation</a></h2>
+<p>See the full implementation in <a href="./src/cell.rs">cell.rs</a>.</p>
+<h2 id="cell-vs-other-interior-mutability-types"><a class="header" href="#cell-vs-other-interior-mutability-types">Cell vs Other Interior Mutability Types</a></h2>
+<div class="table-wrapper"><table><thead><tr><th></th><th>Cell</th><th>RefCell</th></tr></thead><tbody>
+<tr><td>Works with</td><td><code>Copy</code> types (for <code>get</code>)</td><td>Any type</td></tr>
+<tr><td>Returns</td><td>Copy of value</td><td>Reference (<code>Ref&lt;T&gt;</code>)</td></tr>
+<tr><td>Overhead</td><td>None</td><td>Runtime borrow tracking</td></tr>
+<tr><td>Panic?</td><td>Never</td><td>Yes, on borrow violation</td></tr>
+<tr><td>Thread-safe?</td><td>No</td><td>No</td></tr>
+</tbody></table>
+</div>
+<p>Use <code>Cell</code> when:</p>
+<ul>
+<li>Your type is <code>Copy</code> (integers, bools, small structs)</li>
+<li>You just need to get/set the value</li>
+<li>You want zero runtime overhead</li>
+</ul>
+<p>Use <code>RefCell</code> when:</p>
+<ul>
+<li>Your type isn't <code>Copy</code></li>
+<li>You need references to the inner value</li>
+<li>You're willing to pay for runtime borrow checking</li>
+</ul>
+<h2 id="key-takeaways"><a class="header" href="#key-takeaways">Key Takeaways</a></h2>
+<ol>
+<li><strong>Interior mutability</strong> allows mutation through shared references</li>
+<li><strong>UnsafeCell</strong> is the primitive - unsafe but flexible</li>
+<li><strong>Cell</strong> is safe by never exposing references - only copies</li>
+<li><strong>Use Cell for counters, flags, and simple state</strong> - like <code>Rc</code>'s reference count</li>
+<li><strong>Cell is not thread-safe</strong> - use atomics or mutexes for that</li>
+</ol>
+<h2 id="exercises"><a class="header" href="#exercises">Exercises</a></h2>
+<p>See <a href="./examples/05_cell.rs">exercises</a>.</p>
+<p><strong>Complete solutions:</strong> Switch to the <code>answers</code> branch with <code>git checkout answers</code> to see completed exercises</p>
+<h2 id="next-chapter"><a class="header" href="#next-chapter">Next Chapter</a></h2>
+<p><a href="./05-refcell.html">RefCell</a> - Runtime borrow checking for non-Copy types.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../docs/04-vec.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../docs/06-refcell.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../docs/04-vec.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../docs/06-refcell.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

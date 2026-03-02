@@ -1,0 +1,1478 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Rc + RefCell - libr0: Building Rust&#x27;s Standard Library from Scratch</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">libr0: Building Rust&#x27;s Standard Library from Scratch</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/arinal/rustlib" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/arinal/rustlib/edit/main/./docs/08-rc-refcell.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="chapter-8-rc--refcell---shared-mutable-state-single-threaded"><a class="header" href="#chapter-8-rc--refcell---shared-mutable-state-single-threaded">Chapter 8: Rc + RefCell - Shared Mutable State (Single-Threaded)</a></h1>
+<h2 id="the-problem-rc-cant-mutate"><a class="header" href="#the-problem-rc-cant-mutate">The Problem: Rc Can't Mutate</a></h2>
+<p>You learned about <code>Rc&lt;T&gt;</code> in Chapter 7 - it gives you shared ownership. Multiple parts of your code can own the same data:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::rc::Rc;
+
+let config = Rc::new(Config { port: 8080 });
+let server = Rc::clone(&amp;config);  // ✅ Multiple owners!
+let logger = Rc::clone(&amp;config);  // ✅ Everyone can read!
+<span class="boring">}</span></code></pre></pre>
+<p>But what if you need to <strong>mutate</strong> the shared data?</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let counter = Rc::new(0);
+*counter += 1;  // ❌ ERROR: cannot borrow as mutable
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Why it fails:</strong> <code>Rc&lt;T&gt;</code> only gives you <code>&amp;T</code> (shared reference), never <code>&amp;mut T</code>. If multiple owners could get <code>&amp;mut T</code>, you'd have multiple mutable references to the same data - a data race!</p>
+<p><strong>Real-world scenarios where you need shared mutable data:</strong></p>
+<ol>
+<li><strong>Graph structures</strong> - Nodes need to add/remove edges to other nodes</li>
+<li><strong>Trees with parent pointers</strong> - Children need to update their parent references</li>
+<li><strong>Observer pattern</strong> - Observable needs to notify and update observers</li>
+<li><strong>Shared cache</strong> - Multiple readers with occasional updates</li>
+</ol>
+<p>You need a way to have multiple owners AND mutation. <code>Rc&lt;T&gt;</code> alone isn't enough.</p>
+<h2 id="the-solution-rcrefcell"><a class="header" href="#the-solution-rcrefcell">The Solution: Rc&lt;RefCell<T>&gt;</a></h2>
+<p>Remember <code>RefCell&lt;T&gt;</code> from Chapter 6? It gives you <strong>interior mutability</strong> - the ability to mutate through a shared reference:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::cell::RefCell;
+
+let cell = RefCell::new(5);
+*cell.borrow_mut() += 1;  // ✅ Mutate through &amp;RefCell!
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Combining them gives you both:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::rc::Rc;
+use std::cell::RefCell;
+
+// Shared ownership + Interior mutability
+let counter = Rc::new(RefCell::new(0));
+
+// Clone the Rc to create multiple owners
+let counter1 = Rc::clone(&amp;counter);
+let counter2 = Rc::clone(&amp;counter);
+
+// All owners can mutate the same data!
+*counter1.borrow_mut() += 1;  // ✅ Works!
+*counter2.borrow_mut() += 1;  // ✅ Works!
+
+println!("Counter: {}", counter.borrow()); // 2
+<span class="boring">}</span></code></pre></pre>
+<h3 id="memory-layout-two-levels-of-tracking"><a class="header" href="#memory-layout-two-levels-of-tracking">Memory Layout: Two Levels of Tracking</a></h3>
+<p><code>Rc&lt;RefCell&lt;T&gt;&gt;</code> has two levels of tracking in a single allocation:</p>
+<div style='width:100%; height:256px;'><style type="text/css">svg { width: 100% !important; }</style><svg xmlns="http://www.w3.org/2000/svg" width="728" height="256" class="svgbob"><style>.svgbob line, .svgbob path, .svgbob circle, .svgbob rect, .svgbob polygon {  stroke: var(--fg);  stroke-width: 2;  stroke-opacity: 1;  fill-opacity: 1;  stroke-linecap: round;  stroke-linejoin: miter;}.svgbob text {  white-space: pre;  fill: var(--fg);  font-family: Iosevka Fixed, monospace;  font-size: 14px;}.svgbob rect.backdrop {  stroke: none;  fill: transparent;}.svgbob .broken {  stroke-dasharray: 8;}.svgbob .filled {  fill: black;}.svgbob .bg_filled {  fill: transparent;  stroke-width: 1;}.svgbob .nofill {  fill: transparent;}.svgbob .end_marked_arrow {  marker-end: url(#arrow);}.svgbob .start_marked_arrow {  marker-start: url(#arrow);}.svgbob .end_marked_diamond {  marker-end: url(#diamond);}.svgbob .start_marked_diamond {  marker-start: url(#diamond);}.svgbob .end_marked_circle {  marker-end: url(#circle);}.svgbob .start_marked_circle {  marker-start: url(#circle);}.svgbob .end_marked_open_circle {  marker-end: url(#open_circle);}.svgbob .start_marked_open_circle {  marker-start: url(#open_circle);}.svgbob .end_marked_big_open_circle {  marker-end: url(#big_open_circle);}.svgbob .start_marked_big_open_circle {  marker-start: url(#big_open_circle);}</style><defs><marker id="arrow" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,0 0,4 4,2 0,0"></polygon></marker><marker id="diamond" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,2 2,0 4,2 2,4 0,2"></polygon></marker><marker id="circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="filled"></circle></marker><marker id="open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="bg_filled"></circle></marker><marker id="big_open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="3" class="bg_filled"></circle></marker></defs><rect class="backdrop" x="0" y="0" width="728" height="256"></rect><rect x="4" y="40" width="96" height="48" class="solid nofill" rx="0"></rect><text x="26" y="60" >counter</text><path d="M 32,64 A 16,16 0,0,0 32,80" class="nofill"></path><text x="34" y="76" >Rc</text><text x="58" y="76" >ptr</text><path d="M 80,64 A 16,16 0,0,1 80,80" class="nofill"></path><rect x="268" y="56" width="248" height="144" class="solid nofill" rx="0"></rect><text x="282" y="76" >Single</text><text x="338" y="76" >RcInner</text><text x="290" y="92" >strong</text><line x1="336" y1="96" x2="344" y2="96" class="solid"></line><text x="346" y="92" >count:</text><text x="290" y="108" >weak</text><line x1="320" y1="112" x2="328" y2="112" class="solid"></line><text x="330" y="108" >count:</text><text x="386" y="108" >0</text><text x="402" y="76" >allocation:</text><text x="402" y="92" >3</text><text x="290" y="140" >RefCell&lt;i32&gt;</text><text x="306" y="156" >borrow:</text><text x="370" y="156" >0</text><text x="306" y="172" >value:</text><text x="362" y="172" >2</text><path d="M 400,128 A 16,16 0,0,0 400,144" class="nofill"></path><text x="402" y="140" >inlined</text><path d="M 456,128 A 16,16 0,0,1 456,144" class="nofill"></path><text x="466" y="140" >:</text><rect x="4" y="104" width="96" height="48" class="solid nofill" rx="0"></rect><text x="18" y="124" >counter1</text><path d="M 32,128 A 16,16 0,0,0 32,144" class="nofill"></path><text x="34" y="140" >Rc</text><text x="58" y="140" >ptr</text><path d="M 80,128 A 16,16 0,0,1 80,144" class="nofill"></path><rect x="4" y="168" width="96" height="48" class="solid nofill" rx="0"></rect><text x="18" y="188" >counter2</text><path d="M 32,192 A 16,16 0,0,0 32,208" class="nofill"></path><text x="34" y="204" >Rc</text><text x="58" y="204" >ptr</text><path d="M 80,192 A 16,16 0,0,1 80,208" class="nofill"></path><text x="2" y="12" >Stack</text><text x="274" y="12" >Heap</text><polygon points="256,68 264,72 256,76" class="filled"></polygon><text x="530" y="92" >←</text><text x="546" y="92" >Rc</text><text x="570" y="92" >tracks</text><text x="626" y="92" >#</text><text x="642" y="92" >of</text><text x="666" y="92" >owners</text><text x="610" y="156" >tracks</text><text x="666" y="156" >borrows</text><path d="M 536,160 A 16,16 0,0,0 536,176" class="nofill"></path><text x="538" y="172" >after</text><text x="586" y="172" >two</text><text x="618" y="172" >increments</text><path d="M 696,160 A 16,16 0,0,1 696,176" class="nofill"></path><text x="282" y="236" >One</text><text x="314" y="236" >shared</text><text x="370" y="236" >allocation</text><text x="458" y="236" >on</text><text x="482" y="236" >heap</text><g><line x1="104" y1="72" x2="256" y2="72" class="solid"></line><line x1="164" y1="72" x2="164" y2="200" class="solid"></line><line x1="104" y1="136" x2="164" y2="136" class="solid"></line><line x1="104" y1="200" x2="164" y2="200" class="solid"></line></g><g><text x="530" y="156">←</text><text x="546" y="156">RefCell</text></g></svg></div>
+<p><strong>Two kinds of tracking:</strong></p>
+<ol>
+<li><strong>Rc level</strong>: Reference counting (how many owners exist)</li>
+<li><strong>RefCell level</strong>: Borrow checking (is anyone currently borrowing?)</li>
+</ol>
+<p><strong>Two ways things can go wrong:</strong></p>
+<ol>
+<li><strong>Memory leak</strong> - If you create a reference cycle at the Rc level (counts never reach 0)</li>
+<li><strong>Runtime panic</strong> - If you violate borrow rules at the RefCell level (multiple mutable borrows)</li>
+</ol>
+<h3 id="two-patterns-which-order"><a class="header" href="#two-patterns-which-order">Two Patterns: Which Order?</a></h3>
+<p>You'll see two different patterns in this chapter - the order matters!</p>
+<p><strong>Pattern 1: <code>Rc&lt;RefCell&lt;T&gt;&gt;</code> - Multiple owners of mutable data</strong></p>
+<p>Use when: You need <strong>multiple owners</strong> who all mutate <strong>the same value</strong>.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let counter = Rc::new(RefCell::new(0));
+let c1 = Rc::clone(&amp;counter);
+let c2 = Rc::clone(&amp;counter);
+
+*c1.borrow_mut() += 1;  // Both owners mutate the same counter
+*c2.borrow_mut() += 1;  // Counter is now 2
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Pattern 2: <code>RefCell&lt;Rc&lt;T&gt;&gt;</code> - Changing which shared value you point to</strong></p>
+<p>Use when: You have <strong>one owner</strong> who needs to <strong>change which</strong> <code>Rc</code> it points to.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct Node {
+    next: RefCell&lt;Option&lt;Rc&lt;Node&gt;&gt;&gt;,  // Can change which node this points to
+}
+
+let node_a = Rc::new(Node { next: RefCell::new(None) });
+let node_b = Rc::new(Node { next: RefCell::new(None) });
+
+// node_a changes which node it points to
+*node_a.next.borrow_mut() = Some(Rc::clone(&amp;node_b));
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Key difference:</strong></p>
+<ul>
+<li><code>Rc&lt;RefCell&lt;T&gt;&gt;</code>: Multiple owners → mutate the value inside</li>
+<li><code>RefCell&lt;Rc&lt;T&gt;&gt;</code>: One owner → change which Rc you're pointing to</li>
+</ul>
+<p>You'll see <strong>both</strong> patterns in real code!</p>
+<blockquote>
+<p><strong>Note:</strong> When you add <code>Option</code> into the mix, the order becomes even more important: <code>RefCell&lt;Option&lt;Rc&lt;T&gt;&gt;&gt;</code> vs <code>Option&lt;RefCell&lt;Rc&lt;T&gt;&gt;&gt;</code> vs <code>Rc&lt;RefCell&lt;Option&lt;T&gt;&gt;&gt;</code> all have different capabilities. See <a href="appendix-nested-types.html">Appendix: Nested Types</a> for a detailed exploration of these patterns.</p>
+</blockquote>
+<h2 id="creating-cycles-the-memory-leak-problem"><a class="header" href="#creating-cycles-the-memory-leak-problem">Creating Cycles: The Memory Leak Problem</a></h2>
+<p>Now that we can mutate through <code>Rc</code>, we can create <strong>actual reference cycles</strong> that leak memory. Chapter 7 showed this conceptually with <code>std::mem::forget</code> - now let's see it for real.</p>
+<h3 id="step-by-step-cycle-creation"><a class="header" href="#step-by-step-cycle-creation">Step-by-Step Cycle Creation</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::rc::Rc;
+use std::cell::RefCell;
+
+// Node that can point to another node
+struct Node {
+    value: i32,
+    next: RefCell&lt;Option&lt;Rc&lt;Node&gt;&gt;&gt;,
+}
+
+// Create two nodes
+let node_a = Rc::new(Node {
+    value: 1,
+    next: RefCell::new(None),
+});
+
+let node_b = Rc::new(Node {
+    value: 2,
+    next: RefCell::new(None),
+});
+
+// a count: 1, b count: 1
+
+// Point a -&gt; b
+*node_a.next.borrow_mut() = Some(Rc::clone(&amp;node_b));
+// a count: 1, b count: 2 (a's next points to b)
+
+// Point b -&gt; a (creating a cycle!)
+*node_b.next.borrow_mut() = Some(Rc::clone(&amp;node_a));
+// a count: 2, b count: 2 (cycle created!)
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Visual representation of the cycle:</strong></p>
+<div style='width:100%; height:320px;'><style type="text/css">svg { width: 100% !important; }</style><svg xmlns="http://www.w3.org/2000/svg" width="416" height="320" class="svgbob"><style>.svgbob line, .svgbob path, .svgbob circle, .svgbob rect, .svgbob polygon {  stroke: var(--fg);  stroke-width: 2;  stroke-opacity: 1;  fill-opacity: 1;  stroke-linecap: round;  stroke-linejoin: miter;}.svgbob text {  white-space: pre;  fill: var(--fg);  font-family: Iosevka Fixed, monospace;  font-size: 14px;}.svgbob rect.backdrop {  stroke: none;  fill: transparent;}.svgbob .broken {  stroke-dasharray: 8;}.svgbob .filled {  fill: black;}.svgbob .bg_filled {  fill: transparent;  stroke-width: 1;}.svgbob .nofill {  fill: transparent;}.svgbob .end_marked_arrow {  marker-end: url(#arrow);}.svgbob .start_marked_arrow {  marker-start: url(#arrow);}.svgbob .end_marked_diamond {  marker-end: url(#diamond);}.svgbob .start_marked_diamond {  marker-start: url(#diamond);}.svgbob .end_marked_circle {  marker-end: url(#circle);}.svgbob .start_marked_circle {  marker-start: url(#circle);}.svgbob .end_marked_open_circle {  marker-end: url(#open_circle);}.svgbob .start_marked_open_circle {  marker-start: url(#open_circle);}.svgbob .end_marked_big_open_circle {  marker-end: url(#big_open_circle);}.svgbob .start_marked_big_open_circle {  marker-start: url(#big_open_circle);}</style><defs><marker id="arrow" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,0 0,4 4,2 0,0"></polygon></marker><marker id="diamond" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,2 2,0 4,2 2,4 0,2"></polygon></marker><marker id="circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="filled"></circle></marker><marker id="open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="bg_filled"></circle></marker><marker id="big_open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="3" class="bg_filled"></circle></marker></defs><rect class="backdrop" x="0" y="0" width="416" height="320"></rect><rect x="188" y="40" width="216" height="80" class="solid nofill" rx="0"></rect><text x="202" y="60" >Rc&lt;Node&gt;</text><text x="274" y="60" >for</text><text x="306" y="60" >node</text><line x1="336" y1="64" x2="344" y2="64" class="solid"></line><text x="346" y="60" >a</text><text x="202" y="76" >strong</text><line x1="248" y1="80" x2="256" y2="80" class="solid"></line><text x="258" y="76" >count:</text><text x="314" y="76" >2</text><text x="202" y="92" >value:</text><text x="258" y="92" >1</text><text x="202" y="108" >next:</text><text x="250" y="108" >Some</text><path d="M 288,96 A 16,16 0,0,0 288,112" class="nofill"></path><text x="290" y="108" >Rc</text><path d="M 304,96 A 16,16 0,0,1 304,112" class="nofill"></path><line x1="376" y1="120" x2="384" y2="120" class="solid"></line><rect x="4" y="56" width="80" height="32" class="solid nofill" rx="0"></rect><text x="18" y="76" >node</text><line x1="48" y1="80" x2="56" y2="80" class="solid"></line><text x="58" y="76" >a</text><rect x="188" y="184" width="216" height="80" class="solid nofill" rx="0"></rect><line x1="360" y1="184" x2="368" y2="184" class="solid"></line><text x="202" y="204" >Rc&lt;Node&gt;</text><text x="274" y="204" >for</text><text x="306" y="204" >node</text><line x1="336" y1="208" x2="344" y2="208" class="solid"></line><text x="346" y="204" >b</text><text x="202" y="220" >strong</text><line x1="248" y1="224" x2="256" y2="224" class="solid"></line><text x="258" y="220" >count:</text><text x="314" y="220" >2</text><text x="202" y="236" >value:</text><text x="258" y="236" >2</text><text x="202" y="252" >next:</text><text x="250" y="252" >Some</text><path d="M 288,240 A 16,16 0,0,0 288,256" class="nofill"></path><text x="290" y="252" >Rc</text><path d="M 304,240 A 16,16 0,0,1 304,256" class="nofill"></path><rect x="4" y="200" width="80" height="32" class="solid nofill" rx="0"></rect><text x="18" y="220" >node</text><line x1="48" y1="224" x2="56" y2="224" class="solid"></line><text x="58" y="220" >b</text><text x="2" y="12" >Stack</text><text x="202" y="12" >Heap</text><line x1="88" y1="72" x2="176" y2="72" class="solid"></line><polygon points="176,68 184,72 176,76" class="filled"></polygon><polygon points="376,164 384,164 380,176" class="filled"></polygon><polygon points="360,140 364,128 368,140" class="filled"></polygon><line x1="88" y1="216" x2="176" y2="216" class="solid"></line><polygon points="176,212 184,216 176,220" class="filled"></polygon><text x="202" y="300" >Circular</text><text x="274" y="300" >reference!</text><g><line x1="320" y1="104" x2="380" y2="104" class="solid"></line><line x1="380" y1="104" x2="380" y2="164" class="solid"></line></g><g><line x1="364" y1="140" x2="364" y2="248" class="solid"></line><line x1="320" y1="248" x2="364" y2="248" class="solid"></line></g></svg></div>
+<p><strong>When the stack variables drop:</strong></p>
+<ol>
+<li><code>node_a</code> drops: Decrements node_a's count from 2 to 1</li>
+<li><code>node_b</code> drops: Decrements node_b's count from 2 to 1</li>
+<li>Both nodes still have count = 1 (from each other's <code>next</code> field)</li>
+<li>Neither can be freed because their counts never reach 0</li>
+<li>Memory leaked forever! 💀</li>
+</ol>
+<p><strong>This is EXACTLY what Chapter 7's <code>std::mem::forget</code> example demonstrated</strong> - the memory stays allocated because the reference count never reaches zero, preventing <code>Drop</code> from being called.</p>
+<h3 id="why-cycles-leak-memory"><a class="header" href="#why-cycles-leak-memory">Why Cycles Leak Memory</a></h3>
+<p>The cycle prevents deallocation because:</p>
+<ul>
+<li><strong>Node A</strong> can't be freed while Node B holds a reference to it</li>
+<li><strong>Node B</strong> can't be freed while Node A holds a reference to it</li>
+<li>There's no "starting point" to begin cleanup</li>
+<li>The reference counts stay positive forever</li>
+</ul>
+<p>This is a <strong>memory leak</strong> - the memory is allocated but never freed. Unlike other memory safety violations (use-after-free, double-free), memory leaks are considered "safe" in Rust - they won't crash your program, but they waste memory.</p>
+<blockquote>
+<p><strong>Note:</strong> "Forever" means for the program's lifetime - the OS reclaims memory when the program exits. The real problem: if cycles are created repeatedly in long-running programs (servers that run 24/7, desktop apps), memory usage grows unbounded until the program crashes.</p>
+</blockquote>
+<h2 id="breaking-cycles-with-weak"><a class="header" href="#breaking-cycles-with-weak">Breaking Cycles with Weak</a></h2>
+<p>Remember our cycle problem? Both nodes point to each other:</p>
+<div style='width:100%; height:64px;'><style type="text/css">svg { width: 100% !important; }</style><svg xmlns="http://www.w3.org/2000/svg" width="320" height="64" class="svgbob"><style>.svgbob line, .svgbob path, .svgbob circle, .svgbob rect, .svgbob polygon {  stroke: var(--fg);  stroke-width: 2;  stroke-opacity: 1;  fill-opacity: 1;  stroke-linecap: round;  stroke-linejoin: miter;}.svgbob text {  white-space: pre;  fill: var(--fg);  font-family: Iosevka Fixed, monospace;  font-size: 14px;}.svgbob rect.backdrop {  stroke: none;  fill: transparent;}.svgbob .broken {  stroke-dasharray: 8;}.svgbob .filled {  fill: black;}.svgbob .bg_filled {  fill: transparent;  stroke-width: 1;}.svgbob .nofill {  fill: transparent;}.svgbob .end_marked_arrow {  marker-end: url(#arrow);}.svgbob .start_marked_arrow {  marker-start: url(#arrow);}.svgbob .end_marked_diamond {  marker-end: url(#diamond);}.svgbob .start_marked_diamond {  marker-start: url(#diamond);}.svgbob .end_marked_circle {  marker-end: url(#circle);}.svgbob .start_marked_circle {  marker-start: url(#circle);}.svgbob .end_marked_open_circle {  marker-end: url(#open_circle);}.svgbob .start_marked_open_circle {  marker-start: url(#open_circle);}.svgbob .end_marked_big_open_circle {  marker-end: url(#big_open_circle);}.svgbob .start_marked_big_open_circle {  marker-start: url(#big_open_circle);}</style><defs><marker id="arrow" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,0 0,4 4,2 0,0"></polygon></marker><marker id="diamond" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,2 2,0 4,2 2,4 0,2"></polygon></marker><marker id="circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="filled"></circle></marker><marker id="open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="bg_filled"></circle></marker><marker id="big_open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="3" class="bg_filled"></circle></marker></defs><rect class="backdrop" x="0" y="0" width="320" height="64"></rect><text x="2" y="12" >node</text><line x1="32" y1="16" x2="40" y2="16" class="solid"></line><text x="42" y="12" >a</text><text x="178" y="12" >node</text><line x1="208" y1="16" x2="216" y2="16" class="solid"></line><text x="218" y="12" >b</text><text x="34" y="28" >↑</text><path d="M 64,0 A 16,16 0,0,0 64,16" class="nofill"></path><text x="66" y="12" >count:</text><text x="122" y="12" >2</text><path d="M 128,0 A 16,16 0,0,1 128,16" class="nofill"></path><line x1="144" y1="8" x2="160" y2="8" class="solid"></line><text x="162" y="12" >→</text><path d="M 240,0 A 16,16 0,0,0 240,16" class="nofill"></path><text x="242" y="12" >count:</text><text x="298" y="12" >2</text><path d="M 304,0 A 16,16 0,0,1 304,16" class="nofill"></path><g><line x1="220" y1="16" x2="220" y2="40" class="solid"></line><line x1="36" y1="32" x2="36" y2="40" class="solid"></line><line x1="36" y1="40" x2="220" y2="40" class="solid"></line></g></svg></div>
+<p>When we drop both variables, the counts go from 2 to 1, but never reach 0. <strong>The nodes keep each other alive forever.</strong></p>
+<h3 id="the-real-world-problem-parent-child-trees"><a class="header" href="#the-real-world-problem-parent-child-trees">The Real-World Problem: Parent-Child Trees</a></h3>
+<p>Imagine a tree structure where:</p>
+<ul>
+<li>Parent nodes need to access their children</li>
+<li>Child nodes need to access their parent</li>
+</ul>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct Node {
+    value: i32,
+    parent: Rc&lt;RefCell&lt;Node&gt;&gt;,   // Child points to parent
+    children: Vec&lt;Rc&lt;RefCell&lt;Node&gt;&gt;&gt;,  // Parent points to children
+}
+<span class="boring">}</span></code></pre></pre>
+<p>This creates a cycle! The parent keeps children alive, and children keep the parent alive. When you drop the root, nothing is freed.</p>
+<h3 id="the-solution-weak-references"><a class="header" href="#the-solution-weak-references">The Solution: Weak References</a></h3>
+<p><strong>The insight:</strong> Children shouldn't "own" their parent. They just need to reference it.</p>
+<p><strong>What does "own" mean?</strong> In Rust, owning a value means <strong>keeping it alive</strong>. When you have an <code>Rc&lt;T&gt;</code>, you own the value - it won't be freed as long as your <code>Rc</code> exists. The value is only freed when <em>all</em> owners (all <code>Rc</code> clones) are dropped.</p>
+<p>In a tree, if children own their parent via <code>Rc</code>, they keep the parent alive. But the parent also owns the children via <code>Rc</code>, keeping them alive. This is a cycle - nothing can be freed.</p>
+<p>The fix: Use <code>Weak&lt;T&gt;</code> for child → parent references. <code>Weak</code> <strong>doesn't own</strong> - it doesn't keep the value alive:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::rc::{Rc, Weak};
+use std::cell::RefCell;
+
+struct Node {
+    value: i32,
+    parent: Weak&lt;RefCell&lt;Node&gt;&gt;,        // Weak: doesn't own parent
+    children: Vec&lt;Rc&lt;RefCell&lt;Node&gt;&gt;&gt;,   // Rc: owns children
+}
+
+// Create root node (the parent)
+let root = Rc::new(RefCell::new(Node {
+    value: 1,
+    parent: Weak::new(),  // Root has no parent
+    children: vec![],
+}));
+
+// Create child nodes
+let child1 = Rc::new(RefCell::new(Node {
+    value: 2,
+    parent: Rc::downgrade(&amp;root),  // Weak reference to parent
+    children: vec![],
+}));
+
+let child2 = Rc::new(RefCell::new(Node {
+    value: 3,
+    parent: Rc::downgrade(&amp;root),  // Weak reference to parent
+    children: vec![],
+}));
+
+// Root stores strong references to children
+root.borrow_mut().children.push(Rc::clone(&amp;child1));
+root.borrow_mut().children.push(Rc::clone(&amp;child2));
+
+// Reference counts:
+// - root: strong=1 (only `root` variable owns it; children have Weak which don't increment strong_count)
+// - child1: strong=2 (owned by `child1` variable + root.children)
+// - child2: strong=2 (owned by `child2` variable + root.children)
+<span class="boring">}</span></code></pre></pre>
+<p>Now when you drop the variables:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>drop(child1);  // child1 strong_count: 2 → 1 (still owned by root.children)
+drop(child2);  // child2 strong_count: 2 → 1 (still owned by root.children)
+
+drop(root);    // ⬅ This triggers the cleanup cascade:
+               // 1. root strong_count: 1 → 0 (no more owners)
+               // 2. root is freed
+               // 3. root.children Vec is freed
+               // 4. child1 strong_count: 1 → 0 (Vec was the last owner)
+               // 5. child2 strong_count: 1 → 0 (Vec was the last owner)
+               // 6. child1 and child2 are freed
+               // 7. No leak! Everything is cleaned up.
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Why this works:</strong> Children use <code>Weak</code> for parent references, so they don't keep the root alive. When the <code>root</code> variable is dropped, the root's strong count reaches 0 and it's freed. This frees the <code>children</code> Vec, which drops the children.</p>
+<h3 id="how-weak-works"><a class="header" href="#how-weak-works">How Weak Works</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let strong = Rc::new(42);
+let weak: Weak&lt;i32&gt; = Rc::downgrade(&amp;strong);
+// Strong count: 1, Weak count: 1
+
+// Must upgrade to use (might return None if value was dropped)
+if let Some(upgraded) = weak.upgrade() {
+    // upgrade() succeeded! strong_count: 1 → 2
+    // `upgraded` is now an Rc&lt;i32&gt; - a new owner
+    assert_eq!(*upgraded, 42);  // Value: 42
+
+    // When `upgraded` goes out of scope: strong_count: 2 → 1
+}
+// After scope ends, strong_count back to 1
+
+drop(strong); // strong_count: 1 → 0, value is freed (even though weak_count = 1, Weak doesn't keep value alive)
+
+// After value is dropped, upgrade returns None
+assert!(weak.upgrade().is_none());
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Key differences:</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Strong (<code>Rc&lt;T&gt;</code>)</th><th>Weak (<code>Weak&lt;T&gt;</code>)</th></tr></thead><tbody>
+<tr><td>Keeps value alive</td><td>Doesn't keep value alive</td></tr>
+<tr><td>Increments <code>strong_count</code></td><td>Increments <code>weak_count</code></td></tr>
+<tr><td>Direct access with <code>*</code></td><td>Must <code>.upgrade()</code> first (returns <code>Option&lt;Rc&lt;T&gt;&gt;</code>)</td></tr>
+<tr><td>Value freed when count = 0</td><td>Can access if strong refs still exist</td></tr>
+</tbody></table>
+</div>
+<h3 id="parent-child-tree-pattern"><a class="header" href="#parent-child-tree-pattern">Parent-Child Tree Pattern</a></h3>
+<p>The classic use case: Trees where children can navigate to their parent.</p>
+<p><strong>The rule:</strong> Use <code>Rc</code> for ownership direction, <code>Weak</code> for back-references:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::rc::{Rc, Weak};
+use std::cell::RefCell;
+
+struct Node {
+    value: i32,
+    parent: RefCell&lt;Weak&lt;Node&gt;&gt;,           // ← Weak to parent (non-owning)
+    children: RefCell&lt;Vec&lt;Rc&lt;Node&gt;&gt;&gt;,      // ← Strong to children (owning)
+}
+
+impl Node {
+    fn new(value: i32) -&gt; Rc&lt;Node&gt; {
+        Rc::new(Node {
+            value,
+            parent: RefCell::new(Weak::new()),
+            children: RefCell::new(vec![]),
+        })
+    }
+
+    fn add_child(parent: &amp;Rc&lt;Node&gt;, child: &amp;Rc&lt;Node&gt;) {
+        // Child holds Weak reference to parent (doesn't keep parent alive)
+        *child.parent.borrow_mut() = Rc::downgrade(parent);
+
+        // Parent holds strong reference to child (keeps child alive)
+        parent.children.borrow_mut().push(Rc::clone(child));
+    }
+}
+
+// Usage
+let root = Node::new(1);
+let child1 = Node::new(2);
+let child2 = Node::new(3);
+
+Node::add_child(&amp;root, &amp;child1);
+Node::add_child(&amp;root, &amp;child2);
+
+// Child can access parent
+if let Some(parent) = child1.parent.borrow().upgrade() {
+    println!("Parent value: {}", parent.value); // 1
+}
+
+// When root is dropped:
+// - Children's strong_count goes to 0 (only parent held them)
+// - Children are freed
+// - Parent's weak_count goes to 0 (children held weak refs)
+// - No memory leak! ✅
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Visual representation:</strong></p>
+<div style='width:100%; height:320px;'><style type="text/css">svg { width: 100% !important; }</style><svg xmlns="http://www.w3.org/2000/svg" width="464" height="320" class="svgbob"><style>.svgbob line, .svgbob path, .svgbob circle, .svgbob rect, .svgbob polygon {  stroke: var(--fg);  stroke-width: 2;  stroke-opacity: 1;  fill-opacity: 1;  stroke-linecap: round;  stroke-linejoin: miter;}.svgbob text {  white-space: pre;  fill: var(--fg);  font-family: Iosevka Fixed, monospace;  font-size: 14px;}.svgbob rect.backdrop {  stroke: none;  fill: transparent;}.svgbob .broken {  stroke-dasharray: 8;}.svgbob .filled {  fill: black;}.svgbob .bg_filled {  fill: transparent;  stroke-width: 1;}.svgbob .nofill {  fill: transparent;}.svgbob .end_marked_arrow {  marker-end: url(#arrow);}.svgbob .start_marked_arrow {  marker-start: url(#arrow);}.svgbob .end_marked_diamond {  marker-end: url(#diamond);}.svgbob .start_marked_diamond {  marker-start: url(#diamond);}.svgbob .end_marked_circle {  marker-end: url(#circle);}.svgbob .start_marked_circle {  marker-start: url(#circle);}.svgbob .end_marked_open_circle {  marker-end: url(#open_circle);}.svgbob .start_marked_open_circle {  marker-start: url(#open_circle);}.svgbob .end_marked_big_open_circle {  marker-end: url(#big_open_circle);}.svgbob .start_marked_big_open_circle {  marker-start: url(#big_open_circle);}</style><defs><marker id="arrow" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,0 0,4 4,2 0,0"></polygon></marker><marker id="diamond" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,2 2,0 4,2 2,4 0,2"></polygon></marker><marker id="circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="filled"></circle></marker><marker id="open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="bg_filled"></circle></marker><marker id="big_open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="3" class="bg_filled"></circle></marker></defs><rect class="backdrop" x="0" y="0" width="464" height="320"></rect><rect x="4" y="152" width="88" height="48" class="solid nofill" rx="0"></rect><text x="26" y="172" >child1</text><text x="18" y="188" >value:</text><text x="74" y="188" >2</text><rect x="124" y="152" width="88" height="48" class="solid nofill" rx="0"></rect><text x="146" y="172" >child2</text><text x="138" y="188" >value:</text><text x="194" y="188" >3</text><rect x="244" y="152" width="88" height="48" class="solid nofill" rx="0"></rect><text x="266" y="172" >child3</text><text x="258" y="188" >value:</text><text x="314" y="188" >4</text><text x="42" y="28" >root</text><polygon points="128,20 120,24 128,28" class="filled"></polygon><line x1="128" y1="24" x2="136" y2="24" class="solid"></line><text x="138" y="28" >.</text><line x1="144" y1="24" x2="160" y2="24" class="solid"></line><text x="162" y="28" >.</text><line x1="168" y1="24" x2="184" y2="24" class="solid"></line><text x="186" y="28" >.</text><line x1="192" y1="24" x2="208" y2="24" class="solid"></line><text x="210" y="28" >.</text><line x1="216" y1="24" x2="232" y2="24" class="solid"></line><text x="234" y="28" >.</text><line x1="240" y1="24" x2="256" y2="24" class="solid"></line><text x="258" y="28" >.</text><line x1="264" y1="24" x2="280" y2="24" class="solid"></line><text x="282" y="28" >.</text><line x1="288" y1="24" x2="304" y2="24" class="solid"></line><text x="306" y="28" >.</text><line x1="312" y1="24" x2="328" y2="24" class="solid"></line><text x="330" y="28" >.</text><line x1="336" y1="24" x2="352" y2="24" class="solid"></line><text x="354" y="28" >.</text><line x1="360" y1="24" x2="376" y2="24" class="solid"></line><text x="378" y="28" >.</text><line x1="384" y1="24" x2="400" y2="24" class="solid"></line><text x="402" y="28" >.</text><line x1="408" y1="24" x2="424" y2="24" class="solid"></line><text x="426" y="28" >.</text><text x="34" y="44" >value:</text><text x="90" y="44" >1</text><line x1="452" y1="60" x2="452" y2="80" class="solid"></line><line x1="452" y1="92" x2="452" y2="112" class="solid"></line><line x1="452" y1="124" x2="452" y2="144" class="solid"></line><polygon points="48,132 56,132 52,144" class="filled"></polygon><polygon points="168,132 176,132 172,144" class="filled"></polygon><polygon points="288,132 296,132 292,144" class="filled"></polygon><line x1="452" y1="156" x2="452" y2="176" class="solid"></line><line x1="452" y1="188" x2="452" y2="208" class="solid"></line><line x1="52" y1="208" x2="52" y2="224" class="solid"></line><line x1="172" y1="208" x2="172" y2="224" class="solid"></line><line x1="292" y1="208" x2="292" y2="224" class="solid"></line><line x1="452" y1="220" x2="452" y2="240" class="solid"></line><text x="50" y="236" >.</text><line x1="56" y1="232" x2="72" y2="232" class="solid"></line><text x="74" y="236" >.</text><line x1="80" y1="232" x2="96" y2="232" class="solid"></line><text x="98" y="236" >.</text><line x1="104" y1="232" x2="120" y2="232" class="solid"></line><text x="122" y="236" >.</text><line x1="128" y1="232" x2="144" y2="232" class="solid"></line><text x="146" y="236" >.</text><text x="194" y="236" >.</text><line x1="200" y1="232" x2="216" y2="232" class="solid"></line><text x="218" y="236" >.</text><line x1="224" y1="232" x2="240" y2="232" class="solid"></line><text x="242" y="236" >.</text><line x1="248" y1="232" x2="264" y2="232" class="solid"></line><text x="266" y="236" >.</text><line x1="272" y1="232" x2="288" y2="232" class="solid"></line><text x="290" y="236" >.</text><line x1="452" y1="252" x2="452" y2="272" class="solid"></line><text x="130" y="268" >references</text><line x1="172" y1="272" x2="172" y2="288" class="solid"></line><text x="170" y="300" >.</text><line x1="176" y1="296" x2="192" y2="296" class="solid"></line><text x="194" y="300" >.</text><line x1="200" y1="296" x2="216" y2="296" class="solid"></line><text x="218" y="300" >.</text><line x1="224" y1="296" x2="240" y2="296" class="solid"></line><text x="242" y="300" >.</text><line x1="248" y1="296" x2="264" y2="296" class="solid"></line><text x="266" y="300" >.</text><line x1="272" y1="296" x2="288" y2="296" class="solid"></line><text x="290" y="300" >.</text><line x1="296" y1="296" x2="312" y2="296" class="solid"></line><text x="314" y="300" >.</text><line x1="320" y1="296" x2="336" y2="296" class="solid"></line><text x="338" y="300" >.</text><line x1="344" y1="296" x2="360" y2="296" class="solid"></line><text x="362" y="300" >.</text><line x1="368" y1="296" x2="384" y2="296" class="solid"></line><text x="386" y="300" >.</text><line x1="392" y1="296" x2="408" y2="296" class="solid"></line><text x="410" y="300" >.</text><line x1="416" y1="296" x2="432" y2="296" class="solid"></line><text x="434" y="300" >.</text><text x="66" y="92" >Strong</text><text x="122" y="92" >references</text><path d="M 216,80 A 16,16 0,0,0 216,96" class="nofill"></path><text x="218" y="92" >parent</text><text x="274" y="92" >owns</text><text x="314" y="92" >children</text><path d="M 376,80 A 16,16 0,0,1 376,96" class="nofill"></path><text x="90" y="268" >Weak</text><path d="M 224,256 A 16,16 0,0,0 224,272" class="nofill"></path><text x="226" y="268" >children</text><text x="298" y="268" >don&#39;t</text><text x="346" y="268" >own</text><text x="378" y="268" >parent</text><path d="M 424,256 A 16,16 0,0,1 424,272" class="nofill"></path><g><line x1="4" y1="8" x2="116" y2="8" class="solid"></line><line x1="4" y1="8" x2="4" y2="56" class="solid"></line><line x1="116" y1="8" x2="116" y2="56" class="solid"></line><line x1="4" y1="56" x2="116" y2="56" class="solid"></line><line x1="52" y1="56" x2="52" y2="132" class="solid"></line><line x1="52" y1="120" x2="292" y2="120" class="solid"></line><line x1="172" y1="120" x2="172" y2="132" class="solid"></line><line x1="292" y1="120" x2="292" y2="132" class="solid"></line></g><g><line x1="432" y1="24" x2="448" y2="24" class="solid"></line><path d="M 448,24 A 4,4 0,0,1 452,28" class="nofill"></path><line x1="452" y1="28" x2="452" y2="48" class="solid"></line></g><g><line x1="152" y1="232" x2="168" y2="232" class="solid"></line><path d="M 168,232 A 4,4 0,0,1 172,236" class="nofill"></path><path d="M 176,232 A 4,4 0,0,0 172,236" class="nofill"></path><line x1="172" y1="236" x2="172" y2="256" class="solid"></line><line x1="176" y1="232" x2="192" y2="232" class="solid"></line></g><g><line x1="452" y1="284" x2="452" y2="296" class="solid"></line><line x1="440" y1="296" x2="452" y2="296" class="solid"></line></g></svg></div>
+<p><strong>Why this works:</strong></p>
+<ul>
+<li>Parent owns children with <code>Rc</code> (strong references)</li>
+<li>Children reference parent with <code>Weak</code> (non-owning references)</li>
+<li>When parent drops, children's <code>strong_count</code> goes to 0, so they're freed</li>
+<li>No cycle, no leak! ✅</li>
+</ul>
+<h2 id="common-patterns"><a class="header" href="#common-patterns">Common Patterns</a></h2>
+<h3 id="pattern-1-graph-structure-with-adjacency-list"><a class="header" href="#pattern-1-graph-structure-with-adjacency-list">Pattern 1: Graph Structure with Adjacency List</a></h3>
+<p>Build a graph where nodes can have edges to other nodes:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::rc::Rc;
+use std::cell::RefCell;
+
+struct Node {
+    id: usize,
+    edges: RefCell&lt;Vec&lt;Rc&lt;Node&gt;&gt;&gt;,
+}
+
+impl Node {
+    fn new(id: usize) -&gt; Rc&lt;Node&gt; {
+        Rc::new(Node {
+            id,
+            edges: RefCell::new(vec![]),
+        })
+    }
+
+    fn add_edge(&amp;self, target: Rc&lt;Node&gt;) {
+        self.edges.borrow_mut().push(target);
+    }
+
+    fn neighbors(&amp;self) -&gt; Vec&lt;Rc&lt;Node&gt;&gt; {
+        // Clone the Vec (clones each Rc inside, incrementing their reference counts)
+        // The returned Vec owns these Rc clones until the caller drops it
+        self.edges.borrow().clone()
+    }
+}
+
+// Usage: Build a simple graph
+let node1 = Node::new(1);
+let node2 = Node::new(2);
+let node3 = Node::new(3);
+
+node1.add_edge(Rc::clone(&amp;node2));
+node1.add_edge(Rc::clone(&amp;node3));
+node2.add_edge(Rc::clone(&amp;node3));
+
+// Traverse the graph
+for neighbor in node1.neighbors() {
+    println!("Node {} connects to Node {}", node1.id, neighbor.id);
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Note:</strong> This creates strong references only, which can leak if there are cycles. For graphs with cycles, use <code>Weak</code> for some edges (e.g., back edges).</p>
+<h3 id="pattern-2-doubly-linked-list"><a class="header" href="#pattern-2-doubly-linked-list">Pattern 2: Doubly-Linked List</a></h3>
+<p>A list you can traverse in both directions:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::rc::{Rc, Weak};
+use std::cell::RefCell;
+
+struct Node {
+    value: i32,
+    next: RefCell&lt;Option&lt;Rc&lt;Node&gt;&gt;&gt;,      // Strong forward link
+    prev: RefCell&lt;Weak&lt;Node&gt;&gt;,            // Weak backward link
+}
+
+impl Node {
+    fn new(value: i32) -&gt; Rc&lt;Node&gt; {
+        Rc::new(Node {
+            value,
+            next: RefCell::new(None),
+            prev: RefCell::new(Weak::new()),
+        })
+    }
+
+    fn append(current: &amp;Rc&lt;Node&gt;, next: &amp;Rc&lt;Node&gt;) {
+        *next.prev.borrow_mut() = Rc::downgrade(current);
+        *current.next.borrow_mut() = Some(Rc::clone(next));
+    }
+}
+
+// Usage
+let head = Node::new(1);
+let second = Node::new(2);
+let third = Node::new(3);
+
+Node::append(&amp;head, &amp;second);
+Node::append(&amp;second, &amp;third);
+
+// Navigate forward
+if let Some(next) = head.next.borrow().as_ref() {
+    println!("After head: {}", next.value); // 2
+}
+
+// Navigate backward
+if let Some(prev) = third.prev.borrow().upgrade() {
+    println!("Before third: {}", prev.value); // 2
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Key insight:</strong> Forward links use <code>Rc</code> (ownership), backward links use <code>Weak</code> (non-owning).</p>
+<h3 id="pattern-3-observer-pattern"><a class="header" href="#pattern-3-observer-pattern">Pattern 3: Observer Pattern</a></h3>
+<p>An observable that notifies multiple observers:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::rc::Rc;
+use std::cell::RefCell;
+
+trait Observer {
+    fn notify(&amp;self, event: &amp;str);
+}
+
+struct Observable {
+    observers: RefCell&lt;Vec&lt;Rc&lt;dyn Observer&gt;&gt;&gt;,
+}
+
+impl Observable {
+    fn new() -&gt; Self {
+        Observable {
+            observers: RefCell::new(vec![]),
+        }
+    }
+
+    fn subscribe(&amp;self, observer: Rc&lt;dyn Observer&gt;) {
+        self.observers.borrow_mut().push(observer);
+    }
+
+    fn notify_all(&amp;self, event: &amp;str) {
+        for observer in self.observers.borrow().iter() {
+            observer.notify(event);
+        }
+    }
+}
+
+// Concrete observer
+struct Logger {
+    name: String,
+}
+
+impl Observer for Logger {
+    fn notify(&amp;self, event: &amp;str) {
+        println!("[{}] Received event: {}", self.name, event);
+    }
+}
+
+// Usage
+let observable = Observable::new();
+
+let logger1 = Rc::new(Logger {
+    name: String::from("Logger1"),
+});
+let logger2 = Rc::new(Logger {
+    name: String::from("Logger2"),
+});
+
+observable.subscribe(Rc::clone(&amp;logger1));
+observable.subscribe(Rc::clone(&amp;logger2));
+
+observable.notify_all("UserLoggedIn");
+// Output:
+// [Logger1] Received event: UserLoggedIn
+// [Logger2] Received event: UserLoggedIn
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Why this works:</strong> Observers are shared via <code>Rc</code> (multiple parts can hold references to the same observer). The observable mutates its list through <code>RefCell</code>.</p>
+<h3 id="pattern-4-shared-cache-with-updates"><a class="header" href="#pattern-4-shared-cache-with-updates">Pattern 4: Shared Cache with Updates</a></h3>
+<p>Multiple readers with occasional updates:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::rc::Rc;
+use std::cell::RefCell;
+use std::collections::HashMap;
+
+struct Cache {
+    data: RefCell&lt;HashMap&lt;String, String&gt;&gt;,
+}
+
+impl Cache {
+    fn new() -&gt; Rc&lt;Cache&gt; {
+        Rc::new(Cache {
+            data: RefCell::new(HashMap::new()),
+        })
+    }
+
+    fn get(&amp;self, key: &amp;str) -&gt; Option&lt;String&gt; {
+        self.data.borrow().get(key).cloned()
+    }
+
+    fn set(&amp;self, key: String, value: String) {
+        self.data.borrow_mut().insert(key, value);
+    }
+}
+
+// Multiple components share the cache
+let cache = Cache::new();
+let reader1 = Rc::clone(&amp;cache);
+let reader2 = Rc::clone(&amp;cache);
+let writer = Rc::clone(&amp;cache);
+
+// Writer updates cache
+writer.set(String::from("user:123"), String::from("Alice"));
+
+// Readers can access
+if let Some(name) = reader1.get("user:123") {
+    println!("Reader1 sees: {}", name);
+}
+if let Some(name) = reader2.get("user:123") {
+    println!("Reader2 sees: {}", name);
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Important:</strong> This is single-threaded only! For multi-threaded caching, use <code>Arc&lt;Mutex&lt;HashMap&lt;K, V&gt;&gt;&gt;</code> (covered in Chapter 14).</p>
+<h2 id="pitfalls"><a class="header" href="#pitfalls">Pitfalls</a></h2>
+<h3 id="pitfall-1-creating-accidental-cycles"><a class="header" href="#pitfall-1-creating-accidental-cycles">Pitfall 1: Creating Accidental Cycles</a></h3>
+<p><strong>BAD:</strong> Both directions using strong references:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::rc::Rc;
+use std::cell::RefCell;
+
+struct Node {
+    value: i32,
+    next: RefCell&lt;Option&lt;Rc&lt;Node&gt;&gt;&gt;,
+    prev: RefCell&lt;Option&lt;Rc&lt;Node&gt;&gt;&gt;,  // ❌ BAD: Strong reference both ways!
+}
+
+let node_a = Rc::new(Node {
+    value: 1,
+    next: RefCell::new(None),
+    prev: RefCell::new(None),
+});
+
+let node_b = Rc::new(Node {
+    value: 2,
+    next: RefCell::new(None),
+    prev: RefCell::new(None),
+});
+
+// Create bidirectional strong references - CYCLE!
+*node_a.next.borrow_mut() = Some(Rc::clone(&amp;node_b));
+*node_b.prev.borrow_mut() = Some(Rc::clone(&amp;node_a));  // Memory leak! 💀
+
+// Counts: node_a = 2, node_b = 2
+// When they drop: counts go to 1, never reach 0
+// Memory leaked!
+<span class="boring">}</span></code></pre></pre>
+<p><strong>FIX:</strong> Use <code>Weak</code> for one direction:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::rc::{Rc, Weak};
+use std::cell::RefCell;
+
+struct Node {
+    value: i32,
+    next: RefCell&lt;Option&lt;Rc&lt;Node&gt;&gt;&gt;,    // Strong forward
+    prev: RefCell&lt;Weak&lt;Node&gt;&gt;,          // ✅ Weak backward
+}
+
+let node_a = Rc::new(Node {
+    value: 1,
+    next: RefCell::new(None),
+    prev: RefCell::new(Weak::new()),
+});
+
+let node_b = Rc::new(Node {
+    value: 2,
+    next: RefCell::new(None),
+    prev: RefCell::new(Weak::new()),
+});
+
+// One strong, one weak - NO CYCLE!
+*node_a.next.borrow_mut() = Some(Rc::clone(&amp;node_b));
+*node_b.prev.borrow_mut() = Rc::downgrade(&amp;node_a);  // ✅ Weak reference
+
+// When they drop, no cycle, memory is freed properly
+<span class="boring">}</span></code></pre></pre>
+<p><strong>The rule:</strong> Pick an ownership direction. Use <code>Rc</code> for ownership, <code>Weak</code> for back-references.</p>
+<h3 id="pitfall-2-borrow-panics-at-runtime"><a class="header" href="#pitfall-2-borrow-panics-at-runtime">Pitfall 2: Borrow Panics at Runtime</a></h3>
+<p><strong>BAD:</strong> Holding a borrow while trying to borrow mutably:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::rc::Rc;
+use std::cell::RefCell;
+
+let data = Rc::new(RefCell::new(vec![1, 2, 3]));
+let data2 = Rc::clone(&amp;data);
+
+// Borrow immutably
+let borrowed = data.borrow();
+println!("Length: {}", borrowed.len());
+
+// Try to borrow mutably through another Rc
+// data2.borrow_mut().push(4);  // 💥 PANIC! Already borrowed immutably
+
+// The borrow from data is still active!
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Why it panics:</strong> Because the <code>RefCell</code> is shared between <code>data</code> and <code>data2</code> (via <code>Rc</code>), both <code>Rc</code> instances point to the same <code>RefCell</code>. When <code>data.borrow()</code> is active, trying <code>data2.borrow_mut()</code> violates the borrowing rules - you can't have both immutable and mutable borrows of the same <code>RefCell</code> at the same time.</p>
+<p><strong>FIX 1:</strong> Drop the borrow explicitly:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let data = Rc::new(RefCell::new(vec![1, 2, 3]));
+let data2 = Rc::clone(&amp;data);
+
+let borrowed = data.borrow();
+println!("Length: {}", borrowed.len());
+drop(borrowed);  // ✅ Drop the borrow
+
+data2.borrow_mut().push(4);  // Now safe!
+<span class="boring">}</span></code></pre></pre>
+<p><strong>FIX 2:</strong> Use a shorter scope:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let data = Rc::new(RefCell::new(vec![1, 2, 3]));
+let data2 = Rc::clone(&amp;data);
+
+{
+    let borrowed = data.borrow();
+    println!("Length: {}", borrowed.len());
+}  // ✅ Borrow dropped here
+
+data2.borrow_mut().push(4);  // Now safe!
+<span class="boring">}</span></code></pre></pre>
+<p><strong>FIX 3:</strong> Don't store the borrow (best approach):</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let data = Rc::new(RefCell::new(vec![1, 2, 3]));
+let data2 = Rc::clone(&amp;data);
+
+println!("Length: {}", data.borrow().len());  // ✅ Borrow dropped immediately
+data2.borrow_mut().push(4);  // Now safe!
+<span class="boring">}</span></code></pre></pre>
+<p><strong>FIX 4:</strong> Use <code>try_borrow_mut</code> to handle gracefully:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let data = Rc::new(RefCell::new(vec![1, 2, 3]));
+let data2 = Rc::clone(&amp;data);
+
+let borrowed = data.borrow();
+println!("Length: {}", borrowed.len());
+
+// Try to borrow mutably - returns Err instead of panicking
+match data2.try_borrow_mut() {
+    Ok(mut b) =&gt; {
+        b.push(4);
+        println!("Successfully modified");
+    }
+    Err(_) =&gt; {
+        println!("Can't modify right now, already borrowed");
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="pitfall-3-weak-upgrade-failures"><a class="header" href="#pitfall-3-weak-upgrade-failures">Pitfall 3: Weak Upgrade Failures</a></h3>
+<p><strong>BAD:</strong> Assuming upgrade always succeeds:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::rc::{Rc, Weak};
+
+let strong = Rc::new(42);
+let weak = Rc::downgrade(&amp;strong);
+
+drop(strong);  // Value is freed!
+
+let value = weak.upgrade().unwrap();  // 💥 PANIC! upgrade() returns None
+<span class="boring">}</span></code></pre></pre>
+<p><strong>FIX:</strong> Always check if upgrade succeeds:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::rc::{Rc, Weak};
+
+let strong = Rc::new(42);
+let weak = Rc::downgrade(&amp;strong);
+
+drop(strong);
+
+// ✅ Check before using
+if let Some(value) = weak.upgrade() {
+    println!("Value: {}", *value);
+} else {
+    println!("Value has been dropped");
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Practical example:</strong> Tree traversal with parent pointers:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::rc::{Rc, Weak};
+use std::cell::RefCell;
+
+struct Node {
+    value: i32,
+    parent: RefCell&lt;Weak&lt;Node&gt;&gt;,
+}
+
+fn print_parent_value(node: &amp;Node) {
+    match node.parent.borrow().upgrade() {
+        Some(parent) =&gt; {
+            println!("Parent value: {}", parent.value);
+        }
+        None =&gt; {
+            println!("No parent (root node or parent dropped)");
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="implementation-building-weak"><a class="header" href="#implementation-building-weak">Implementation: Building Weak<T></a></h2>
+<blockquote>
+<p><strong>Note:</strong> The complete implementation is in <a href="../../src/rc.rs">src/rc.rs</a> in this repository. That implementation already includes <code>Weak&lt;T&gt;</code> and uses <code>ManuallyDrop&lt;T&gt;</code> internally. These sections show how to build them step-by-step to help you understand how they work under the hood.</p>
+</blockquote>
+<h3 id="weak-structure"><a class="header" href="#weak-structure">Weak Structure</a></h3>
+<p><code>Weak&lt;T&gt;</code> has the same structure as <code>Rc&lt;T&gt;</code> - it's just a pointer to the same <code>RcInner</code>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::cell::Cell;
+
+struct RcInner&lt;T&gt; {
+    strong_count: Cell&lt;usize&gt;,
+    weak_count: Cell&lt;usize&gt;,  // Track weak references
+    value: T,
+}
+
+pub struct Rc&lt;T&gt; {
+    ptr: *mut RcInner&lt;T&gt;,
+}
+
+pub struct Weak&lt;T&gt; {
+    ptr: *mut RcInner&lt;T&gt;,  // Same pointer type as Rc!
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Key difference:</strong> <code>Weak</code> points to the same allocation as <code>Rc</code>, but doesn't keep the value alive.</p>
+<blockquote>
+<p><strong>Implementation Note: Implicit Weak Reference</strong>
+In the real <code>std::rc::Rc</code> implementation, <code>weak_count</code> starts at 1, not 0. This represents an "implicit weak reference" held by the <code>Rc</code> allocation itself. The count only reaches 0 when both:</p>
+<ol>
+<li>All strong references are dropped (<code>strong_count == 0</code>)</li>
+<li>All explicit weak references are dropped</li>
+</ol>
+<p>This pattern ensures the <code>RcInner</code> allocation stays valid as long as ANY reference (strong or weak) exists. When <code>strong_count</code> reaches 0, the value <code>T</code> is dropped but <code>RcInner</code> remains allocated with <code>weak_count = 1</code> (the implicit reference). Only when the last explicit <code>Weak</code> is dropped does <code>weak_count</code> go from 1 to 0, triggering deallocation of <code>RcInner</code>.</p>
+<p>For simplicity, our implementation here shows <code>weak_count</code> starting at 0, which is conceptually easier to understand but differs from the actual std library implementation.</p>
+</blockquote>
+<h3 id="creating-weak-rcdowngrade"><a class="header" href="#creating-weak-rcdowngrade">Creating Weak: Rc::downgrade()</a></h3>
+<p>Convert a strong reference to a weak one:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;T&gt; Rc&lt;T&gt; {
+    pub fn downgrade(this: &amp;Rc&lt;T&gt;) -&gt; Weak&lt;T&gt; {
+        unsafe {
+            let inner = &amp;*this.ptr;
+
+            // Increment weak_count
+            let count = inner.weak_count.get();
+            inner.weak_count.set(count + 1);
+
+            // Create Weak pointing to the same allocation
+            Weak { ptr: this.ptr }
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>What happens:</strong></p>
+<ol>
+<li>Increment <code>weak_count</code> (doesn't affect <code>strong_count</code>)</li>
+<li>Create a new <code>Weak</code> with the same pointer</li>
+<li>Value stays alive (strong_count unchanged)</li>
+</ol>
+<h3 id="upgrading-weak-weakupgrade"><a class="header" href="#upgrading-weak-weakupgrade">Upgrading Weak: Weak::upgrade()</a></h3>
+<p>Try to convert a weak reference back to a strong one:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;T&gt; Weak&lt;T&gt; {
+    pub fn upgrade(&amp;self) -&gt; Option&lt;Rc&lt;T&gt;&gt; {
+        // Check for null pointer (from Weak::new())
+        if self.ptr.is_null() {
+            return None;
+        }
+
+        unsafe {
+            let inner = &amp;*self.ptr;
+            let strong = inner.strong_count.get();
+
+            // Check if value is still alive
+            if strong == 0 {
+                // Value has been dropped, can't upgrade
+                None
+            } else {
+                // Value still alive, increment strong_count
+                inner.strong_count.set(strong + 1);
+
+                // Create new Rc pointing to same allocation
+                Some(Rc { ptr: self.ptr })
+            }
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Why it returns <code>Option</code>:</strong></p>
+<ul>
+<li>If <code>strong_count == 0</code>, all <code>Rc</code> owners have dropped, value is gone → return <code>None</code></li>
+<li>If <code>strong_count &gt; 0</code>, value still alive → increment count and return <code>Some(Rc)</code></li>
+</ul>
+<p><strong>Example:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let strong = Rc::new(42);
+let weak = Rc::downgrade(&amp;strong);
+// strong_count = 1, weak_count = 1
+
+// Upgrade succeeds (strong_count &gt; 0)
+if let Some(rc) = weak.upgrade() {
+    assert_eq!(*rc, 42);
+    // strong_count now 2
+}
+// strong_count back to 1
+
+drop(strong);
+// strong_count = 0, value dropped
+
+// Upgrade fails (strong_count == 0)
+assert!(weak.upgrade().is_none());
+<span class="boring">}</span></code></pre></pre>
+<h3 id="weaknew---creating-an-empty-weak"><a class="header" href="#weaknew---creating-an-empty-weak">Weak::new() - Creating an Empty Weak</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;T&gt; Weak&lt;T&gt; {
+    pub fn new() -&gt; Weak&lt;T&gt; {
+        Weak {
+            ptr: std::ptr::null_mut(),  // Null pointer, doesn't point to anything
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Usage:</strong> For fields that might never have a value:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct Node {
+    parent: Weak&lt;Node&gt;,  // Start with no parent
+}
+
+let root = Node {
+    parent: Weak::new(),  // Root has no parent
+};
+<span class="boring">}</span></code></pre></pre>
+<h3 id="weaks-drop-implementation"><a class="header" href="#weaks-drop-implementation">Weak's Drop Implementation</a></h3>
+<p>When a <code>Weak</code> is dropped, we decrement <code>weak_count</code> and potentially deallocate:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;T&gt; Drop for Weak&lt;T&gt; {
+    fn drop(&amp;mut self) {
+        // Check for null pointer (from Weak::new())
+        if self.ptr.is_null() {
+            return;
+        }
+
+        unsafe {
+            let inner = &amp;*self.ptr;
+            let weak = inner.weak_count.get();
+            inner.weak_count.set(weak - 1);
+
+            if weak - 1 == 0 {
+                // Last Weak reference!
+
+                let strong = inner.strong_count.get();
+                if strong == 0 {
+                    // Value already dropped by Rc, safe to deallocate
+                    drop(Box::from_raw(self.ptr));
+                }
+                // If strong &gt; 0, some Rc still exists, they'll handle deallocation
+            }
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>The lifecycle:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let strong1 = Rc::new(String::from("data"));
+let strong2 = Rc::clone(&amp;strong1);
+let weak = Rc::downgrade(&amp;strong1);
+// strong_count = 2, weak_count = 1
+
+drop(strong1);
+// strong_count: 2 → 1
+// Nothing deallocated
+
+drop(strong2);
+// strong_count: 1 → 0
+// Rc::drop() drops the String
+// But weak_count = 1, so RcInner stays allocated
+
+drop(weak);
+// weak_count: 1 → 0
+// strong_count already 0, so Weak::drop() deallocates RcInner
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Key insight:</strong> <code>Weak::drop()</code> only deallocates <code>RcInner</code> when BOTH counts are 0. It never drops the value - <code>Rc::drop()</code> handles that.</p>
+<h3 id="why-weak-doesnt-keep-value-alive"><a class="header" href="#why-weak-doesnt-keep-value-alive">Why Weak Doesn't Keep Value Alive</a></h3>
+<p>The key is in <code>upgrade()</code>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub fn upgrade(&amp;self) -&gt; Option&lt;Rc&lt;T&gt;&gt; {
+    if strong_count == 0 {
+        return None;  // Value gone, can't access it
+    }
+    // ...
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Contrast with <code>Rc::clone()</code>:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;T&gt; Clone for Rc&lt;T&gt; {
+    fn clone(&amp;self) -&gt; Rc&lt;T&gt; {
+        // Always increments strong_count
+        let count = self.inner().strong_count.get();
+        self.inner().strong_count.set(count + 1);
+        Rc { ptr: self.ptr }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>The difference:</strong></p>
+<ul>
+<li><code>Rc::clone()</code> → increments <code>strong_count</code> → keeps value alive</li>
+<li><code>Rc::downgrade()</code> → increments <code>weak_count</code> → doesn't keep value alive</li>
+<li><code>Weak::upgrade()</code> → checks <code>strong_count</code> first → returns <code>None</code> if value dropped</li>
+</ul>
+<h3 id="complete-weak-example"><a class="header" href="#complete-weak-example">Complete Weak Example</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::rc::{Rc, Weak};
+
+// Create strong reference
+let strong = Rc::new(42);
+println!("strong_count: {}", Rc::strong_count(&amp;strong)); // 1
+
+// Create weak reference
+let weak: Weak&lt;i32&gt; = Rc::downgrade(&amp;strong);
+println!("weak_count: {}", Rc::weak_count(&amp;strong)); // 1
+
+// Upgrade weak to strong (value still alive)
+if let Some(upgraded) = weak.upgrade() {
+    println!("Upgraded: {}", *upgraded); // 42
+    println!("strong_count: {}", Rc::strong_count(&amp;upgraded)); // 2
+}
+// upgraded dropped, strong_count back to 1
+
+// Drop the strong reference
+drop(strong);
+
+// Try to upgrade (value is gone)
+match weak.upgrade() {
+    Some(_) =&gt; println!("Upgraded successfully"),
+    None =&gt; println!("Can't upgrade, value dropped"), // This runs
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="implementation-why-rc-needs-manuallydrop"><a class="header" href="#implementation-why-rc-needs-manuallydrop">Implementation: Why Rc Needs ManuallyDrop</a></h2>
+<h3 id="quick-reminder-rc-structure"><a class="header" href="#quick-reminder-rc-structure">Quick Reminder: Rc Structure</a></h3>
+<p>From Chapter 7, recall that <code>Rc&lt;T&gt;</code> is defined as:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::cell::Cell;
+
+struct RcInner&lt;T&gt; {
+    strong_count: Cell&lt;usize&gt;,  // Reference count
+    value: T,                   // The actual data
+}
+
+pub struct Rc&lt;T&gt; {
+    ptr: *mut RcInner&lt;T&gt;,  // Pointer to heap allocation
+}
+<span class="boring">}</span></code></pre></pre>
+<p>When implementing <code>Drop</code> for <code>Rc&lt;T&gt;</code>, we face a <strong>double-drop</strong> problem. This affects <code>Rc&lt;T&gt;</code> for <strong>any</strong> type <code>T</code>, not just <code>RefCell</code>.</p>
+<h3 id="the-problem-double-drop"><a class="header" href="#the-problem-double-drop">The Problem: Double Drop</a></h3>
+<p><strong>Concrete example:</strong> Let's say we have 2 strong references and 1 weak reference:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::rc::{Rc, Weak};
+
+let strong1 = Rc::new(String::from("data"));
+let strong2 = Rc::clone(&amp;strong1);
+let weak: Weak&lt;String&gt; = Rc::downgrade(&amp;strong1);
+
+// State: strong_count = 2, weak_count = 1
+<span class="boring">}</span></code></pre></pre>
+<p><strong>What needs to happen when we drop both strong refs:</strong></p>
+<ol>
+<li>Drop <code>strong1</code> → <code>strong_count</code> = 2 → 1 (value still alive)</li>
+<li>Drop <code>strong2</code> → <code>strong_count</code> = 1 → 0 (value must be dropped now!)</li>
+<li>But <code>weak</code> still exists! <code>RcInner</code> must stay allocated so <code>weak.upgrade()</code> can check <code>strong_count</code></li>
+<li>Later, drop <code>weak</code> → <code>weak_count</code> = 1 → 0 (now deallocate <code>RcInner</code>)</li>
+</ol>
+<p><strong>The challenge:</strong> In step 2, we must <strong>drop the String</strong> but <strong>keep the RcInner allocation alive</strong>. These are two separate operations.</p>
+<h3 id="naive-approach-broken"><a class="header" href="#naive-approach-broken">Naive Approach (Broken)</a></h3>
+<p>Now let's see the implementation problem:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;T&gt; Drop for Rc&lt;T&gt; {
+    fn drop(&amp;mut self) {
+        unsafe {
+            // self.ptr is *mut RcInner&lt;T&gt;
+            let inner = &amp;*self.ptr;
+            let count = inner.strong_count.get();
+            inner.strong_count.set(count - 1);
+
+            if count - 1 == 0 {
+                // Last strong owner! (strong_count = 0, but weak_count = 1)
+
+                // Step 1: Drop the value T
+                ptr::drop_in_place(&amp;mut (*self.ptr).value);
+                // ✅ String is now dropped, its buffer freed
+
+                // Step 2: Check if we can deallocate RcInner
+                let weak = inner.weak_count.get();
+                if weak == 0 {
+                    // No Weak references, safe to deallocate
+                    drop(Box::from_raw(self.ptr));
+                    // ⚠️ PROBLEM: Box::drop will try to drop all fields of RcInner&lt;T&gt;
+                    // This includes `value: T` - but we already dropped it in Step 1!
+                    // 💥 DOUBLE DROP!
+                } else {
+                    // weak_count = 1, Weak reference still exists!
+                    // We must keep the RcInner allocation alive so Weak::upgrade() can check strong_count
+                    // The String is dropped, but RcInner stays allocated
+                    // Later when Weak is dropped, it will deallocate RcInner
+                }
+            }
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Why we need TWO separate steps:</strong></p>
+<p>When <code>strong_count</code> reaches 0:</p>
+<ol>
+<li><strong>Drop the value</strong> - No more strong owners, value must be freed</li>
+<li><strong>Keep the RcInner allocation</strong> - If <code>weak_count &gt; 0</code>, Weak references still need to check <code>strong_count</code></li>
+</ol>
+<p>When <code>weak_count</code> ALSO reaches 0: 3. <strong>Deallocate the RcInner</strong> - No more references at all</p>
+<p><strong>The double-drop problem:</strong></p>
+<p>If we skip Step 1 and just do Step 3 (deallocate RcInner), we can't keep the allocation alive for Weak references. We need to drop the value when strong_count → 0, but deallocate the struct only when weak_count → 0.</p>
+<p>Without <code>ManuallyDrop</code>, step 3 would automatically drop <code>value</code> again - but we already dropped it in step 1!</p>
+<h3 id="the-solution-manuallydrop"><a class="header" href="#the-solution-manuallydrop">The Solution: ManuallyDrop</a></h3>
+<p><code>ManuallyDrop&lt;T&gt;</code> is a wrapper that tells Rust: "Don't automatically drop this value - I'll handle it manually."</p>
+<p><strong>How does it do this?</strong> Simple: by not implementing <code>Drop</code>. When Rust drops a struct, it automatically drops all its fields - but only if the field's type implements <code>Drop</code>. Since <code>ManuallyDrop&lt;T&gt;</code> doesn't implement <code>Drop</code>, Rust won't automatically drop the inner <code>T</code>.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::mem::ManuallyDrop;
+use std::cell::Cell;
+
+struct RcInner&lt;T&gt; {
+    strong_count: Cell&lt;usize&gt;,
+    weak_count: Cell&lt;usize&gt;,
+    value: ManuallyDrop&lt;T&gt;,  // ← Wrapped in ManuallyDrop
+}
+<span class="boring">}</span></code></pre></pre>
+<p>Now with <code>ManuallyDrop</code>, the Drop implementation is safe:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;T&gt; Drop for Rc&lt;T&gt; {
+    fn drop(&amp;mut self) {
+        unsafe {
+            let inner = &amp;*self.ptr;
+            let count = inner.strong_count.get();
+            inner.strong_count.set(count - 1);
+
+            if count - 1 == 0 {
+                // Manually drop the value (need mutable access)
+                let inner_mut = &amp;mut *self.ptr;
+                ManuallyDrop::drop(&amp;mut inner_mut.value);  // ✅ Drops T inside ManuallyDrop
+
+                let weak = inner.weak_count.get();
+                if weak == 0 {
+                    // Deallocate the RcInner
+                    // Since value is ManuallyDrop, Rust won't try to drop it again
+                    drop(Box::from_raw(self.ptr));  // ✅ Safe! No double-drop
+                }
+            }
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Why it works:</strong></p>
+<ol>
+<li><code>ManuallyDrop&lt;T&gt;</code> prevents automatic drop when <code>RcInner</code> is deallocated</li>
+<li>We explicitly call <code>ptr::drop_in_place()</code> on the value when <code>strong_count</code> reaches 0</li>
+<li>No double drop - the value is dropped exactly once</li>
+</ol>
+<h3 id="what-is-manuallydrop"><a class="header" href="#what-is-manuallydrop">What is ManuallyDrop?</a></h3>
+<p><code>ManuallyDrop&lt;T&gt;</code> is a zero-cost wrapper defined in <code>std::mem</code>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[repr(transparent)]
+pub struct ManuallyDrop&lt;T&gt; {
+    value: T,
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Key properties:</strong></p>
+<ul>
+<li><strong>Zero cost</strong>: Same size and layout as <code>T</code> (due to <code>#[repr(transparent)]</code>)</li>
+<li><strong>Does not implement Drop</strong>: Rust never automatically drops the inner <code>T</code></li>
+<li><strong>Requires unsafe to drop</strong>: You must explicitly call <code>ManuallyDrop::drop(&amp;mut x)</code></li>
+</ul>
+<p><strong>Core operations:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Create
+let x = ManuallyDrop::new(String::from("hello"));
+
+// Access (no drop)
+println!("{}", *x);  // Deref to access inner value
+
+// Drop explicitly (unsafe - you must ensure no future access)
+unsafe {
+    ManuallyDrop::drop(&amp;mut x);  // Drops the String
+}
+// After this, accessing x is undefined behavior!
+
+// Move out without dropping (unsafe)
+let s = unsafe { ManuallyDrop::take(&amp;mut x) };  // Takes ownership of String
+// Now s owns the String, x is left in uninitialized state
+<span class="boring">}</span></code></pre></pre>
+<h3 id="can-we-manually-implement-it"><a class="header" href="#can-we-manually-implement-it">Can We Manually Implement It?</a></h3>
+<p>Yes! Here's how <code>ManuallyDrop</code> is essentially implemented:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::mem::forget;
+use std::ptr;
+
+#[repr(transparent)]
+pub struct ManualDrop&lt;T&gt; {
+    value: T,
+}
+
+impl&lt;T&gt; ManualDrop&lt;T&gt; {
+    pub const fn new(value: T) -&gt; Self {
+        ManualDrop { value }
+    }
+
+    // Safe: Just creates a reference
+    pub fn deref(&amp;self) -&gt; &amp;T {
+        &amp;self.value
+    }
+
+    // Unsafe: Caller must ensure no further access
+    pub unsafe fn drop(slot: &amp;mut Self) {
+        // Read the value out and drop it
+        ptr::drop_in_place(&amp;mut slot.value);
+    }
+
+    // Unsafe: Caller must ensure no further access
+    pub unsafe fn take(slot: &amp;mut Self) -&gt; T {
+        // Move the value out, leaving uninitialized memory
+        ptr::read(&amp;slot.value)
+    }
+}
+
+// No Drop implementation! This is the key.
+// Without Drop, Rust won't automatically drop T.
+
+impl&lt;T&gt; Deref for ManualDrop&lt;T&gt; {
+    type Target = T;
+
+    fn deref(&amp;self) -&gt; &amp;T {
+        &amp;self.value
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Key insight:</strong> By <em>not</em> implementing <code>Drop</code>, the wrapper doesn't drop its contents. You must manually call <code>drop()</code> or <code>take()</code> to handle the inner value.</p>
+<h3 id="manuallydrop-in-practice"><a class="header" href="#manuallydrop-in-practice">ManuallyDrop in Practice</a></h3>
+<p>You'll see <code>ManuallyDrop</code> used whenever:</p>
+<ol>
+<li><strong>Reference counting</strong> - <code>Rc</code>, <code>Arc</code> need to control when <code>T</code> is dropped</li>
+<li><strong>Custom allocators</strong> - Managing memory lifetime manually</li>
+<li><strong>FFI boundaries</strong> - Passing ownership to C code</li>
+<li><strong>Union types</strong> - Only one variant should be dropped</li>
+<li><strong>Implementing Drop flags</strong> - Control drop order precisely</li>
+</ol>
+<p><strong>Warning:</strong> Using <code>ManuallyDrop</code> is subtle - you must ensure:</p>
+<ul>
+<li>Drop is called exactly once</li>
+<li>No access after drop</li>
+<li>Memory is eventually freed</li>
+</ul>
+<p>Get it wrong, and you'll have memory leaks or use-after-free bugs!</p>
+<h2 id="anti-patterns"><a class="header" href="#anti-patterns">Anti-patterns</a></h2>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// ❌ BAD: Single owner, no sharing needed
+let data = Rc::new(RefCell::new(vec![1, 2, 3]));
+data.borrow_mut().push(4);
+// Should be: let mut data = vec![1, 2, 3];
+
+// ❌ BAD: Never mutated, just shared
+let config = Rc::new(RefCell::new(Config::load()));
+// Should be: let config = Rc::new(Config::load());
+
+// ❌ BAD: Using in multi-threaded context
+let counter = Rc::new(RefCell::new(0));
+thread::spawn(move || { ... });  // Won't compile! (Not Send)
+// Should be: Arc&lt;Mutex&lt;i32&gt;&gt; or Arc&lt;AtomicI32&gt;
+<span class="boring">}</span></code></pre></pre>
+<h2 id="key-takeaways"><a class="header" href="#key-takeaways">Key Takeaways</a></h2>
+<ol>
+<li><strong>Rc&lt;RefCell<T>&gt; combines shared ownership + interior mutability</strong> - Multiple owners can all mutate the same data</li>
+<li><strong>Two levels of tracking</strong> - Rc tracks reference counts (ownership), RefCell tracks borrows (usage)</li>
+<li><strong>Two ways to fail</strong> - Memory leaks from Rc cycles (safe but wasteful), panics from RefCell borrow violations (runtime error)</li>
+<li><strong>Use Weak to break cycles</strong> - Weak references don't keep values alive, preventing memory leaks in cyclic structures</li>
+<li><strong>Parent-child pattern</strong> - Use Rc for ownership direction (parent → child), Weak for back-references (child → parent)</li>
+<li><strong>Drop borrows quickly</strong> - Keep RefCell borrows short-lived to avoid runtime panics</li>
+<li><strong>Don't overuse</strong> - If you have a clear owner or don't need sharing, use simpler patterns (&amp;mut T, Box<T>, Rc<T>)</li>
+<li><strong>Always check Weak::upgrade()</strong> - Weak references might point to dropped values, always handle None case</li>
+<li><strong>Runtime cost</strong> - Both Rc (reference counting) and RefCell (borrow checking) have runtime overhead, use only when needed</li>
+</ol>
+<h2 id="exercises"><a class="header" href="#exercises">Exercises</a></h2>
+<p>See <a href="../examples/08_rc_refcell.rs">examples/08_rc_refcell.rs</a> for hands-on exercises demonstrating:</p>
+<ul>
+<li>Creating and using <code>Rc&lt;RefCell&lt;T&gt;&gt;</code></li>
+<li>Multiple owners mutating shared data</li>
+<li>Creating and breaking reference cycles with <code>Weak</code></li>
+<li>Building graphs and trees with cycles</li>
+<li>Observer pattern implementation</li>
+<li>Common pitfalls and how to avoid them</li>
+</ul>
+<p><strong>Complete solutions:</strong> Switch to the <code>answers</code> branch with <code>git checkout answers</code> to see completed exercises.</p>
+<h2 id="next-chapter"><a class="header" href="#next-chapter">Next Chapter</a></h2>
+<p><a href="./09-arc.html">Chapter 9: Arc - Atomic Reference Counting</a> - Thread-safe shared ownership for multi-threaded code.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../docs/07-rc.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../docs/appendix-closures.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../docs/07-rc.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../docs/appendix-closures.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>
