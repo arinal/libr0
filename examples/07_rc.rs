@@ -16,7 +16,7 @@ use rustlib::rc::Rc0;
 
 fn _01_new_and_clone() {
     let rc1 = Rc0::new(String::from("shared data"));
-    let rc2 = Rc0::new(String::new()); // TODO: clone rc1 using Rc0::clone
+    let rc2 = Rc0::clone(&rc1);
 
     assert_eq!(*rc1, "shared data");
     assert_eq!(*rc2, "shared data");
@@ -25,13 +25,13 @@ fn _01_new_and_clone() {
 
 fn _02_strong_count() {
     let rc1 = Rc0::new(42);
-    let count1 = 0; // TODO: get strong_count of rc1
+    let count1 = Rc0::strong_count(&rc1);
 
     let rc2 = Rc0::clone(&rc1);
-    let count2 = 0; // TODO: get strong_count of rc1 again
+    let count2 = Rc0::strong_count(&rc1);
 
     let rc3 = rc1.clone();
-    let count3 = 0; // TODO: get strong_count of rc1 again
+    let count3 = Rc0::strong_count(&rc1);
 
     assert_eq!(count1, 1);
     assert_eq!(count2, 2);
@@ -46,7 +46,7 @@ fn _03_deref_coercion() {
         s.split_whitespace().count()
     }
 
-    let word_count = 0; // TODO: call count_words with rc
+    let word_count = count_words(&rc);
 
     assert_eq!(word_count, 2);
 }
@@ -58,11 +58,11 @@ fn _04_drop_reduces_count() {
 
     assert_eq!(Rc0::strong_count(&rc1), 3);
 
-    // TODO: drop rc2
+    drop(rc2);
 
     assert_eq!(Rc0::strong_count(&rc1), 2);
 
-    // TODO: drop rc3
+    drop(rc3);
 
     assert_eq!(Rc0::strong_count(&rc1), 1);
 }
@@ -72,8 +72,8 @@ fn _05_ptr_eq() {
     let rc2 = Rc0::clone(&rc1);
     let rc3 = Rc0::new(42); // Same value, different allocation
 
-    let same_alloc = false; // TODO: check if rc1 and rc2 point to same allocation
-    let diff_alloc = true; // TODO: check if rc1 and rc3 point to same allocation
+    let same_alloc = Rc0::ptr_eq(&rc1, &rc2);
+    let diff_alloc = Rc0::ptr_eq(&rc1, &rc3);
 
     assert_eq!(same_alloc, true);
     assert_eq!(diff_alloc, false);
@@ -84,7 +84,7 @@ fn _06_get_mut_sole_owner() {
 
     // When we're the sole owner, we can get mutable access
     if let Some(vec) = Rc0::get_mut(&mut rc) {
-        // TODO: push 4 to the vec
+        vec.push(4);
     }
 
     assert_eq!(*rc, vec![1, 2, 3, 4]);
@@ -99,7 +99,7 @@ fn _07_get_mut_shared() {
 
     assert!(result.is_none());
 
-    // TODO: drop rc2
+    drop(rc2);
 
     // Now we can mutate
     if let Some(s) = Rc0::get_mut(&mut rc1) {
@@ -113,8 +113,8 @@ fn _08_clone_is_cheap() {
     let big_data = Rc0::new(vec![0u8; 1_000_000]); // 1MB
 
     // Cloning Rc is cheap - just increments a counter
-    let clone1: Rc0<Vec<u8>> = Rc0::new(vec![]); // TODO: clone big_data
-    let clone2: Rc0<Vec<u8>> = Rc0::new(vec![]); // TODO: clone big_data
+    let clone1: Rc0<Vec<u8>> = Rc0::clone(&big_data);
+    let clone2: Rc0<Vec<u8>> = Rc0::clone(&big_data);
 
     // All three point to the same 1MB allocation
     assert_eq!(Rc0::strong_count(&big_data), 3);
@@ -145,7 +145,7 @@ fn _10_clone_semantics() {
 
 fn _11_default() {
     // Rc implements Default when T implements Default
-    let rc: Rc0<Vec<i32>> = Rc0::new(vec![]); // TODO: create using Default trait
+    let rc: Rc0<Vec<i32>> = Rc0::default();
 
     assert_eq!(*rc, Vec::<i32>::new());
 }
@@ -203,11 +203,11 @@ impl Database {
 }
 
 fn _12_shared_config() {
-    let config: Rc0<Config> = Rc0::new(Config {
+    let config = Rc0::new(Config {
         db_url: String::from("localhost:5432"),
         api_key: String::from("secret123"),
         max_connections: 10,
-    }); // TODO: create Rc0 with Config
+    });
 
     let server = Server::new(Rc0::clone(&config));
     let logger = Logger::new(Rc0::clone(&config));
@@ -300,10 +300,7 @@ impl<T> List<T> {
 
 fn _14_functional_list() {
     // Create a shared tail: [3, 4, 5]
-    let shared_tail = List::cons(
-        5,
-        List::cons(4, List::cons(3, List::new())),
-    );
+    let shared_tail = List::cons(5, List::cons(4, List::cons(3, List::new())));
 
     // Two lists sharing the same tail
     let list1 = List::cons(2, List::cons(1, Rc0::clone(&shared_tail)));

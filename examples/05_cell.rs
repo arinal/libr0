@@ -16,14 +16,14 @@ use rustlib::cell::Cell0;
 
 fn _01_new_and_get() {
     let cell = Cell0::new(42);
-    let value = 0; // TODO: get the value from cell
+    let value = cell.get();
 
     assert_eq!(value, 42);
 }
 
 fn _02_set() {
     let cell = Cell0::new(10);
-    // TODO: set cell to 20
+    cell.set(20);
 
     assert_eq!(cell.get(), 20);
 }
@@ -33,8 +33,8 @@ fn _03_shared_mutation() {
     let ref1 = &cell;
     let ref2 = &cell;
 
-    // TODO: use ref1 to set cell to 5
-    // TODO: use ref2 to set cell to 10
+    ref1.set(5);
+    ref2.set(10);
 
     assert_eq!(cell.get(), 10);
     // Both shared references could mutate!
@@ -42,7 +42,7 @@ fn _03_shared_mutation() {
 
 fn _04_replace() {
     let cell = Cell0::new(String::from("hello"));
-    let old = String::new(); // TODO: replace cell contents with "world"
+    let old = cell.replace(String::from("world"));
 
     assert_eq!(old, "hello");
     assert_eq!(cell.into_inner(), "world");
@@ -52,7 +52,7 @@ fn _05_swap() {
     let a = Cell0::new(1);
     let b = Cell0::new(2);
 
-    // TODO: swap the values of a and b
+    a.swap(&b);
 
     assert_eq!(a.get(), 2);
     assert_eq!(b.get(), 1);
@@ -60,7 +60,7 @@ fn _05_swap() {
 
 fn _06_take() {
     let cell = Cell0::new(Some(42));
-    let value: Option<i32> = None; // TODO: take the value from cell
+    let value: Option<i32> = cell.take();
 
     assert_eq!(value, Some(42));
     assert_eq!(cell.get(), None); // Default is None
@@ -68,14 +68,14 @@ fn _06_take() {
 
 fn _07_update() {
     let cell = Cell0::new(5);
-    // TODO: update cell by doubling its value (use update method)
+    cell.update(|x| x * 2);
 
     assert_eq!(cell.get(), 10);
 }
 
 fn _08_into_inner() {
     let cell = Cell0::new(String::from("owned"));
-    let value = String::new(); // TODO: consume cell and extract the value
+    let value = cell.into_inner();
 
     assert_eq!(value, "owned");
     // cell is no longer valid here
@@ -83,7 +83,7 @@ fn _08_into_inner() {
 
 fn _09_clone() {
     let cell1 = Cell0::new(42);
-    let cell2 = Cell0::new(0); // TODO: clone cell1
+    let cell2 = cell1.clone();
 
     cell1.set(100);
 
@@ -93,14 +93,14 @@ fn _09_clone() {
 
 fn _10_as_ptr() {
     let cell = Cell0::new(99);
-    let ptr: *mut i32 = std::ptr::null_mut(); // TODO: get raw pointer from cell
+    let ptr: *mut i32 = cell.as_ptr();
 
     let value = unsafe { *ptr };
     assert_eq!(value, 99);
 }
 
 fn _11_default() {
-    let cell: Cell0<i32> = Cell0::new(0); // TODO: create cell using Default trait
+    let cell: Cell0<i32> = Cell0::default();
 
     assert_eq!(cell.get(), 0);
 }
@@ -135,16 +135,18 @@ impl Counter {
 }
 
 fn _12_counter() {
-    let counter: Counter = Counter::new(); // TODO: create new counter
+    let counter: Counter = Counter::new();
 
     // Multiple shared references can all increment
     let r1 = &counter;
     let r2 = &counter;
     let r3 = &counter;
 
-    // TODO: increment using r1, r2, r3
+    r1.increment();
+    r2.increment();
+    r3.increment();
 
-    let count = 0; // TODO: get final count
+    let count = counter.get();
 
     assert_eq!(count, 3);
 }
@@ -182,8 +184,8 @@ fn _13_config() {
 
     // Can modify through shared reference
     let cfg_ref = &config;
-    // TODO: enable debug mode using cfg_ref
-    // TODO: set max_retries to 5 using cfg_ref
+    cfg_ref.enable_debug();
+    cfg_ref.set_retries(5);
 
     assert_eq!(config.debug_mode.get(), true);
     assert_eq!(config.max_retries.get(), 5);
@@ -221,7 +223,7 @@ impl<T: Copy> Cache<T> {
 }
 
 fn _14_cache() {
-    let cache: Cache<i32> = Cache::new(); // TODO: create new cache
+    let cache: Cache<i32> = Cache::new();
 
     let mut call_count = 0;
     let expensive_fn = || {
@@ -229,14 +231,14 @@ fn _14_cache() {
         42
     };
 
-    let result1 = 0; // TODO: get value using get_or_compute
-    let result2 = 0; // TODO: get value again (should be cached)
+    let result1 = cache.get_or_compute(expensive_fn);
+    let result2 = cache.get_or_compute(|| 42);
 
     assert_eq!(result1, 42);
     assert_eq!(result2, 42);
     assert_eq!(call_count, 1); // Only called once!
 
-    // TODO: clear the cache
+    cache.clear();
 
     let result3 = cache.get_or_compute(|| 99);
     assert_eq!(result3, 99);

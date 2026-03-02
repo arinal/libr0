@@ -16,10 +16,10 @@ use rustlib::r#box::Box0;
 
 fn _01_new_and_deref() {
     let boxed = Box0::new(42);
-    let result = 0; // TODO: dereference boxed to get the value
+    let result = *boxed;
 
     let boxed_string = Box0::new(String::from("hello"));
-    let result2 = 0; // TODO: get the length of the string inside boxed_string
+    let result2 = boxed_string.len();
 
     assert_eq!(result, 42);
     assert_eq!(result2, 5);
@@ -27,10 +27,10 @@ fn _01_new_and_deref() {
 
 fn _02_deref_mut() {
     let mut boxed = Box0::new(10);
-    // TODO: use dereference mutation to change the value to 100
+    *boxed = 100;
 
     let mut boxed_string = Box0::new(String::from("hello"));
-    // TODO: use push_str to add " world" to the string
+    boxed_string.push_str(" world");
 
     assert_eq!(*boxed, 100);
     assert_eq!(*boxed_string, "hello world");
@@ -38,7 +38,7 @@ fn _02_deref_mut() {
 
 fn _03_into_inner() {
     let boxed = Box0::new(String::from("owned"));
-    let result = String::new(); // TODO: extract the String from boxed using into_inner
+    let result = boxed.into_inner();
 
     assert_eq!(result, "owned");
     // boxed is no longer valid here
@@ -46,10 +46,10 @@ fn _03_into_inner() {
 
 fn _04_map() {
     let boxed = Box0::new(5);
-    let result: Box0<i32> = Box0::new(0); // TODO: map boxed to multiply by 2
+    let result: Box0<i32> = boxed.map(|x| x * 2);
 
     let boxed_str = Box0::new(String::from("hello"));
-    let result2: Box0<usize> = Box0::new(0); // TODO: map to get length
+    let result2: Box0<usize> = boxed_str.map(|s| s.len());
 
     assert_eq!(*result, 10);
     assert_eq!(*result2, 5);
@@ -57,7 +57,7 @@ fn _04_map() {
 
 fn _05_clone() {
     let boxed1 = Box0::new(String::from("original"));
-    let boxed2 = Box0::new(String::new()); // TODO: clone boxed1
+    let boxed2 = boxed1.clone();
 
     assert_eq!(*boxed1, "original");
     assert_eq!(*boxed2, "original");
@@ -70,25 +70,25 @@ fn _06_deref_coercion() {
     }
 
     let boxed_string = Box0::new(String::from("hello"));
-    let result = 0; // TODO: call print_len with &boxed_string (deref coercion!)
+    let result = print_len(&boxed_string);
 
     assert_eq!(result, 5);
 }
 
 fn _07_nested_box() {
     let inner = Box0::new(42);
-    let outer: Box0<Box0<i32>> = Box0::new(Box0::new(0)); // TODO: wrap inner in another Box0
+    let outer: Box0<Box0<i32>> = Box0::new(inner);
 
-    let result = 0; // TODO: dereference twice to get the value
+    let result = **outer;
 
     assert_eq!(result, 42);
 }
 
 fn _08_into_raw_from_raw() {
     let boxed = Box0::new(String::from("raw"));
-    let ptr: *mut String = std::ptr::null_mut(); // TODO: convert boxed to raw pointer using into_raw
+    let ptr: *mut String = Box0::into_raw(boxed);
 
-    let restored: Box0<String> = Box0::new(String::new()); // TODO: restore from ptr using from_raw (unsafe!)
+    let restored: Box0<String> = unsafe { Box0::from_raw(ptr) };
 
     assert_eq!(*restored, "raw");
 }
@@ -122,7 +122,7 @@ impl<T> List<T> {
 
 fn _09_real_world() {
     // Create a list: 1 -> 2 -> 3 -> Nil
-    let list: List<i32> = List::Nil; // TODO: create list with values 3, 2, 1 using prepend
+    let list: List<i32> = List::new().prepend(3).prepend(2).prepend(1);
 
     // Without Box0, this wouldn't compile! List would have infinite size.
     // Box0 puts data on the heap and stores only a pointer (8 bytes).

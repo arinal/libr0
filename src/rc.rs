@@ -339,4 +339,3 @@ mod tests {
         assert!(!Rc0::ptr_eq(&rc1, &rc3));
     }
 }
-

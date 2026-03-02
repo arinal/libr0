@@ -601,15 +601,15 @@ Here's a starting point for a slice-like type:
 ```rust
 use std::marker::PhantomData;
 
-pub struct MySlice<'a, T> {
+pub struct Slice0<'a, T> {
     ptr: *const T,
     len: usize,
     _marker: PhantomData<&'a T>,  // Zero-sized, but tells compiler about 'a and T
 }
 
-impl<'a, T> MySlice<'a, T> {
-    pub fn from_vec(vec: &'a Vec0<T>) -> MySlice<'a, T> {
-        MySlice {
+impl<'a, T> Slice0<'a, T> {
+    pub fn from_vec(vec: &'a Vec0<T>) -> Slice0<'a, T> {
+        Slice0 {
             ptr: vec.ptr,
             len: vec.len,
             _marker: PhantomData,
@@ -632,7 +632,7 @@ impl<'a, T> MySlice<'a, T> {
 
 **Why PhantomData?**
 
-Raw pointers (`*const T` and `*mut T`) don't carry lifetime information. Without `PhantomData`, the compiler wouldn't know that `MySlice<'a, T>` should:
+Raw pointers (`*const T` and `*mut T`) don't carry lifetime information. Without `PhantomData`, the compiler wouldn't know that `Slice0<'a, T>` should:
 
 1. **Not outlive the data it points to** - The `'a` lifetime connects the slice to the vec
 2. **Act like it owns a `&'a T`** - For variance and drop check purposes
@@ -644,7 +644,7 @@ Example of what could go wrong without it:
 let slice = {
     let vec = Vec0::new();
     vec.push(42);
-    MySlice::from_vec(&vec)  // vec dies here!
+    Slice0::from_vec(&vec)  // vec dies here!
 }; // slice now points to freed memory! ❌ Use-after-free!
 
 // WITH PhantomData, the compiler catches this:
@@ -658,7 +658,7 @@ let slice = {
 You could use real references instead of raw pointers:
 
 ```rust
-pub struct MySlice<'a, T> {
+pub struct Slice0<'a, T> {
     data: &'a [T],  // Real reference, carries lifetime automatically
 }
 ```
@@ -676,7 +676,7 @@ But this defeats the purpose of the exercise - we want to see what we can build 
 
 - Slice syntax: `&my_slice[1..3]` (requires compiler support)
 - Pattern matching: `match my_slice { [first, rest @ ..] => ... }` (DST feature)
-- Automatic coercion from arrays: `&[1, 2, 3]` → `MySlice` (compiler magic)
+- Automatic coercion from arrays: `&[1, 2, 3]` → `Slice0` (compiler magic)
 
 This demonstrates why slices are special - they need compiler integration for the syntax we take for granted!
 

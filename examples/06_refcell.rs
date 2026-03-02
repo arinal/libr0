@@ -16,14 +16,14 @@ use rustlib::refcell::RefCell0;
 
 fn _01_new_and_borrow() {
     let cell = RefCell0::new(String::from("hello"));
-    let value = String::new(); // TODO: borrow from cell and clone the value
+    let value = cell.borrow().clone();
 
     assert_eq!(value, "hello");
 }
 
 fn _02_borrow_mut() {
     let cell = RefCell0::new(String::from("hello"));
-    // TODO: borrow_mut and push " world" to the string
+    cell.borrow_mut().push_str(" world");
 
     assert_eq!(*cell.borrow(), "hello world");
 }
@@ -31,7 +31,6 @@ fn _02_borrow_mut() {
 fn _03_multiple_borrows() {
     let cell = RefCell0::new(vec![1, 2, 3]);
 
-    // TODO: create three immutable borrows (r1, r2, r3)
     let r1 = cell.borrow();
     let r2 = cell.borrow();
     let r3 = cell.borrow();
@@ -50,7 +49,7 @@ fn _04_scoped_borrows() {
         *borrowed
     }; // borrowed dropped here
 
-    // TODO: borrow_mut and multiply by 2
+    *cell.borrow_mut() = value * 2;
 
     assert_eq!(*cell.borrow(), 20);
 }
@@ -59,7 +58,6 @@ fn _05_try_borrow() {
     let cell = RefCell0::new(42);
     let _guard = cell.borrow_mut(); // Hold a mutable borrow
 
-    // TODO: use try_borrow (should fail)
     let result = cell.try_borrow();
 
     assert!(result.is_err());
@@ -69,7 +67,6 @@ fn _06_try_borrow_mut() {
     let cell = RefCell0::new(42);
     let _guard1 = cell.borrow(); // Hold an immutable borrow
 
-    // TODO: use try_borrow_mut (should fail)
     let result = cell.try_borrow_mut();
 
     assert!(result.is_err());
@@ -77,7 +74,7 @@ fn _06_try_borrow_mut() {
 
 fn _07_replace() {
     let cell = RefCell0::new(String::from("old"));
-    let old = String::new(); // TODO: replace with "new" using replace()
+    let old = cell.replace(String::from("new"));
 
     assert_eq!(old, "old");
     assert_eq!(*cell.borrow(), "new");
@@ -87,7 +84,7 @@ fn _08_swap() {
     let a = RefCell0::new(1);
     let b = RefCell0::new(2);
 
-    // TODO: swap a and b
+    a.swap(&b);
 
     assert_eq!(*a.borrow(), 2);
     assert_eq!(*b.borrow(), 1);
@@ -95,7 +92,7 @@ fn _08_swap() {
 
 fn _09_into_inner() {
     let cell = RefCell0::new(String::from("owned"));
-    let value = String::new(); // TODO: consume cell using into_inner
+    let value = cell.into_inner();
 
     assert_eq!(value, "owned");
     // cell is no longer valid here
@@ -103,7 +100,7 @@ fn _09_into_inner() {
 
 fn _10_clone() {
     let cell1 = RefCell0::new(vec![1, 2, 3]);
-    let cell2: RefCell0<Vec<i32>> = RefCell0::new(vec![]); // TODO: clone cell1
+    let cell2 = cell1.clone();
 
     cell1.borrow_mut().push(4);
 
@@ -114,8 +111,7 @@ fn _10_clone() {
 fn _11_get_mut() {
     let mut cell = RefCell0::new(5);
 
-    // TODO: use get_mut to add 10 to the value
-    // Hint: get_mut returns &mut T and requires &mut self
+    *cell.get_mut() += 10;
 
     assert_eq!(*cell.borrow(), 15);
 }
@@ -150,14 +146,13 @@ impl DataStore {
 }
 
 fn _12_data_store() {
-    let store: DataStore = DataStore::new(); // TODO: create new DataStore
+    let store = DataStore::new();
 
     // Multiple shared references can all mutate
     let r1 = &store;
     let r2 = &store;
     let r3 = &store;
 
-    // TODO: use r1, r2, r3 to add items
     r1.add(String::from("first"));
     r2.add(String::from("second"));
     r3.add(String::from("third"));
@@ -196,9 +191,9 @@ impl Counter {
 fn _13_counter() {
     let counter = Counter::new(5);
 
-    let initial = 0; // TODO: get initial value
-    // TODO: call increment_by_current
-    let final_value = 0; // TODO: get final value
+    let initial = counter.get();
+    counter.increment_by_current();
+    let final_value = counter.get();
 
     assert_eq!(initial, 5);
     assert_eq!(final_value, 10); // 5 + 5 = 10
@@ -240,22 +235,24 @@ impl<T> LazyValue<T> {
 }
 
 fn _14_lazy_value() {
-    let lazy: LazyValue<i32> = LazyValue::new(); // TODO: create new LazyValue
+    let lazy = LazyValue::new();
 
     let mut call_count = 0;
-    let expensive_fn = || {
+
+    let result1 = lazy.get_or_init(|| {
         call_count += 1;
         42
-    };
-
-    let result1 = 0; // TODO: get value using get_or_init
-    let result2 = 0; // TODO: get value again (should be cached)
+    });
+    let result2 = lazy.get_or_init(|| {
+        call_count += 1;
+        42
+    });
 
     assert_eq!(result1, 42);
     assert_eq!(result2, 42);
     assert_eq!(call_count, 1); // Only called once!
 
-    // TODO: clear the cache
+    lazy.clear();
 
     let result3 = lazy.get_or_init(|| 99);
     assert_eq!(result3, 99);
@@ -292,7 +289,6 @@ fn _15_graph() {
     // Simple graph: node 0 -> node 1 -> node 2
     let nodes = vec![Node::new(0), Node::new(1), Node::new(2)];
 
-    // TODO: add edges
     nodes[0].add_neighbor(1); // 0 -> 1
     nodes[1].add_neighbor(2); // 1 -> 2
     nodes[2].add_neighbor(0); // 2 -> 0 (cycle!)

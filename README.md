@@ -155,16 +155,16 @@ Each chapter contains:
 
 ```rust
 // Example: Our own Option type
-enum MyOption<T> {
+enum Option0<T> {
     Some(T),
     None,
 }
 
-impl<T> MyOption<T> {
-    fn map<U, F: FnOnce(T) -> U>(self, f: F) -> MyOption<U> {
+impl<T> Option0<T> {
+    fn map<U, F: FnOnce(T) -> U>(self, f: F) -> Option0<U> {
         match self {
-            MyOption::Some(x) => MyOption::Some(f(x)),
-            MyOption::None => MyOption::None,
+            Option0::Some(x) => Option0::Some(f(x)),
+            Option0::None => Option0::None,
         }
     }
 }
@@ -184,7 +184,7 @@ rustlib/
 │   └── appendix-closures.md  # Appendix: Closures
 ├── src/                      # Library implementations
 │   ├── lib.rs                # Main library file
-│   ├── option.rs             # MyOption<T> implementation
+│   ├── option.rs             # Option0<T> implementation
 │   ├── result.rs             # Result0<T, E> implementation
 │   ├── box.rs                # Box0<T> implementation
 │   ├── vec.rs                # Vec0<T> implementation
@@ -235,7 +235,7 @@ You can use the completed implementations in your own code:
 
 ```rust
 // Completed types (Chapters 1-6)
-use rustlib::option::{MyOption, Some, None};
+use rustlib::option::{Option0, Some, None};
 use rustlib::result::{Result0, Ok, Err};
 use rustlib::r#box::Box0;
 use rustlib::vec::Vec0;
