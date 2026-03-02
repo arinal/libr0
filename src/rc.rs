@@ -5,14 +5,14 @@ use std::mem::ManuallyDrop;
 use std::ops::Deref;
 
 /// The heap-allocated data shared by all `Rc0` and `Weak0` pointers.
-struct RcInner<T> {
+struct RcInner<T: ?Sized> {
     strong_count: Cell<usize>,
     weak_count: Cell<usize>,
     value: ManuallyDrop<T>,
 }
 
 /// A reference-counted pointer for shared ownership.
-pub struct Rc0<T> {
+pub struct Rc0<T: ?Sized> {
     ptr: *mut RcInner<T>,
 }
 
@@ -105,7 +105,7 @@ impl<T> Rc0<T> {
     }
 }
 
-impl<T> Clone for Rc0<T> {
+impl<T: ?Sized> Clone for Rc0<T> {
     /// Clones the reference-counted pointer (increments the count).
     /// ```
     /// use rustlib::rc::Rc0;
@@ -120,7 +120,7 @@ impl<T> Clone for Rc0<T> {
     }
 }
 
-impl<T> Deref for Rc0<T> {
+impl<T: ?Sized> Deref for Rc0<T> {
     type Target = T;
 
     fn deref(&self) -> &T {
@@ -129,7 +129,7 @@ impl<T> Deref for Rc0<T> {
     }
 }
 
-impl<T> Drop for Rc0<T> {
+impl<T: ?Sized> Drop for Rc0<T> {
     fn drop(&mut self) {
         let inner = unsafe { &*self.ptr };
         let strong = inner.strong_count.get();
@@ -138,7 +138,7 @@ impl<T> Drop for Rc0<T> {
         if strong == 1 {
             // Drop the value
             unsafe {
-                ManuallyDrop::drop(&mut (*self.ptr).value);
+                std::ptr::drop_in_place(&mut (*self.ptr).value as *mut ManuallyDrop<T> as *mut T);
             }
 
             // Decrement weak count (remove implicit weak ref)
@@ -180,11 +180,25 @@ impl<T: std::fmt::Debug> std::fmt::Debug for Rc0<T> {
 }
 
 /// A weak reference that doesn't own the value.
-pub struct Weak0<T> {
+pub struct Weak0<T: ?Sized> {
     ptr: *mut RcInner<T>,
 }
 
 impl<T> Weak0<T> {
+    /// Creates a new empty weak reference that doesn't point to anything.
+    /// ```
+    /// use rustlib::rc::Weak0;
+    /// let weak: Weak0<i32> = Weak0::new();
+    /// assert!(weak.upgrade().is_none());
+    /// ```
+    pub fn new() -> Weak0<T> {
+        Weak0 {
+            ptr: std::ptr::null_mut(),
+        }
+    }
+}
+
+impl<T: ?Sized> Weak0<T> {
     /// Attempts to upgrade to a strong reference.
     /// ```
     /// use rustlib::rc::Rc0;
@@ -195,6 +209,10 @@ impl<T> Weak0<T> {
     /// assert!(weak.upgrade().is_none());
     /// ```
     pub fn upgrade(&self) -> Option<Rc0<T>> {
+        if self.ptr.is_null() {
+            return None;
+        }
+
         let inner = unsafe { &*self.ptr };
         let strong = inner.strong_count.get();
 
@@ -214,7 +232,11 @@ impl<T> Weak0<T> {
     /// assert_eq!(weak.strong_count(), 1);
     /// ```
     pub fn strong_count(&self) -> usize {
-        unsafe { (*self.ptr).strong_count.get() }
+        if self.ptr.is_null() {
+            0
+        } else {
+            unsafe { (*self.ptr).strong_count.get() }
+        }
     }
 
     /// Returns the number of weak references.
@@ -225,11 +247,15 @@ impl<T> Weak0<T> {
     /// assert_eq!(weak.weak_count(), 1);
     /// ```
     pub fn weak_count(&self) -> usize {
-        let count = unsafe { (*self.ptr).weak_count.get() };
-        if count > 0 {
-            count - 1
-        } else {
+        if self.ptr.is_null() {
             0
+        } else {
+            let count = unsafe { (*self.ptr).weak_count.get() };
+            if count > 0 {
+                count - 1
+            } else {
+                0
+            }
         }
     }
 
@@ -246,7 +272,7 @@ impl<T> Weak0<T> {
     }
 }
 
-impl<T> Clone for Weak0<T> {
+impl<T: ?Sized> Clone for Weak0<T> {
     /// Clones the weak reference (increments the weak count).
     /// ```
     /// use rustlib::rc::Rc0;
@@ -256,14 +282,20 @@ impl<T> Clone for Weak0<T> {
     /// assert_eq!(Rc0::weak_count(&rc), 2);
     /// ```
     fn clone(&self) -> Weak0<T> {
-        let inner = unsafe { &*self.ptr };
-        inner.weak_count.set(inner.weak_count.get() + 1);
+        if !self.ptr.is_null() {
+            let inner = unsafe { &*self.ptr };
+            inner.weak_count.set(inner.weak_count.get() + 1);
+        }
         Weak0 { ptr: self.ptr }
     }
 }
 
-impl<T> Drop for Weak0<T> {
+impl<T: ?Sized> Drop for Weak0<T> {
     fn drop(&mut self) {
+        if self.ptr.is_null() {
+            return;
+        }
+
         let inner = unsafe { &*self.ptr };
         let weak = inner.weak_count.get();
         inner.weak_count.set(weak - 1);
@@ -274,6 +306,19 @@ impl<T> Drop for Weak0<T> {
                 drop(Box::from_raw(self.ptr));
             }
         }
+    }
+}
+
+impl<T: ?Sized + std::fmt::Debug> std::fmt::Debug for Weak0<T> {
+    /// Formats the value using the given formatter.
+    /// ```
+    /// use rustlib::rc::{Rc0, Weak0};
+    /// let rc = Rc0::new(42);
+    /// let weak = Rc0::downgrade(&rc);
+    /// assert!(format!("{:?}", weak).contains("(Weak)"));
+    /// ```
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "(Weak)")
     }
 }
 
