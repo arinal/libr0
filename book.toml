@@ -10,8 +10,8 @@ build-dir = "book"
 [output.html]
 default-theme = "light"
 preferred-dark-theme = "navy"
-git-repository-url = "https://github.com/arinal/rustlib"
-edit-url-template = "https://github.com/arinal/rustlib/edit/main/{path}"
+git-repository-url = "https://github.com/arinal/libr0"
+edit-url-template = "https://github.com/arinal/libr0/edit/main/{path}"
 
 [output.html.search]
 enable = true
