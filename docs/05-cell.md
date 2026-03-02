@@ -740,6 +740,8 @@ Use `RefCell` when:
 
 See [exercises](./examples/05_cell.rs).
 
+**Complete solutions:** Switch to the `answers` branch with `git checkout answers` to see completed exercises
+
 ## Next Chapter
 
 [RefCell](./05-refcell.md) - Runtime borrow checking for non-Copy types.

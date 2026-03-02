@@ -573,6 +573,8 @@ fn recursive(cell: &RefCell<i32>, n: i32) {
 
 Practice using RefCell with hands-on exercises in [06_refcell.rs](../examples/06_refcell.rs).
 
+**Complete solutions:** Switch to the `answers` branch with `git checkout answers` to see completed exercises
+
 ## Next Chapter
 
 [Rc](./07-rc.md) - Reference counting for shared ownership.

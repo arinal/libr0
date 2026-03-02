@@ -9,7 +9,7 @@
 mod common;
 
 use rustlib::rc::{Rc0, Weak0};
-use rustlib::refcell::{BorrowError, RefCell0};
+use rustlib::refcell::{BorrowError, Ref, RefCell0};
 
 // ============================================================================
 // Exercises - Replace variables with TODOs with the correct operations

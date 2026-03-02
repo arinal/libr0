@@ -714,6 +714,8 @@ All three:
 See the full code in [`src/box.rs`](./src/box.rs) for the complete implementation of `Option0` with all methods.
 Also, see the exercises in [01_box.rs](./examples/01_box.rs)
 
+**Complete solutions:** Switch to the `answers` branch with `git checkout answers` to see completed exercises
+
 ## Key Takeaways
 
 1. **Box is just a pointer** - Single pointer to heap-allocated data

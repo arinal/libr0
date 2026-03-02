@@ -594,6 +594,8 @@ See `examples/04_vec.rs` for the full implementation with:
 
 See ./examples/04_vec.rs for exercises.
 
+**Complete solutions:** Switch to the `answers` branch with `git checkout answers` to see completed exercises
+
 ### Implement a slice-like type
 
 Here's a starting point for a slice-like type:

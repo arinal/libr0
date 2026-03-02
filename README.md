@@ -95,6 +95,21 @@ For low-level concepts (syscalls, process memory, blocking vs non-blocking opera
    - `try_borrow` for non-panicking access
    - Common pitfalls and patterns
 
+7. **[Rc](./docs/07-rc.md)** - Reference counting for shared ownership
+   - Multiple owners of the same data
+   - Strong and weak references
+   - Breaking reference cycles with `Weak`
+   - `Clone` semantics for reference counting
+   - When to use `Rc` vs borrowing
+
+8. **[Rc + RefCell](./docs/08-rc-refcell.md)** - Shared mutable state (single-threaded)
+   - Combining reference counting with interior mutability
+   - Building graph structures with cycles
+   - Tree with parent pointers using `Weak`
+   - Observer pattern implementation
+   - Common patterns and pitfalls
+   - Memory leak prevention
+
 ### Appendix
 
 - **[Closures](./docs/appendix-closures.md)** - Function-like types
@@ -119,13 +134,11 @@ For low-level concepts (syscalls, process memory, blocking vs non-blocking opera
 
 The following chapters are planned but not yet implemented. See [CLAUDE.md](./CLAUDE.md) for the full roadmap.
 
-- **Rc** - Reference counting for shared ownership
 - **Arc** - Atomic reference counting
 - **Send and Sync** - Thread safety markers
 - **Dynamic Dispatch** - Runtime polymorphism
 - **Mutex** - Mutual exclusion
 - **Channels** - Message passing
-- **Rc + RefCell** - Shared mutable state (single-threaded)
 - **Arc + Mutex** - Shared mutable state (multi-threaded)
 - **Async State Machines** - How async/await works
 - **Future Trait** - The async foundation
@@ -181,6 +194,8 @@ rustlib/
 │   ├── 04-vec.md             # Chapter 4: Vec
 │   ├── 05-cell.md            # Chapter 5: Cell
 │   ├── 06-refcell.md         # Chapter 6: RefCell
+│   ├── 07-rc.md              # Chapter 7: Rc
+│   ├── 08-rc-refcell.md      # Chapter 8: Rc + RefCell
 │   └── appendix-closures.md  # Appendix: Closures
 ├── src/                      # Library implementations
 │   ├── lib.rs                # Main library file
@@ -201,13 +216,25 @@ rustlib/
 Each chapter has corresponding example code in the `examples/` directory:
 
 ```bash
-# Run individual examples (Chapters 1-6 completed)
-cargo run --example option      # Chapter 1: Option
-cargo run --example result      # Chapter 2: Result
-cargo run --example box         # Chapter 3: Box
-cargo run --example vec         # Chapter 4: Vec
-cargo run --example cell        # Chapter 5: Cell
-cargo run --example refcell     # Chapter 6: RefCell
+# Run individual examples (Chapters 1-8 completed)
+cargo run --example 01_option      # Chapter 1: Option
+cargo run --example 02_result      # Chapter 2: Result
+cargo run --example 03_box         # Chapter 3: Box
+cargo run --example 04_vec         # Chapter 4: Vec
+cargo run --example 05_cell        # Chapter 5: Cell
+cargo run --example 06_refcell     # Chapter 6: RefCell
+cargo run --example 07_rc          # Chapter 7: Rc
+cargo run --example 08_rc_refcell  # Chapter 8: Rc + RefCell
+```
+
+**Note:** Example files contain TODO placeholders for you to fill in as exercises. Complete solutions are available on the `answers` branch:
+
+```bash
+# Switch to the answers branch to see complete solutions
+git checkout answers
+
+# Return to the main branch with exercises
+git checkout main
 ```
 
 ### Running Tests
@@ -234,13 +261,14 @@ cargo test cell
 You can use the completed implementations in your own code:
 
 ```rust
-// Completed types (Chapters 1-6)
+// Completed types (Chapters 1-8)
 use rustlib::option::{Option0, Some, None};
 use rustlib::result::{Result0, Ok, Err};
 use rustlib::r#box::Box0;
 use rustlib::vec::Vec0;
 use rustlib::cell::Cell0;
 use rustlib::refcell::RefCell0;
+use rustlib::rc::{Rc0, Weak0};
 
 // Use the vec0! macro
 use rustlib::vec0;

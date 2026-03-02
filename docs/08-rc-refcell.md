@@ -16,7 +16,7 @@ But what if you need to **mutate** the shared data?
 
 ```rust
 let counter = Rc::new(0);
-// *counter += 1;  // ❌ ERROR: cannot borrow as mutable
+*counter += 1;  // ❌ ERROR: cannot borrow as mutable
 ```
 
 **Why it fails:** `Rc<T>` only gives you `&T` (shared reference), never `&mut T`. If multiple owners could get `&mut T`, you'd have multiple mutable references to the same data - a data race!
