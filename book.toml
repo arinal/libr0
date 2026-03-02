@@ -11,7 +11,8 @@ build-dir = "book"
 default-theme = "light"
 preferred-dark-theme = "navy"
 git-repository-url = "https://github.com/arinal/libr0"
-edit-url-template = "https://github.com/arinal/libr0/edit/main/{path}"
+git-repository-icon = "fa-github"
+additional-js = ["mermaid.min.js", "mermaid-init.js"]
 
 [output.html.search]
 enable = true
@@ -24,3 +25,6 @@ expand = true
 heading-split-level = 3
 
 [preprocessor.svgbob]
+
+[preprocessor.mermaid]
+command = "mdbook-mermaid"
