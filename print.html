@@ -30,6 +30,8 @@
         <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/custom.css">
+        <link rel="stylesheet" href="theme/landing.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -179,297 +181,45 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="libr0"><a class="header" href="#libr0">libr0</a></h1>
-<p><a href="https://github.com/arinal/libr0/actions/workflows/deploy-docs.yml"><img src="https://github.com/arinal/libr0/actions/workflows/deploy-docs.yml/badge.svg" alt="Deploy Documentation" /></a></p>
-<p>Building Rust's standard library from scratch - a hands-on learning guide to understanding Rust's core types by implementing them ourselves.</p>
-<p><strong><a href="https://arinal.github.io/libr0/">📖 Read the Documentation</a></strong></p>
-<h2 id="whats-in-the-name"><a class="header" href="#whats-in-the-name">What's in the name?</a></h2>
-<p><strong>libr0</strong> = <strong>lib</strong> <strong>r</strong>ust from zer<strong>0</strong></p>
-<p>We're building Rust's library (lib) from zero, one type at a time.</p>
-<h2 id="approach"><a class="header" href="#approach">Approach</a></h2>
-<p><strong>Learn by building.</strong> The best way to understand something is to implement it yourself. This guide takes you through Rust's fundamental types from scratch, starting with simple enums and progressing to async runtime internals. Each chapter builds on the previous one.</p>
-<p><strong>De-abstract the abstractions.</strong> Rust concepts aren't magic:</p>
+                        <h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
+<p>Welcome to <strong>libr0</strong> - a hands-on journey through Rust's standard library types.</p>
+<h2 id="what-is-libr0"><a class="header" href="#what-is-libr0">What is libr0?</a></h2>
+<p>libr0 is an educational project that reimplements Rust's core standard library types from scratch. By building types like <code>Option</code>, <code>Box</code>, <code>Vec</code>, and <code>Rc</code> yourself, you'll develop a deep understanding of:</p>
 <ul>
-<li>Borrowing? Just a safe pointer (one pointer in memory)</li>
-<li>Moving? Just a copy (mov instruction or memcpy)</li>
-<li><code>Box</code>? Just alloc + dealloc wrapped in a struct</li>
-<li><code>RefCell</code>? Just a counter and panic! when rules break</li>
-<li><code>async</code>? Compiler-generated state machines</li>
+<li>Memory management and allocation</li>
+<li>Smart pointers and ownership patterns</li>
+<li>Interior mutability with <code>Cell</code> and <code>RefCell</code></li>
+<li>Reference counting and weak references</li>
 </ul>
-<p><strong>Show the underlying reality:</strong></p>
+<h2 id="who-is-this-for"><a class="header" href="#who-is-this-for">Who is this for?</a></h2>
+<p>This book is designed for developers who:</p>
 <ul>
-<li>What's in memory? Show the layout</li>
-<li>What does the CPU do? Explain the instruction or syscall</li>
-<li>What does the compiler generate? Show the desugaring</li>
+<li>Understand basic Rust syntax and ownership rules</li>
+<li>Want to understand how Rust's types work under the hood</li>
+<li>Learn best by building and experimenting with code</li>
+<li>Are curious about memory layout and low-level implementation details</li>
 </ul>
-<p><strong>Concrete over abstract.</strong> When abstractions are hard to grasp, we use good representative examples. Understanding comes from working code, not theory.</p>
-<p><strong>Address common confusions.</strong> If people commonly misunderstand something, we call it out explicitly.</p>
-<p><strong>Recommended resources:</strong></p>
-<p>Since this guide relies heavily on memory layout, this is a great reference for visualizing each type in Rust:</p>
-<ul>
-<li><a href="https://cheats.rs/#memory-layout">cheats.rs/#memory-layout</a> - Visual memory layouts for Rust types</li>
-</ul>
-<p>For low-level concepts (syscalls, process memory, blocking vs non-blocking operations):</p>
-<ul>
-<li><a href="https://github.com/arinal/under-the-hood">under-the-hood</a></li>
-</ul>
-<h2 id="what-youll-discover"><a class="header" href="#what-youll-discover">What You'll Discover</a></h2>
-<ul>
-<li><strong>Rust has no null</strong> - The language itself doesn't have null. <code>Option&lt;T&gt;</code> is just a regular enum we can implement ourselves.</li>
-<li><strong>String is just a struct</strong> - <code>String</code>, <code>Vec</code>, <code>Box</code>, <code>Rc</code> - they're all normal structs you can build yourself. Nothing magical.</li>
-<li><strong>Rust doesn't know what "threads" or "tasks" are</strong> - The language only knows <code>Send</code> and <code>Sync</code> traits. Thread safety comes from library functions (often called <code>spawn</code>) requiring these traits in their signatures. Threads and tasks? Just library constructs.</li>
-<li><strong>Heap vs Stack</strong> - Creating a struct or array? That's on the stack. Unsafe allocator calls (<code>alloc</code>/<code>dealloc</code>) put things on the heap. <code>Box</code>, <code>Vec</code>, and <code>Rc</code> are just safe wrappers.</li>
-<li><strong>Cell doesn't allocate</strong> - <code>Cell&lt;T&gt;</code> and <code>RefCell&lt;T&gt;</code> live wherever you put them - stack, heap, or inside other structs. They're just wrappers.</li>
-<li><strong>PhantomData isn't scary</strong> - Go to definition on stdlib types and you'll see it everywhere. What is it? Just a lifetimes marker. That's it. Nothing magical.</li>
-<li><strong>Slices are special</strong> - Unlike everything else here, <code>&amp;[T]</code> is a language primitive. You can't fully replicate it in user code.</li>
-<li><strong>String is literally Vec&lt;u8&gt;</strong> - It's just a <code>Vec</code> with a UTF-8 guarantee. Same memory layout, same <code>ptr/len/capacity</code>.</li>
-<li><strong>async is rewriting your code</strong> - <code>async fn</code> desugars into a state machine. The compiler transforms your code completely.</li>
-<li><strong>No async runtime included</strong> - Rust only provides the <code>Future</code> trait. Tokio? That's just a library anyone can write.</li>
-</ul>
-<h2 id="table-of-contents"><a class="header" href="#table-of-contents">Table of Contents</a></h2>
-<h3 id="part-1-foundational-types"><a class="header" href="#part-1-foundational-types">Part 1: Foundational Types</a></h3>
+<h2 id="how-to-use-this-book"><a class="header" href="#how-to-use-this-book">How to use this book</a></h2>
+<p>Each chapter covers one type in depth:</p>
 <ol>
-<li>
-<p><strong><a href="./docs/01-option.html">Option</a></strong> - The simplest enum</p>
-<ul>
-<li>Pattern matching basics</li>
-<li><code>Some(T)</code> and <code>None</code> variants</li>
-<li>Implementing <code>map</code>, <code>and_then</code>, <code>unwrap_or</code>, <code>filter</code>, <code>as_ref</code>, <code>take</code></li>
-</ul>
-</li>
-<li>
-<p><strong><a href="./docs/02-result.html">Result</a></strong> - Error handling</p>
-<ul>
-<li><code>Ok(T)</code> and <code>Err(E)</code> variants</li>
-<li>The <code>?</code> operator</li>
-<li>Converting between <code>Option</code> and <code>Result</code></li>
-<li>Error propagation patterns</li>
-</ul>
-</li>
+<li><strong>What problem does it solve?</strong> - Understanding the motivation</li>
+<li><strong>How does it work?</strong> - Implementation details with memory diagrams</li>
+<li><strong>Build it yourself</strong> - Runnable examples and exercises</li>
+<li><strong>Common patterns</strong> - Real-world usage scenarios</li>
 </ol>
-<h3 id="part-2-smart-pointers--interior-mutability"><a class="header" href="#part-2-smart-pointers--interior-mutability">Part 2: Smart Pointers &amp; Interior Mutability</a></h3>
-<ol start="3">
-<li>
-<p><strong><a href="./docs/03-box.html">Box</a></strong> - Heap allocation</p>
-<ul>
-<li>Stack vs Heap</li>
-<li>The <code>Deref</code> and <code>DerefMut</code> traits</li>
-<li><code>Drop</code> for cleanup</li>
-<li>Why recursive types need <code>Box</code></li>
-<li>Trait objects basics</li>
-</ul>
-</li>
-<li>
-<p><strong><a href="./docs/04-vec.html">Vec</a></strong> - Growable arrays</p>
-<ul>
-<li>Heap allocation without <code>Box</code></li>
-<li>Direct use of allocator APIs (alloc/dealloc)</li>
-<li><code>ptr</code>, <code>len</code>, and <code>capacity</code></li>
-<li>Growing and shrinking</li>
-<li><code>String</code> is just <code>Vec&lt;u8&gt;</code></li>
-<li>Slices: <code>&amp;[T]</code> and <code>&amp;str</code></li>
-</ul>
-</li>
-<li>
-<p><strong><a href="./docs/05-cell.html">Cell</a></strong> - Copy-based interior mutability</p>
-<ul>
-<li>What is interior mutability?</li>
-<li><code>UnsafeCell</code> - the foundation</li>
-<li><code>get</code> and <code>set</code> operations</li>
-<li>When to use <code>Cell</code></li>
-</ul>
-</li>
-<li>
-<p><strong><a href="./docs/06-refcell.html">RefCell</a></strong> - Runtime borrow checking</p>
-<ul>
-<li>Interior mutability for any type</li>
-<li>Guard types (<code>Ref</code> and <code>RefMut</code>)</li>
-<li>Runtime borrow tracking with counters</li>
-<li>RAII and automatic cleanup</li>
-<li><code>try_borrow</code> for non-panicking access</li>
-<li>Common pitfalls and patterns</li>
-</ul>
-</li>
-<li>
-<p><strong><a href="./docs/07-rc.html">Rc</a></strong> - Reference counting for shared ownership</p>
-<ul>
-<li>Multiple owners of the same data</li>
-<li>Strong and weak references</li>
-<li>Breaking reference cycles with <code>Weak</code></li>
-<li><code>Clone</code> semantics for reference counting</li>
-<li>When to use <code>Rc</code> vs borrowing</li>
-</ul>
-</li>
-<li>
-<p><strong><a href="./docs/08-rc-refcell.html">Rc + RefCell</a></strong> - Shared mutable state (single-threaded)</p>
-<ul>
-<li>Combining reference counting with interior mutability</li>
-<li>Building graph structures with cycles</li>
-<li>Tree with parent pointers using <code>Weak</code></li>
-<li>Observer pattern implementation</li>
-<li>Common patterns and pitfalls</li>
-<li>Memory leak prevention</li>
-</ul>
-</li>
-</ol>
-<h3 id="appendix"><a class="header" href="#appendix">Appendix</a></h3>
-<ul>
-<li>
-<p><strong><a href="./docs/appendix-closures.html">Closures</a></strong> - Function-like types</p>
-<ul>
-<li><code>Fn</code> - immutable capture</li>
-<li><code>FnMut</code> - mutable capture</li>
-<li><code>FnOnce</code> - consuming capture</li>
-<li>Closure capture mechanics</li>
-<li>When to use each trait</li>
-</ul>
-</li>
-<li>
-<p><strong><a href="./docs/appendix-memory-layout.html">Memory Layout</a></strong> - Where your data lives</p>
-<ul>
-<li>Process memory layout (Stack, Heap, Static data)</li>
-<li>Function calls and stack frames</li>
-<li>Raw pointers and heap allocation</li>
-<li>Memory layout visualizations</li>
-</ul>
-</li>
-<li>
-<p><strong><a href="./docs/appendix-sized.html">Sized</a></strong> - The <code>Sized</code> trait</p>
-<ul>
-<li>What is <code>Sized</code>?</li>
-<li>Dynamically sized types</li>
-<li><code>?Sized</code> bounds</li>
-</ul>
-</li>
-</ul>
-<h3 id="coming-soon"><a class="header" href="#coming-soon">Coming Soon</a></h3>
-<p>The following chapters are planned but not yet implemented. See <a href="./CLAUDE.html">CLAUDE.md</a> for the full roadmap.</p>
-<ul>
-<li><strong>Arc</strong> - Atomic reference counting</li>
-<li><strong>Send and Sync</strong> - Thread safety markers</li>
-<li><strong>Dynamic Dispatch</strong> - Runtime polymorphism</li>
-<li><strong>Mutex</strong> - Mutual exclusion</li>
-<li><strong>Channels</strong> - Message passing</li>
-<li><strong>Arc + Mutex</strong> - Shared mutable state (multi-threaded)</li>
-<li><strong>Async State Machines</strong> - How async/await works</li>
-<li><strong>Future Trait</strong> - The async foundation</li>
-<li><strong>Waker</strong> - Wake-up mechanism</li>
-<li><strong>Mini Executor</strong> - Running futures</li>
-<li><strong>Mini Tokio</strong> - Async runtime from scratch</li>
-</ul>
-<h2 id="prerequisites"><a class="header" href="#prerequisites">Prerequisites</a></h2>
-<ul>
-<li>Basic Rust syntax (functions, structs, enums)</li>
-<li>Understanding of ownership and borrowing</li>
-<li>Familiarity with generics and traits</li>
-</ul>
-<h2 id="helpful-resources"><a class="header" href="#helpful-resources">Helpful Resources</a></h2>
-<ul>
-<li><strong><a href="https://cheats.rs/">Rust Language Cheat Sheet</a></strong> - Quick reference for Rust syntax and concepts</li>
-<li><strong><a href="https://github.com/arinal/under-the-hood">under-the-hood</a></strong> - Low-level concepts: memory layout, syscalls, blocking vs non-blocking</li>
-</ul>
-<h2 id="how-to-use-this-guide"><a class="header" href="#how-to-use-this-guide">How to Use This Guide</a></h2>
-<p>Each chapter contains:</p>
-<ul>
-<li><strong>Concept explanation</strong> - Why this type exists</li>
-<li><strong>Step-by-step implementation</strong> - Building it from scratch</li>
-<li><strong>Code examples</strong> - Practical usage</li>
-<li><strong>Exercises</strong> - Reinforce your understanding</li>
-</ul>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>// Example: Our own Option type
-enum MyOption&lt;T&gt; {
-    Some(T),
-    None,
-}
-
-impl&lt;T&gt; MyOption&lt;T&gt; {
-    fn map&lt;U, F: FnOnce(T) -&gt; U&gt;(self, f: F) -&gt; MyOption&lt;U&gt; {
-        match self {
-            MyOption::Some(x) =&gt; MyOption::Some(f(x)),
-            MyOption::None =&gt; MyOption::None,
-        }
-    }
-}
-<span class="boring">}</span></code></pre></pre>
-<h2 id="project-structure"><a class="header" href="#project-structure">Project Structure</a></h2>
-<pre><code>rustlib/
-├── docs/                     # Chapter documentation
-│   ├── 01-option.md          # Chapter 1: Option
-│   ├── 02-result.md          # Chapter 2: Result
-│   ├── 03-box.md             # Chapter 3: Box
-│   ├── 04-vec.md             # Chapter 4: Vec
-│   ├── 05-cell.md            # Chapter 5: Cell
-│   ├── 06-refcell.md         # Chapter 6: RefCell
-│   ├── 07-rc.md              # Chapter 7: Rc
-│   ├── 08-rc-refcell.md      # Chapter 8: Rc + RefCell
-│   └── appendix-closures.md  # Appendix: Closures
-├── src/                      # Library implementations
-│   ├── lib.rs                # Main library file
-│   ├── option.rs             # MyOption&lt;T&gt; implementation
-│   ├── result.rs             # Result0&lt;T, E&gt; implementation
-│   ├── box.rs                # Box0&lt;T&gt; implementation
-│   ├── vec.rs                # Vec0&lt;T&gt; implementation
-│   ├── cell.rs               # Cell0&lt;T&gt; implementation
-│   ├── refcell.rs            # RefCell0&lt;T&gt; implementation
-│   └── rc.rs                 # Rc0&lt;T&gt; and Weak0&lt;T&gt; implementation
-└── README.md                 # This file
-</code></pre>
-<h2 id="running-the-code"><a class="header" href="#running-the-code">Running the Code</a></h2>
-<h3 id="running-examples"><a class="header" href="#running-examples">Running Examples</a></h3>
-<p>Each chapter has corresponding example code in the <code>examples/</code> directory:</p>
-<pre><code class="language-bash"># Run individual examples (Chapters 1-8 completed)
-cargo run --example 01_option      # Chapter 1: Option
-cargo run --example 02_result      # Chapter 2: Result
-cargo run --example 03_box         # Chapter 3: Box
-cargo run --example 04_vec         # Chapter 4: Vec
-cargo run --example 05_cell        # Chapter 5: Cell
-cargo run --example 06_refcell     # Chapter 6: RefCell
-cargo run --example 07_rc          # Chapter 7: Rc
-cargo run --example 08_rc_refcell  # Chapter 8: Rc + RefCell
-</code></pre>
-<p><strong>Note:</strong> Example files contain TODO placeholders for you to fill in as exercises. Complete solutions are available on the <code>answers</code> branch:</p>
-<pre><code class="language-bash"># Switch to the answers branch to see complete solutions
-git checkout answers
-
-# Return to the main branch with exercises
-git checkout main
-</code></pre>
-<h3 id="running-tests"><a class="header" href="#running-tests">Running Tests</a></h3>
-<p>The project includes comprehensive tests:</p>
+<p>All implementations use the suffix <code>0</code> (e.g., <code>Option0&lt;T&gt;</code>, <code>Vec0&lt;T&gt;</code>) to distinguish them from stdlib types, allowing side-by-side comparison.</p>
+<h2 id="running-the-code"><a class="header" href="#running-the-code">Running the code</a></h2>
+<p>The complete source code is available at <a href="https://github.com/arinal/libr0">github.com/arinal/libr0</a>. You can:</p>
 <pre><code class="language-bash"># Run all tests
 cargo test
 
-# Run only unit tests
-cargo test --lib
-
-# Run only documentation tests
-cargo test --doc
-
-# Run tests for a specific module
-cargo test option
-cargo test cell
+# Run a specific chapter's examples
+cargo run --example option
+cargo run --example vec
+cargo run --example rc
 </code></pre>
-<h3 id="using-as-a-library"><a class="header" href="#using-as-a-library">Using as a Library</a></h3>
-<p>You can use the completed implementations in your own code:</p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>// Completed types (Chapters 1-8)
-use rustlib::option::{Option0, Some, None};
-use rustlib::result::{Result0, Ok, Err};
-use rustlib::r#box::Box0;
-use rustlib::vec::Vec0;
-use rustlib::cell::Cell0;
-use rustlib::refcell::RefCell0;
-use rustlib::rc::{Rc0, Weak0};
-
-// Use the vec0! macro
-use rustlib::vec0;
-let v = vec0![1, 2, 3];
-<span class="boring">}</span></code></pre></pre>
-<h2 id="license"><a class="header" href="#license">License</a></h2>
-<p>MIT</p>
+<h2 id="ready-to-dive-in"><a class="header" href="#ready-to-dive-in">Ready to dive in?</a></h2>
+<p>Start with <a href="docs/01-option.html">Chapter 1: Option</a> to begin your journey.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="chapter-1-option---the-simplest-enum"><a class="header" href="#chapter-1-option---the-simplest-enum">Chapter 1: Option - The Simplest Enum</a></h1>
 <h2 id="the-problem-null-references"><a class="header" href="#the-problem-null-references">The Problem: Null References</a></h2>
 <p>In many languages, any reference can be <code>null</code>:</p>
@@ -8349,6 +8099,7 @@ let reference: &amp;CustomSlice&lt;i32&gt; = ...;
         <!-- Custom JS scripts -->
         <script src="mermaid.min.js"></script>
         <script src="mermaid-init.js"></script>
+        <script src="theme/landing.js"></script>
 
         <script>
         window.addEventListener('load', function() {

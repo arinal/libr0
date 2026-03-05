@@ -12,7 +12,8 @@ default-theme = "light"
 preferred-dark-theme = "navy"
 git-repository-url = "https://github.com/arinal/libr0"
 git-repository-icon = "fa-github"
-additional-js = ["mermaid.min.js", "mermaid-init.js"]
+additional-js = ["mermaid.min.js", "mermaid-init.js", "theme/landing.js"]
+additional-css = ["theme/custom.css", "theme/landing.css"]
 
 [output.html.search]
 enable = true
