@@ -10,7 +10,8 @@ Let's start with a concrete Rust program and trace where everything lives:
 
 ```rust
 // Global/static data - lives in data segment
-static GREETING: &str = "Hello";
+static GLOBAL_S: &str = "Global";
+static mut GLOBAL_N: u32 = 10;
 static mut BUFFER: [u8; 10_000] = [0; 10_000];  // 10 KB zero-initialized
 
 fn main() {
@@ -19,8 +20,8 @@ fn main() {
     let y = 100;
 
     // Stack: String struct (24 bytes: ptr + len + cap)
-    // Heap: actual string data "world"
-    let s = String::from("world");
+    // Heap: actual string data "Local"
+    let s = String::from("Local");
 
     // Stack: vector struct (24 bytes: ptr + len + cap)
     // Heap: array data [1, 2, 3, 4, 5]
@@ -56,30 +57,31 @@ Now let's see where each piece of data lives in memory.
 When your Rust program runs, the operating system gives it a contiguous chunk of virtual memory organized into distinct regions:
 
 ```bob
-High Memory Addresses (0x0000_7FFF_FFFF_FFFF - User Space upper bound)
-┌─────────────────────────────────────────────┐
-│              STACK                          │  ← Grows downward
-│  (Function frames, local variables)         │
-├─────────────────────────────────────────────┤
-│                   ↓                         │
-│                                             │
-│              (unused space)                 │
-│                                             │
-│                   ↑                         │
-├─────────────────────────────────────────────┤
-│              HEAP                           │  ← Grows upward
-│  (Dynamically allocated: Box, Vec, String)  │
-├─────────────────────────────────────────────┤
-│        BSS (Uninitialized Data)             │
-│  (static mut with no initializer)           │
-├─────────────────────────────────────────────┤
-│        DATA (Initialized Data)              │
-│  (static, const, string literals)           │
-├─────────────────────────────────────────────┤
-│              TEXT (Code)                    │
-│  (Your compiled functions)                  │
-└─────────────────────────────────────────────┘
-Low Memory Addresses (0x0000_0000_0000_0000)
+High Memory Addresses "(0x0000_7FFF_FFFF_FFFF - User Space upper bound)"
++---------------------------------------------+
+|              STACK                          |  <- Grows downward
+|  "(Function frames, local variables)"       |
++---------------------------------------------+
+|                   ↓                         |
+|                                             |
+|              "(unused space)"               |
+|                                             |
+|                   ↑                         |
++---------------------------------------------+
+|              HEAP                           |  <- Grows upward
+|  "(Dynamically allocated: Box, Vec, String)"|
++---------------------------------------------+
+|     DATA SEGMENT "(Read + Write)"           |
+|  ".bss section: uninitialized data"         |
+|  ".data section: initialized mutable data"  |
++---------------------------------------------+
+|     RODATA SEGMENT "(Read-Only)"            |
+|  "(static, const, string literals)"         |
++---------------------------------------------+
+|     TEXT SEGMENT "(Read + Execute)"         |
+|  "(Your compiled functions)"                |
++---------------------------------------------+
+Low Memory Addresses "(0x0000_0000_0000_0000)"
 ```
 
 **Key Insight:** The stack and heap grow toward each other!
@@ -93,113 +95,114 @@ Now let's see exactly where each piece of data from our example lives.
 Before `main()` even runs, the OS loads static data into the DATA segment:
 
 ```bob
-High Memory Addresses (0x0000_7FFF_FFFF_FFFF)
-┌────────────────────────────────────────────┐
-│                   STACK                    │
-│              (empty at start)              │
-├────────────────────────────────────────────┤
-│             (unused space)                 │
-├────────────────────────────────────────────┤
-│                   HEAP                     │
-│              (empty at start)              │
-├────────────────────────────────────────────┤
-│        BSS (Uninitialized Data)            │
-│                                            │
-│  0x6000: BUFFER = [0u8; 10_000]            │
-│          [0][0][0][0]...[0][0][0][0]       │
-│          (10,000 bytes - all zeros)        │
-├────────────────────────────────────────────┤
-│        DATA (Initialized Data)             │
-│                                            │
-│  0x5000: GREETING = "Hello"                │
-│          ├─ ptr:  0x5000  ─┐               │
-│          ├─ len:  5        │               │
-│          └─ "Hello\0"  <───┘               │
-├────────────────────────────────────────────┤
-│              TEXT (Code)                   │
-│                                            │
-│  0x1000: fn main() { ... }                 │
-│  0x2000: fn process_data() { ... }         │
-│  ...    (Rust standard library functions)  │
-│  0x3000: println!() code                   │
-│  0x4000: std::alloc::alloc()               │
-│  0x7000: Vec::push()                       │
-│                                            │
-└────────────────────────────────────────────┘
-Low Memory Addresses (0x0000_0000_0000_0000)
+High Memory Addresses "(0x0000_7FFF_FFFF_FFFF)"
++-------------------------------------------+
+|                   STACK                   |   .------------------------------.
+|              "(empty at start)"           |   | Note that segments           |
++-------------------------------------------+   : consist of multiple sections |
+|             "(unused space)"              |   '------------------------------'
++-------------------------------------------+
+|                   HEAP                    |
+|              "(empty at start)"           |
++-------------------------------------------+
+|    DATA SEGMENT "(Read + Write)"          |
+|                                           |  .----------------------------------------.
+|  ".bss section (Uninitialized Data):"     |  |"static GLOBAL_S: &str = 'Global';"     |
+|                                           |  |"static mut GLOBAL_N: u32 = 10;"        |
+|  "BUFFER [u8; 10_000] (10KB, all zeros)"  |  |"static mut BUFFER = [0; 10_000];"      |
+|  +---+---+---+-------+---+---+            |  |                                        |
+|  | 0 | 0 | 0 |...... | 0 | 0 |            |  |"fn main() {"                           |
+|  +---+---+---+-------+---+---+            |  |"    let x = 42;"                       |
+|                                           |  |"    let y = 100;"                      |
+|  ".data section (Initialized Mutable):"   |  |"    let s = String::from('Local');"    |
+|                                           |  |"    let v = vec![1, 2, 3, 4, 5];"      |
+|  "GLOBAL_N: u32 = 10"                     |  |"    let arr = [10, 20, 30, 40, 50];"   |
+|                                           |  :"    let doubled = process_data(x, &s);"|
++-------------------------------------------+  |     ...                                |
+|    RODATA SEGMENT "(Read-Only)"           |  |"}"                                     |
+|                                           |  |                                        |
+| .rodata section "(static variables)"      |  |"fn process_data("                      |
+|                                           |  |"   param_num: i32,"                    |
+|  +-----------+                            |  |"   param_text: &string"                |
+|  | "len:" 5  | GLOBAL "&str"              |  |" ) -> i32 {"                           |
+|  | "ptr:" *--+--+                         |  |"    let result = param_num * 2;"       |
+|  +-----------+  |                         |  |     ...                                |
+|                 |                         |  |     result                             |
+| .rodata section |"(string literals)"      |  |"}"                                     |
+|               +-v-+---+---+---+---+---+   |  '----------------------------------------'
+|               | G | l | o | b | a | l |   |
+|               +---+---+---+---+---+---+   |
+|               | L | o | c | a | l |       |
+|               +---+---+---+---+---+       |
+|                                           |
++-------------------------------------------+
+|              TEXT "(Code)"                |   
+|                                           |   
+|             "(User's code)"               |
+|  "fn main()" { ... }                      |
+|  "fn process_data ()" { ... }             |
+|                                           |
+|    "(Rust standard library functions)"    |
+|  "fn println!()" code                     |
+|  "fn std::alloc::alloc()"                 |
+|  "fn Vec::push()"                         |
+|                                           |
++--------------------------------------------+
+Low Memory Addresses "(0x0000_0000_0000_0000)"
 ```
-
-> **Note on addresses:** The stack addresses shown (0x7FFF_FFFF_FFFF) are realistic—they represent the upper canonical address range on x86-64 Linux. 
-> However, the low addresses (0x1000-0x7000) are simplified examples for clarity. Real addresses on modern systems would be:
-> - **TEXT/DATA/BSS segments:** Around `0x5555_5555_0000` to `0x5555_5556_0000` (randomized by ASLR)
-> - **Heap:** Typically starts around `0x5555_5556_0000` and grows upward
-> - **First 64KB (0x0000-0xFFFF):** Unmapped as null pointer protection—dereferencing causes segfault
-> We use simplified addresses in diagrams to keep them readable and focus on concepts rather than implementation details.
-
-> **Why BSS exists:** It's a file size optimization! BSS stores only zeros, so the executable doesn't need to include them.
->
-> **Program in file:** `static BUFFER: [u8; 1_000_000] = [0; 1_000_000];`
->
-> - BSS: Executable just says "allocate 1 MB of zeros" (~16 bytes metadata)
-> - Data: Would need to store all 1 million bytes of zeros (~1 MB in file)
->
-> **Process in memory:** Both are 1 MB of zeros in memory. The OS allocates and zeroes the BSS memory at load time.
->
-> **Result:** Executable with BSS is ~320 KB, with Data would be ~1.3 MB. Same memory usage at runtime, but different file sizes!
 
 ### Step 2: main() Executes - Local Variables on Stack
 
 When `main()` is called, the function's **prologue** (compiler-generated instructions at the beginning of the function) creates a stack frame by adjusting the stack pointer (typically `sub rsp, N` where N is the size needed for local variables). After all local variables are initialized (right before calling `process_data(x, &s)`), the stack looks like this:
 
 ```bob
-STACK (grows downward from high addresses):
-┌─────────────────────────────────┐
-│                                 │    0x7FFF_FFFF_FFF0 (high address)
-│    main()'s stack frame         │
-│                                 │
-│  [Return address]               │  ← Where to return after main
-│  [Saved registers]              │
-│                                 │
-│  x: i32 = 42                    │  ← Local variable (4 bytes)
-│  y: i32 = 100                   │  ← Local variable (4 bytes)
-│                                 │
-│  s: String                      │  ← String struct (24 bytes):
-│    ├─ ptr:  0x8000 ──────┐      │     Points to heap
-│    ├─ len:  5            │      │
-│    └─ cap:  5            │      │
-│                          │      │
-│  v: Vec<i32>             │      │  ← Vec struct (24 bytes):
-│    ├─ ptr:  0x8100 ───┐  │      │     Points to heap
-│    ├─ len:  5         │  │      │
-│    └─ cap:  5         │  │      │
-│                       │  │      │
-│  arr: [i32; 5]        │  │      │  ← Native array (20 bytes):
-│    [50]               │  │      │     All data on stack!
-│    [40]               │  │      │     Elements at increasing
-│    [30]               │  │      │     addresses (50 highest,
-│    [20]               │  │      │     10 lowest)
-│    [10]               │  │      │
-│                       │  │      │
-└───────────────────────┼──┼──────┘  ← Stack Pointer (RSP) points here (low address)
-                        │  │
-                        │  └───────┐
-HEAP (grows upward):    │          │
-┌───────────────────────┼──────────┼─────────────┐
-│                       ↓          │             │
-│  0x8100: [1][2][3][4][5]         │             │
-│   v's data (6 bytes)             │             │
-│                                  ↓             │
-│                         0x8000: [w][o][r][l][d]│  ← v's data
-│               (20 bytes: 5 * 4-byte integers)  │
-│                                                │
-└────────────────────────────────────────────────┘
+  STACK
++------------------------+
+|  main's frame          |<-- "0x7FFF_FFFF_FFF0 (high address)"
+|                        |  .--------------------------~------------.
+|  +---------------------+  |"; Function prologue (assembly)"       +----.  
+|  |Return address       |  |"push rbp        ; Save old base ptr"  :    |  
+|  +---------------------+  :"mov rbp, rsp    ; Set new base ptr"   |    |  
+|  |rbp                  |  |"sub rsp, 128    ; Allocate locals"    |    |  
+|  +---------------------+  '--------------------------~------------'    |  
+|  |"x: i32 = 42"        |                                               |  
+|  +---------------------+   .-----------------------------------------. |
+|  |"y: i32 = 100"       |   |"static GLOBAL_S: &str = 'Global';"      | |
+|  +---------------------+   |"static mut GLOBAL_N: u32 = 10;"         | |
+|  |"doubled: i32 = ?"   |   |"static mut BUFFER = [0; 10_000];"       | |
+|  +---------------------+   |                                         | |
+|  |  "arr: [i32; 5]"    |   |"fn main() {"                            | |
+|  +---+---+---+---+---+ |   |"    // function prologue" <-------------+-+
+|  |10 |20 |30 |40 |50 | |   |"    let x = 42;"                        |    
+|  +---+---+---+---+---+-+   |"    let y = 100;"                       |    
+|  |"s: String"          |   |"    let s = String::from('Local');"     |    
+|  |  "len:"  5          |   |"    let v = vec![1, 2, 3, 4, 5];"       |    
+|  |  "cap:"  5          |   |"    let arr = [10, 20, 30, 40, 50];"    |    
+|  |  "ptr:"  *----------+-. :"    let doubled = process_data(x, &s);" |    
+|  +---------------------+ | |     ...                                 |    
+|  | "v: Vec<i32>"       | | |"}"                                      |    
+|  |   "len:"  5         | | '-----------------------------------------'    
+|  |   "cap:"  5         | | 
+|  |   "ptr:"  *         | | 
++--+-----------|---------+<++- "RSP points here after prologue (allocated for locals)"
+               |           |
+  .------------'           |
+  |                        |
+  |   HEAP                 |
++-+------------------------|-------------------+
+| |                        v                   |
+| |   +--+--+--+--+--+   +---+---+---+---+---+ |
+| '-->|1 |2 |3 |4 |5 |   | L | o | c | a | l | |
+|     +--+--+--+--+--+   +---+---+---+---+---+ |
+|                                              |
++----------------------------------------------+
 ```
 
 **Important observations:**
 
 1. **`x` and `y`** are just 4 bytes each, living directly on the stack
 2. **`s` (String)** is 24 bytes on the stack (metadata: pointer, length, capacity)
-   - The **actual string data** "world" lives on the heap
+   - The **actual string data** "Local" lives on the heap
 3. **`v` (Vec)** is 24 bytes on the stack (metadata: pointer, length, capacity)
    - The **actual array data** [1,2,3,4,5] lives on the heap
 4. **`arr` (native array)** is 20 bytes entirely on the stack (no heap allocation!)
@@ -220,67 +223,64 @@ When we call `process_data(x, &s)`, here's what the CPU actually does (x86-64 ca
    - May spill register arguments to stack (compiler's choice)
 
 ```bob
-CPU REGISTERS (not in memory!):
-┌────────────────────────────────────┐
-│  RBP:  0x7FFF_FFFF_FF00            │  Base pointer (main's frame base)
-│  RSP:  0x7FFF_FFFF_FE00            │  Stack pointer (current top)
-│  EDI:  42          ← param_num     │  Arguments passed via registers!
-│  RSI:  0x7FFF...   ← param_text    │  Points to s on stack
-└──────────┼─────────────────────────┘  These are NOT in stack memory
-           │
-STACK:     └ ─ ─ ─ ─ ─ ─ ─ ┐
-┌──────────────────────────┼─────────┐  ← main() pushed first (higher address)
-│                                    │    0x7FFF_FFFF_FFF0
-│    main()'s stack frame  │         │
-│                                    │
-│  [Return address to OS]  │         │
-│  [Saved main's RBP]                │  ← RBP points here (0x7FFF_FFFF_FF00)
-│                          │         │
-│  x: i32 = 42                       │  ← at [rbp-4]
-│  y: i32 = 100            │         │  ← at [rbp-8]
-│  [padding ~24 bytes]               │  ← Compiler adds padding for alignment
-│  s: String  ←─ ─ ─ ─ ─ ─ ┘         │  ← at [rbp-32] (aligned to 8-byte boundary)
-│    ├─ ptr:  0x8000  ───────┐       │
-│    ├─ len:  5              │       │
-│    └─ cap:  5              │       │
-│                            │       │
-│  v: Vec<i32>               │       │
-│    ├─ ptr:  0x8100  ──┐    │       │
-│    ├─ len:  5         │    │       │
-│    └─ cap:  5         │    │       │
-│                       │    │       │
-│  arr: [i32; 5]        │    │       │
-│    [50]               │    │       │
-│    [40]               │    │       │
-│    [30]               │    │       │
-│    [20]               │    │       │
-│    [10]               │    │       │
-│                       │    │       │
-│  doubled: i32 = ???   │    │       │  ← Space for return value (not set yet)
-│                       │    │       │
-├───────────────────────┼────┼───────┤
-│  [Return address to main]  │       │  ← process_data()'s stack frame
-│  [Saved RBP = 0x7FFF_FFFF_FF00]    │  ← "push rbp" saved it here
-│                       │    │       │  ← process_data's RBP points HERE
-│  result: i32 = 84     │    │       │  ← Local variable at [rbp-4]
-│                       │    │       │
-│  (param_num/param_text NOT here!)  │  ← Arguments are in REGISTERS, not stack!
-│                       │    │       │
-│  [allocated space]    │    │       │  ← "sub rsp, 16" allocated this
-│                       │    │       │
-└───────────────────────│────┼───────┘  ← RSP points here (0x7FFF_FFFF_FE00)
-                        │    │
-HEAP:                   │    │
-┌───────────────────────┼────┼─────────────────┐
-│                       │    ↓                 │
-│  0x8000: "world\0"    │  [w][o][r][l][d][\0] │
-│                       ↓                      │
-│              0x8100: [1][2][3][4][5]         │
-│                                              │
-└──────────────────────────────────────────────┘
+  CPU REGISTERS "(not in memory!)"
++------------------------------+
+|  "RBP:  0x7FFF_FFFF_FF00"    |
+|  "RSP:  0x7FFF_FFFF_FE00"    |
+|  "EDI:  42 (param_num)"      |
+|  "RSI:  param_text" *--------+-+
++------------------------------+ |   
+                                 |   .-----------------------------------------.
+  STACK                          |   |"; Function prologue (assembly)"         +---.
++-----------------------------+  |   |"push rbp         ; Save caller's RBP"   :   |
+| "main()'s frame"            |  |   :"mov rbp, rsp     ; Set our RBP"         |   |
+|  +--------------------------+  |   |"sub rsp, 16      ; Allocate locals"     |   |
+|  | Return address to OS     |  |   '-----------------------------------------'   |
+|  +--------------------------+  |   .------------------------------------------.  |
+|  | Saved main's RBP         |  |   |"fn process_data("                        |  |
+|  +--------------------------+  |   |"    param_num: i32,"                     |  |
+|  | "x: i32 = 42"            |  |   |"    param_text: &String"                 |  |
+|  +--------------------------+  |   |") -> i32 {"                              |  |
+|  | "y: i32 = 100"           |  |   |"    // function prologue" <--------------+--'
+|  +--------------------------+  |   |"    let result = param_num * 2;"         |  
+|  | "doubled: i32 = ???"     |  |   |"    println!(...)"                       |  
+|  +--------------------------+  |   |"    result  // Returns 84"               |  
+|  | "arr:" [i32; 5]          |  |   |"}"                                       |  
+|  +---+---+---+---+---+      |  |   '------------------------------------------'  
+|  |10 |20 |30 |40 |50 |      |  |
+|  +---+---+---+---+---+------+  |
+|  | "s: String"              |<-+   "&s points here (param_text)"          
+|  |   "len:"  5              |   
+|  |   "cap:"  5              |                                               
+|  |   "ptr:"  *--------------+-------------------------------------------+
+|  +--------------------------+                                           |
+|  | "v: Vec<i32>"            |                                           |
+|  |   "ptr:"  *--------------+--+                                        |
+|  |   "len:"  5              |  |                                        |
+|  |   "cap:"  5              |  |                                        |
++--+--------------------------+  |                                        |
+|  "process_data()' s frame"  |  |                                        |
+|  +--------------------------+  |                                        |
+|  | Return address to main   |  |                                        |
+|  +--------------------------+  |                                        |
+|  | "Saved RBP = 0x7F.."     +<-|---"push rbp stored this"               |
+|  +--------------------------+  |                                        |
+|  | "result: i32 = 84"       |  |                                        |
++--+--------------------------+<-|---"RSP points here (after prologue)"   |
+       +-------------------------+                                        |
+       |                   +----------------------------------------------+
+       |                   |
+  HEAP |                   |
++------+-------------------+-------------------+
+|      v                   v                   |
+|     +--+--+--+--+--+   +---+---+---+---+---+ |
+|     |1 |2 |3 |4 |5 |   | L | o | c | a | l | |
+|     +--+--+--+--+--+   +---+---+---+---+---+ |
+|                                              |
++----------------------------------------------+
 ```
 
-**Key observations about arguments and returns:**
+Key observations about arguments and returns:**
 
 1. **`param_num` and `param_text` are in CPU REGISTERS, not in memory!**
    - `param_num` (value 42) lives in the EDI register
@@ -363,47 +363,46 @@ When `process_data()` returns, two things happen:
 2. **Stack frame is popped**: process_data's entire frame is destroyed
 
 ```bob
-STACK:
-┌───────────────────────────────────┐
-│                                   │
-│    main()'s stack frame           │
-│                                   │
-│  [Return address to OS]           │
-│  [Saved registers]                │
-│                                   │
-│  x: i32 = 42                      │
-│  y: i32 = 100                     │
-│                                   │
-│  s: String                        │
-│    ├─ ptr:  0x8000  ──────┐       │
-│    ├─ len:  5             │       │
-│    └─ cap:  5             │       │
-│                           │       │
-│  v: Vec<i32>              │       │
-│    ├─ ptr:  0x8100  ──┐   │       │
-│    ├─ len:  5         │   │       │
-│    └─ cap:  5         │   │       │
-│                       │   │       │
-│  arr: [i32; 5]        │   │       │
-│    [50]               │   │       │
-│    [40]               │   │       │
-│    [30]               │   │       │
-│    [20]               │   │       │
-│    [10]               │   │       │
-│                       │   │       │
-│  doubled: i32 = 84    │   │       │  ← Return value COPIED here (4 bytes)
-│                       │   │       │
-└───────────────────────┼───┼───────┘
-                        │   │
-                        │   └────────────┐
-HEAP:                   │                │
-┌───────────────────────┼────────────────┼───┐
-│                       ↓                ↓   │
-│  0x8000: "world\0"    [w][o][r][l][d][\0]  │
-│                                            │
-│  0x8100: [1][2][3][4][5]                   │
-│                                            │
-└────────────────────────────────────────────┘
+  STACK
++------------------------+
+|  main's frame          |
+|                        |
+|  +---------------------+
+|  |Return address       |
+|  +---------------------+
+|  |rbp                  |
+|  +---------------------+
+|  |"x: i32 = 42"        |
+|  +---------------------+
+|  |"y: i32 = 100"       |
+|  +---------------------+
+|  |"doubled: i32 = 84"  | <- "Return value COPIED here (4 bytes)"
+|  +---------------------+
+|  |  "arr: [i32; 5]"    |
+|  +---+---+---+---+---+ |
+|  |10 |20 |30 |40 |50 | |
+|  +---+---+---+---+---+-+
+|  |"s: String"          |
+|  |  "len:"  5          |
+|  |  "cap:"  5          |
+|  |  "ptr:"  *----------+-. 
+|  +---------------------+ |
+|  | "v: Vec<i32>"       | |
+|  |   "len:"  5         | |
+|  |   "cap:"  5         | | 
+|  |   "ptr:"  *         | | 
++--+-----------|---------+ |
+               |           |
+  .------------'           |
+  |                        |
+  |   HEAP                 |
++-+------------------------|-------------------+
+| |                        v                   |
+| |   +--+--+--+--+--+   +---+---+---+---+---+ |
+| '-->|1 |2 |3 |4 |5 |   | L | o | c | a | l | |
+|     +--+--+--+--+--+   +---+---+---+---+---+ |
+|                                              |
++----------------------------------------------+
 ```
 
 **Key observations about returns:**
@@ -423,23 +422,9 @@ HEAP:                   │                │
 
 When `main()` returns, `s` and `v` go out of scope. Their `Drop` implementations run:
 
-1. **`s` is dropped**: Calls `dealloc()` to free the heap memory at 0x8000
-2. **`v` is dropped**: Calls `dealloc()` to free the heap memory at 0x8100
+1. **`s` is dropped**: Calls `dealloc()` to free the heap memory
+2. **`v` is dropped**: Calls `dealloc()` to free the heap memory
 3. **main's stack frame is popped**: All local variables disappear
-
-```
-STACK: (empty)
-
-HEAP: (freed)
-  0x8000: (deallocated)
-  0x8100: (deallocated)
-
-DATA Segment: (still there)
-  0x5000: GREETING = "Hello"
-
-BSS Segment: (still there)
-  0x6000: COUNTER = 0
-```
 
 ## Memory Regions in Detail
 
@@ -524,18 +509,20 @@ v.push(2);                      // adds to heap, len=2, cap=4
 **Stack memory layout:**
 
 ```bob
-Stack:
-┌────────────────────────────┐
-│ number: Number             │
-│   n: 42                    │  4 bytes
-├────────────────────────────┤
-│ v: Vec<i32>                │
-│   ptr:  0x1000  ─────┐     │  8 bytes (pointer)
-│   len:  2            │     │  8 bytes
-│   cap:  4            │     │  8 bytes
-└──────────────────────┼─────┘  Total: 24 bytes on stack
-                       │
-                       └──────> Heap at 0x1000: [1][2]  (8 bytes + capacity for 2 more)
+
+      STACK                                    HEAP
+
++-------------------------+
+| "number:" Number        |
+|  "n: 42 (4 bytes)"      | 
++-------------------------+
+| "v: Vec<i32>"           |              +--+--+--+--+--+
+|  "ptr: (8 bytes)"  *----+------------->|1 |2 |  |  |  |
+|  "len: 2 (8 bytes)"     |              +--+--+--+--+--+
+|  "cap: 4 (8 bytes)"     |        "(8 bytes + capacity for 2 more)"
++-------------------------+  
+"Total: 24 bytes on stack"
+                           
 ```
 
 We'll explore heap and allocation in more detail in the next section.
@@ -605,16 +592,17 @@ You can think a reference as a safe pointer guaranteed by the compiler.
 **What's in memory :**
 
 ```bob
-Stack (User Space - lower canonical addresses start with 0x0000):
-                         ┌─────────────────────────────┐
- │ 0x0000_7FFF_FFFF_FF00 │  x: i32 = 42                │
- │                       │  [0x00][0x00][0x00][0x2A]   │
-Low to high              ├─────────────────────────────┤
- │                       │                             │
- │ 0x0000_7FFF_FFFF_FF04 │  x_ref: &i32                │
- │                       │  [0x00][0x00][0x7F][0xFF]   │ Contains address: 0x0000_7FFF_FFFF_FF00
- │                       │  [0xFF][0xFF][0xFF][0x00]   │  (points to x)
- ↓                       └─────────────────────────────┘
+"Stack (User Space - lower canonical addresses start with 0x0000):"
+                           +------------------------------+
+ | "0x0000_7FFF_FFFF_FF00" |  "x: i32 = 42"               |
+ |                         |  "[0x00][0x00][0x00][0x2A]"  |
+ |                         |        "(4 bytes)"           |
+ |                         +------------------------------+
+ | "0x0000_7FFF_FFFF_FF04" |  "x_ref: &i32"               |
+ |                         |  "[0x00][0x00][0x7F][0xFF]"  | "Contains address: 0x0000_7FFF_FFFF_FF00"
+ |                         |  "[0xFF][0xFF][0xFF][0x00]"  |  "(points to x)"
+ |                         |        "(8 bytes)"           |
+ v                         +------------------------------+
 ```
 
 **Key points about references:**
@@ -637,14 +625,14 @@ let y_mut_ref: &mut i32 = &mut y;
 
 ```bob
 Stack:
-┌─────────────────────────────┐
-│  y: i32 = 100               │  0x0000_7FFF_FFFF_FF10 (initially 100, then 200)
-├─────────────────────────────┤
-│  y_mut_ref: &mut i32        │  0x0000_7FFF_FFFF_FF14 (8 bytes)
-│  [pointer to y]  ────────┐  │  Contains: 0x0000_7FFF_FFFF_FF10
-└──────────────────────────┼──┘
-                           │
-    *y_mut_ref = 200  ─────┘  Writes through the pointer
++------------------------------+
+|  "y: i32 = 100"              |  "0x0000_7FFF_FFFF_FF10 (initially 100, then 200)"
++------------------------------+
+|  "y_mut_ref: &mut i32"       |  "0x0000_7FFF_FFFF_FF14 (8 bytes)"
+|  "[pointer to y]"  --------+ |  "Contains: 0x0000_7FFF_FFFF_FF10"
++---------------------------+-+
+                           |
+    "*y_mut_ref = 200"  ---'  "Writes through the pointer"
 ```
 
 **References vs Raw Pointers:**
@@ -817,17 +805,17 @@ Unlike `Vec`, raw pointers don't do bounds checking! `Vec` would panic on `vec[3
 After \*ptr.add(2) = 3, the heap looks like this:
 
 ```bob
-Stack (0x7FFF_FFFF_FF00)              Heap (0x5555_8000_0000)
-                                   (12 bytes total: 3 × 4-byte i32s)
-    ┌─────────────────────┐         ┌─────┐
-ptr │  0x5555_8000_0000  ─────────> │  1  │
-    └─────────────────────┘         ┌─────┐
-                                 +4 │  2  │
-                                    ┌─────┐
-                                 +8 │  3  │
-                                    ┌─────┐
-                                +12 │  4  │ *ptr.add(3) = 4 changed this, which is not owned by us!
-                                    └─────┘
+"Stack (0x7FFF_FFFF_FF00)"              "Heap (0x5555_8000_0000)"
+                                   "(12 bytes total: 3 × 4-byte i32s)"
+    +---------------------+         +-----+
+ptr |  "0x5555_8000_0000" --------> |  1  |
+    +---------------------+         +-----+
+                                 +4 |  2  |
+                                    +-----+
+                                 +8 |  3  |
+                                    +-----+
+                                +12 |  4  | "*ptr.add(3) = 4 changed this, which is not owned by us!"
+                                    +-----+
 ```
 
 **Key points:**
@@ -993,58 +981,66 @@ Let's see where different types memory layout:
 let x: i32 = 42;
 let y: bool = true;
 let z: f64 = 3.14;
+```
 
+```bob
 Stack:
-┌──────────────┐
-│ x: i32 = 42  │  4 bytes
-│ y: bool = 1  │  1 byte (+ padding)
-│ z: f64 = ... │  8 bytes
-└──────────────┘
++--------------+
+| "x: i32 = 42"  |  4 bytes
+| "y: bool = 1"  |  "1 byte (+ padding)"
+| "z: f64 = ..." |  8 bytes
++--------------+
 
-Heap: (nothing)
+"Heap: (nothing)"
 ```
 
 ### Arrays (Fixed Size)
 
 ```rust
 let arr: [i32; 5] = [1, 2, 3, 4, 5];
+```
 
+```bob
 Stack:
-┌──────────────────────────┐
-│ arr: [i32; 5]            │
-│   [1][2][3][4][5]        │  20 bytes
-└──────────────────────────┘
++--------------------------+
+| "arr: [i32; 5]"            |
+|   [1][2][3][4][5]        |  20 bytes
++--------------------------+
 
-Heap: (nothing)
+"Heap: (nothing)"
 ```
 
 ### String
 
 ```rust
 let s = String::from("hello");
+```
 
-Stack:                      Heap:
-┌──────────────────┐       ┌──────────────────┐
-│ s: String        │       │                  │
-│   ptr ──────────────────>│ [h][e][l][l][o]  │
-│   len: 5         │       │  5 bytes         │
-│   cap: 5         │       │                  │
-└──────────────────┘       └──────────────────┘
-    24 bytes                   5 bytes (+ capacity)
+```bob
+Stack:                      "Heap:"
++------------------+       +------------------+
+| "s: String"        |       |                  |
+|   "ptr" ----------+------>| [h][e][l][l][o]  |
+|   "len:" 5         |       |  5 bytes         |
+|   "cap:" 5         |       |                  |
++------------------+       +------------------+
+    24 bytes                   "5 bytes (+ capacity)"
 ```
 
 ### Vec
 
 ```rust
 let v = vec![1, 2, 3];
+```
 
-Stack:                      Heap:
-┌──────────────────┐       ┌──────────────────┐
-│ v: Vec<i32>      │       │                  │
-│   ptr ──────────────────>│ [1][2][3]        │
-│   len: 3         │       │  12 bytes        │
-│   cap: 3         │       │                  │
-└──────────────────┘       └──────────────────┘
+```bob
+Stack:                      "Heap:"
++------------------+       +------------------+
+| "v: Vec<i32>"      |       |                  |
+|   "ptr" ----------+------>| [1][2][3]        |
+|   "len:" 3         |       |  12 bytes        |
+|   "cap:" 3         |       |                  |
++------------------+       +------------------+
     24 bytes                   12 bytes
 ```
 
@@ -1052,13 +1048,15 @@ Stack:                      Heap:
 
 ```rust
 let b = Box::new(42);
+```
 
-Stack:                      Heap:
-┌──────────────────┐       ┌──────┐
-│ b: Box<i32>      │       │      │
-│   ptr ──────────────────>│  42  │
-└──────────────────┘       │      │
-    8 bytes                └──────┘
+```bob
+Stack:                      "Heap:"
++------------------+       +------+
+| "b: Box<i32>"      |       |      |
+|   "ptr" ----------+------>|  42  |
++------------------+       |      |
+    8 bytes                +------+
                             4 bytes
 ```
 
@@ -1069,28 +1067,30 @@ let v: Vec<String> = vec![
     String::from("hello"),
     String::from("world"),
 ];
+```
 
-Stack:                          Heap:
-┌────────────────────┐         ┌─────────────────────────────────────────┐
-│ v: Vec<String>     │         │  String 0:                              │
-│   ptr ─────────────────────> │    ├─ ptr  ──┐                          │
-│   len: 2           │         │    ├─ len: 5 │  (24 bytes)              │
-│   cap: 2           │         │    └─ cap: 5 │                          │
-└────────────────────┘         │              │                          │
-                               │  String 1:   │                          │
-                               │    ├─ ptr  ──┼──┐                       │
-                               │    ├─ len: 5 │  │  (24 bytes)           │
-                               │    └─ cap: 5 │  │                       │
-                               │              ↓  │                       │
-                               │   "hello"  [h][e│[l][l][o] (5 bytes)    │
-                               │                 ↓                       │
-                               │       "world"  [w][o][r][l][d] (5 bytes)│
-                               └─────────────────────────────────────────┘
+```bob
+Stack:                          "Heap:"
++--------------------+         +-----------------------------------------+
+| "v: Vec<String>"     |         |  "String 0:"                              |
+|   "ptr" -----------+--------> |    +- "ptr"  --+                          |
+|   "len:" 2           |         |    +- "len:" 5 |  "(24 bytes)"              |
+|   "cap:" 2           |         |    +- "cap:" 5 |                          |
++--------------------+         |              |                          |
+                               |  "String 1:"   |                          |
+                               |    +- "ptr"  --+--+                       |
+                               |    +- "len:" 5 |  |  "(24 bytes)"           |
+                               |    +- "cap:" 5 |  |                       |
+                               |              v  |                       |
+                               |   'hello'  [h][e][l][l][o] "(5 bytes)"    |
+                               |                 v                       |
+                               |       'world'  [w][o][r][l][d] "(5 bytes)"|
+                               +-----------------------------------------+
+```
 
 - Stack: 24 bytes (Vec metadata)
 - Heap: 48 bytes (2 × String metadata: 2 × 24 bytes) + 10 bytes (string data)
 - Total heap: 58 bytes
-```
 
 **Three levels of indirection!**
 
@@ -1110,22 +1110,22 @@ let v = Vec::new();
 
 ```bob
 Stack:
-┌────────────────────┐
-│ v: Vec<i32>        │
-│   [data goes here] │  ← NO! Data doesn't live here
-└────────────────────┘
++--------------------+
+| "v: Vec<i32>"        |
+|   "[data goes here]" |  <- "NO! Data doesn't live here"
++--------------------+
 ```
 
 **Correct mental model:**
 
 ```bob
-Stack:                    Heap:
-┌──────────────┐         ┌──────────┐
-│ v: Vec<i32>  │         │          │
-│   ptr ──────────────>  │ (data)   │  ← Data lives here!
-│   len: 0     │         │          │
-│   cap: 0     │         └──────────┘
-└──────────────┘
+Stack:                    "Heap:"
++--------------+         +----------+
+| "v: Vec<i32>"  |         |          |
+|   "ptr" ------+-------->| "(data)"   |  <- "Data lives here!"
+|   "len:" 0     |         |          |
+|   "cap:" 0     |         +----------+
++--------------+
 ```
 
 ### Misconception #2: "String is just text"
