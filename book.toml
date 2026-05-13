@@ -25,7 +25,7 @@ expand = true
 heading-split-level = 3
 
 [preprocessor.svgbob]
-command = "/home/arinal/Sources/rust/@oss/mdbook-svgbob/target/release/mdbook-svgbob"
+command = "mdbook-svgbob"
 
 [preprocessor.mermaid]
 command = "mdbook-mermaid"

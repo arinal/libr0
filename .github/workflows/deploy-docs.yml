@@ -26,22 +26,22 @@ jobs:
             ~/.cargo/bin/mdbook
             ~/.cargo/bin/mdbook-svgbob
             ~/.cargo/bin/mdbook-mermaid
-          key: ${{ runner.os }}-cargo-bins-mdbook-0.4.52-svgbob-0.2.2-mermaid-0.14.0
+          key: ${{ runner.os }}-cargo-bins-mdbook-0.5.2-svgbob-0.5-mermaid-0.17.0
           restore-keys: |
             ${{ runner.os }}-cargo-bins-
 
       - name: Install mdBook
         run: |
-          if ! command -v mdbook &> /dev/null || [ "$(mdbook --version | grep -o '0\.4\.52')" != "0.4.52" ]; then
-            cargo install mdbook --version 0.4.52 --force
+          if ! command -v mdbook &> /dev/null || [ "$(mdbook --version | grep -o '0\.5\.2')" != "0.5.2" ]; then
+            cargo install mdbook --version 0.5.2 --force
           else
-            echo "mdBook 0.4.52 already installed"
+            echo "mdBook 0.5.2 already installed"
           fi
 
       - name: Install mdbook-svgbob
         run: |
           if ! command -v mdbook-svgbob &> /dev/null; then
-            cargo install mdbook-svgbob
+            cargo install mdbook-svgbob --git https://github.com/arinal/mdbook-svgbob --branch mdbook-0.5
           else
             echo "mdbook-svgbob already installed"
           fi
@@ -49,7 +49,7 @@ jobs:
       - name: Install mdbook-mermaid
         run: |
           if ! command -v mdbook-mermaid &> /dev/null; then
-            cargo install mdbook-mermaid --version 0.14.0
+            cargo install mdbook-mermaid --version 0.17.0
           else
             echo "mdbook-mermaid already installed"
           fi
