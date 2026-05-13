@@ -1,0 +1,701 @@
+/* Tokio-Inspired Markdown Styles for libr0 */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --rust-orange: #CE422B;
+    --tokio-magenta: #c83895;
+    --tokio-magenta-dark: #a82d7a;
+}
+
+/* Base typography */
+body {
+    font-family: 'Roboto', sans-serif;
+    font-size: 1.06em;
+    -webkit-font-smoothing: antialiased;
+}
+
+#content {
+    line-height: 1.7;
+}
+
+/* Hide unnecessary elements */
+.menu-title,
+h1#libr0 {
+    display: none !important;
+}
+
+/* Professional Animated Background - Subtle Grid Flow */
+html {
+    background: #ffffff;
+}
+
+body {
+    position: relative;
+    overflow-x: hidden;
+    background: transparent;
+}
+
+/* Animated gradient background */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1000;
+    background:
+        radial-gradient(circle at 30% 20%, rgba(206, 66, 43, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 70% 80%, rgba(206, 66, 43, 0.02) 0%, transparent 50%),
+        linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+    animation: subtleShift 15s ease-in-out infinite;
+}
+
+@keyframes subtleShift {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.95; }
+}
+
+/* Subtle moving dots pattern */
+body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -999;
+    background-image: radial-gradient(circle, rgba(206, 66, 43, 0.08) 1px, transparent 1px);
+    background-size: 30px 30px;
+    animation: dotPattern 40s linear infinite;
+    opacity: 0.4;
+}
+
+@keyframes dotPattern {
+    0% { background-position: 0 0; }
+    100% { background-position: 30px 30px; }
+}
+
+/* Canvas for additional effects */
+#memory-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -998;
+    pointer-events: none;
+}
+
+/* Ensure content is above background */
+#body-container,
+.page-wrapper,
+.page,
+#content {
+    background: transparent !important;
+    position: relative;
+    z-index: 1;
+}
+
+/* Hide default chapter title */
+#introduction .chapter-title {
+    display: none;
+}
+
+/* ========================================
+   LANDING PAGE - HERO SECTION
+   ======================================== */
+
+.landing-hero {
+    text-align: center;
+    padding: 100px 40px 80px;
+    margin: -20px -20px 80px -20px;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px);
+    position: relative;
+    overflow: hidden;
+}
+
+.landing-hero::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(206, 66, 43, 0.2), transparent);
+}
+
+.landing-logo {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 30px;
+    display: block;
+    animation: gentleFloat 4s ease-in-out infinite;
+}
+
+@keyframes gentleFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+.landing-title {
+    font-size: 4rem;
+    font-weight: 700;
+    margin: 0 0 16px 0;
+    color: var(--text-primary);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+}
+
+.landing-title a {
+    text-decoration: none;
+    color: var(--rust-orange);
+}
+
+.landing-subtitle {
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin: 0 0 24px 0;
+    line-height: 1.4;
+}
+
+.landing-description {
+    font-size: 1.125rem;
+    max-width: 600px;
+    margin: 0 auto 40px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+}
+
+/* Action Buttons */
+.landing-actions {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 40px;
+}
+
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 32px;
+    background: var(--rust-orange);
+    color: white !important;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(206, 66, 43, 0.2);
+}
+
+.btn-primary:hover {
+    background: var(--rust-orange-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(206, 66, 43, 0.3);
+}
+
+.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 32px;
+    background: white;
+    color: var(--text-primary) !important;
+    text-decoration: none;
+    border: 1.5px solid #e5e5e5;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-secondary:hover {
+    border-color: var(--rust-orange);
+    color: var(--rust-orange) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* ========================================
+   STATS SECTION
+   ======================================== */
+
+.landing-stats {
+    display: flex;
+    justify-content: center;
+    gap: 100px;
+    padding: 60px 40px;
+    margin: 0 -20px 80px -20px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    background: rgba(250, 250, 250, 0.5);
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--rust-orange);
+    line-height: 1;
+    margin-bottom: 8px;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+/* ========================================
+   FEATURE CARDS
+   ======================================== */
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 32px;
+    margin: 60px 0;
+}
+
+.feature-card {
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    padding: 32px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+    border-color: rgba(206, 66, 43, 0.3);
+}
+
+.feature-icon {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    color: var(--rust-orange);
+}
+
+.feature-card h3 {
+    color: var(--text-primary);
+    margin: 0 0 12px 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.feature-card h3 a {
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: color 0.2s;
+}
+
+.feature-card h3 a:hover {
+    color: var(--rust-orange);
+}
+
+.feature-card h3 code {
+    background: none;
+    padding: 0;
+    color: var(--rust-orange);
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.feature-card p {
+    line-height: 1.6;
+    color: var(--text-secondary);
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+/* ========================================
+   TOKIO-STYLE MARKDOWN CONTENT
+   ======================================== */
+
+/* Headings - all black, clean spacing */
+#content main h1,
+#content main h2,
+#content main h3,
+#content main h4 {
+    color: #000000 !important;
+}
+
+#content main h1 {
+    font-size: 2.5rem;
+    font-weight: 400;
+    margin: 0 0 0.5rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+#content main h2 { font-size: 1.75rem; font-weight: 500; margin: 2.5rem 0 1rem 0; }
+#content main h3 { font-size: 1.4rem; font-weight: 500; margin: 2rem 0 0.75rem 0; }
+#content main h4 { font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 0.5rem 0; }
+
+/* Remove heading decorations */
+#content main h1::before,
+#content main h2::before,
+#content main h3::before,
+#content main h4::before { display: none; }
+
+/* Heading anchor links - black */
+#content main a.header {
+    color: #000000 !important;
+    text-decoration: none;
+}
+
+/* Text */
+#content main p {
+    line-height: 1.8;
+    margin: 0 0 1.2em 0;
+}
+
+#content main strong {
+    font-weight: 600;
+}
+
+/* Lists */
+#content main ul,
+#content main ol {
+    margin: 1.2em 0;
+    padding-left: 2em;
+}
+
+#content main li {
+    margin: 1rem 0;
+    line-height: 1.8;
+}
+
+#content main ul li::marker {
+    color: var(--tokio-magenta);
+    font-size: 1.2em;
+}
+
+#content main ol li::marker {
+    font-weight: 600;
+}
+
+/* Links */
+#content main a {
+    color: var(--tokio-magenta);
+    text-decoration: none;
+}
+
+#content main a:hover {
+    color: var(--tokio-magenta-dark);
+    text-decoration: underline;
+}
+
+/* Inline code */
+#content main code {
+    background: #f0f0f0;
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-size: 0.9em;
+    font-family: 'SF Mono', Monaco, monospace;
+}
+
+#content main a code {
+    color: var(--tokio-magenta);
+}
+
+/* Code blocks */
+#content main pre {
+    background: #f6f8fa;
+    border-radius: 4px;
+    padding: 16px;
+    margin: 1.5em 0;
+}
+
+#content main pre code {
+    background: none;
+    padding: 0;
+}
+
+#content main pre pre {
+    background: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* Special backgrounds for diagram blocks */
+
+/* Bob diagrams (rendered as SVG) */
+#content main div:has(svg.svgbob) {
+    background: #fff8f0;
+    border-left: 4px solid var(--rust-orange);
+    border-radius: 4px;
+    padding: 16px;
+    margin: 1.5em 0;
+}
+
+/* Mermaid diagrams */
+#content main div:has(.mermaid),
+#content main pre:has(code.language-mermaid) {
+    background: #f0f9ff;
+    border-left: 4px solid #0ea5e9;
+    border-radius: 4px;
+    padding: 16px;
+    margin: 1.5em 0;
+}
+
+/* Blockquotes - Tokio style with magenta accent */
+#content main blockquote {
+    border-left: 4px solid var(--tokio-magenta);
+    background: var(--tokio-magenta-light);
+    padding: 1em 1.5em;
+    margin: 1.5em 0;
+    border-radius: 4px;
+}
+
+#content main blockquote p {
+    margin: 0.5em 0;
+}
+
+#content main blockquote p:first-child {
+    margin-top: 0;
+}
+
+#content main blockquote p:last-child {
+    margin-bottom: 0;
+}
+
+/* Tables */
+#content main table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1.5em 0;
+}
+
+#content main table th,
+#content main table td {
+    border: 1px solid var(--border-color);
+    padding: 0.75em 1em;
+    text-align: left;
+}
+
+#content main table th {
+    background: var(--bg-subtle);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+#content main table td {
+    color: var(--text-primary);
+}
+
+/* Horizontal rules */
+#content main hr {
+    border: none;
+    border-top: 1px solid var(--border-color);
+    margin: 2.5em 0;
+}
+
+/* ========================================
+   PHILOSOPHY SECTION
+   ======================================== */
+
+.philosophy-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 32px;
+    margin: 60px 0;
+}
+
+.philosophy-item {
+    padding: 32px;
+    background: white;
+    border-left: 4px solid var(--rust-orange);
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.philosophy-item:hover {
+    transform: translateX(4px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.philosophy-item h4 {
+    color: var(--rust-orange);
+    margin: 0 0 12px 0;
+    font-size: 1.125rem;
+    font-weight: 700;
+}
+
+.philosophy-item p {
+    line-height: 1.6;
+    color: var(--text-secondary);
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+/* ========================================
+   MENU BAR / HEADER
+   ======================================== */
+
+/* Tokio-style header - clean white background with black icons */
+#menu-bar {
+    background-color: #ffffff !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Black icons and text in menu bar */
+#menu-bar .icon-button,
+#menu-bar a,
+#menu-bar i {
+    color: #000000 !important;
+}
+
+#menu-bar .icon-button:hover,
+#menu-bar a:hover,
+#menu-bar i:hover {
+    color: #4a4a4a !important;
+}
+
+/* ========================================
+   GENERAL IMPROVEMENTS
+   ======================================== */
+
+/* Override general pre styling - let main content styles handle it */
+pre {
+    border: none;
+    border-radius: 4px;
+}
+
+code {
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Courier New', monospace;
+}
+
+/* Better blockquotes */
+blockquote {
+    border-left: 3px solid var(--rust-orange);
+    background: rgba(250, 250, 250, 0.8);
+    padding: 20px 24px;
+    margin: 24px 0;
+    border-radius: 4px;
+}
+
+/* Enhance lists */
+ul li, ol li {
+    margin: 10px 0;
+    line-height: 1.7;
+    color: var(--text-secondary);
+}
+
+/* Clean link styling */
+a {
+    color: var(--rust-orange);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+a:hover {
+    color: var(--rust-orange-light);
+}
+
+/* Better badges */
+a img[src*="badge"] {
+    display: inline-block;
+    margin: 4px;
+}
+
+/* Final CTA Section */
+.btn-large {
+    padding: 16px 48px !important;
+    font-size: 1.125rem !important;
+    border-radius: 10px !important;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+
+@media (max-width: 768px) {
+    .landing-hero {
+        padding: 60px 24px 50px;
+    }
+
+    .landing-title {
+        font-size: 2.5rem;
+    }
+
+    .landing-subtitle {
+        font-size: 1.25rem;
+    }
+
+    .landing-stats {
+        gap: 40px;
+        flex-direction: column;
+        padding: 40px 24px;
+    }
+
+    .stat-number {
+        font-size: 2rem;
+    }
+
+    .feature-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+
+    .philosophy-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+
+    h2 {
+        font-size: 2rem;
+        margin: 60px 0 32px 0;
+    }
+}
+
+/* ========================================
+   DARK THEME SUPPORT
+   ======================================== */
+
+.navy body::before,
+.coal body::before,
+.ayu body::before {
+    background:
+        radial-gradient(circle at 30% 20%, rgba(206, 66, 43, 0.06) 0%, transparent 50%),
+        radial-gradient(circle at 70% 80%, rgba(206, 66, 43, 0.04) 0%, transparent 50%),
+        linear-gradient(180deg, #0d1117 0%, #161b22 100%);
+}
+
+.navy .landing-hero,
+.coal .landing-hero,
+.ayu .landing-hero {
+    background: rgba(13, 17, 23, 0.9);
+    backdrop-filter: blur(20px);
+}
+
+.navy .feature-card,
+.coal .feature-card,
+.ayu .feature-card {
+    background: rgba(22, 27, 34, 0.8);
+    border-color: rgba(206, 66, 43, 0.2);
+}
+
+.navy .philosophy-item,
+.coal .philosophy-item,
+.ayu .philosophy-item {
+    background: rgba(22, 27, 34, 0.8);
+}

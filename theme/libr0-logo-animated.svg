@@ -1,0 +1,136 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Animated clip path that reveals from left to right -->
+    <clipPath id="finished-reveal">
+      <rect x="0" y="0" width="0" height="200">
+        <animate attributeName="width" from="0" to="200" dur="2s" begin="0s" fill="freeze"/>
+      </rect>
+    </clipPath>
+
+    <!-- Inverse clip path for the unfinished part -->
+    <clipPath id="unfinished-hide">
+      <rect x="0" y="0" width="200" height="200">
+        <animate attributeName="x" from="0" to="200" dur="2s" begin="0s" fill="freeze"/>
+      </rect>
+    </clipPath>
+  </defs>
+
+  <!-- UNFINISHED GEAR (starts visible, slides out) -->
+  <g clip-path="url(#unfinished-hide)">
+    <!-- Outer orange base circle (outlined) -->
+    <circle cx="100" cy="100" r="80" fill="none" stroke="#CE5C23" stroke-width="2" stroke-dasharray="6,3" opacity="0.7"/>
+
+    <!-- 12 TRAPEZOID teeth (outlined) - narrower outside, wider inside -->
+    <g fill="none" stroke="#CE5C23" stroke-width="1.5" stroke-dasharray="4,2" opacity="0.6">
+      <polygon points="93,5 107,5 111,22 89,22" transform-origin="100 100"/>
+      <polygon points="93,5 107,5 111,22 89,22" transform="rotate(30 100 100)"/>
+      <polygon points="93,5 107,5 111,22 89,22" transform="rotate(60 100 100)"/>
+      <polygon points="93,5 107,5 111,22 89,22" transform="rotate(90 100 100)"/>
+      <polygon points="93,5 107,5 111,22 89,22" transform="rotate(120 100 100)"/>
+      <polygon points="93,5 107,5 111,22 89,22" transform="rotate(150 100 100)"/>
+      <polygon points="93,5 107,5 111,22 89,22" transform="rotate(180 100 100)"/>
+      <polygon points="93,5 107,5 111,22 89,22" transform="rotate(210 100 100)"/>
+      <polygon points="93,5 107,5 111,22 89,22" transform="rotate(240 100 100)"/>
+      <polygon points="93,5 107,5 111,22 89,22" transform="rotate(270 100 100)"/>
+      <polygon points="93,5 107,5 111,22 89,22" transform="rotate(300 100 100)"/>
+      <polygon points="93,5 107,5 111,22 89,22" transform="rotate(330 100 100)"/>
+    </g>
+
+    <!-- Black ring outline (r=72 outer, r=48 inner) -->
+    <circle cx="100" cy="100" r="72" fill="none" stroke="#2C2C2C" stroke-width="2" stroke-dasharray="6,3" opacity="0.7"/>
+    <circle cx="100" cy="100" r="48" fill="none" stroke="#2C2C2C" stroke-width="2" stroke-dasharray="6,3" opacity="0.7"/>
+
+    <!-- Bolt holes (outlined) - positioned in the middle of the black ring (radius 60, evenly spaced 72° apart) -->
+    <circle cx="100" cy="40" r="5" fill="none" stroke="white" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.7"/>
+    <circle cx="157.1" cy="81.5" r="5" fill="none" stroke="white" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.7"/>
+    <circle cx="135.3" cy="148.5" r="5" fill="none" stroke="white" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.7"/>
+    <circle cx="64.7" cy="148.5" r="5" fill="none" stroke="white" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.7"/>
+    <circle cx="42.9" cy="81.5" r="5" fill="none" stroke="white" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.7"/>
+
+    <!-- Blueprint construction lines -->
+    <g stroke="#4A90E2" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.5">
+      <circle cx="100" cy="100" r="48"/>
+      <circle cx="100" cy="100" r="72"/>
+      <circle cx="100" cy="100" r="80"/>
+      <line x1="100" y1="10" x2="100" y2="190"/>
+      <line x1="10" y1="100" x2="190" y2="100"/>
+      <line x1="36.4" y1="36.4" x2="163.6" y2="163.6"/>
+      <line x1="163.6" y1="36.4" x2="36.4" y2="163.6"/>
+    </g>
+
+    <!-- Technical annotations -->
+    <text x="150" y="103" font-family="monospace" font-size="6" fill="#666">R72</text>
+    <text x="140" y="28" font-family="monospace" font-size="5" fill="#666">30°</text>
+    <text x="50" y="28" font-family="monospace" font-size="5" fill="#666">30°</text>
+
+    <!-- Proportional R letter - centered and reaching the ring -->
+    <g fill="none" stroke="#2C2C2C" stroke-width="2" stroke-dasharray="4,2">
+      <!-- Top-left horizontal bar extending toward black ring -->
+      <rect x="56" y="62" width="22" height="10"/>
+      <!-- Main R body (top part, rounded section, and left leg) -->
+      <path d="M 78 62 L 90 62 L 90 105 L 103 105 L 103 92 L 90 92 L 90 113 L 78 113 Z M 90 62 Q 125 62 125 82 Q 125 102 113 105 L 103 105 L 103 92 Q 115 92 115 82 Q 115 72 108 72 L 90 72 Z"/>
+      <!-- Right diagonal leg as a polygon with proper width -->
+      <polygon points="103,105 115,105 123,123 111,123"/>
+      <!-- Bottom-right horizontal bar extending toward black ring (also serves as bottom of right leg) -->
+      <rect x="111" y="123" width="34" height="10"/>
+      <!-- Bottom-left horizontal bar extending toward black ring (also serves as bottom of left leg) -->
+      <rect x="50" y="113" width="40" height="10"/>
+    </g>
+  </g>
+
+  <!-- FINISHED GEAR (animates in from left to right) -->
+  <g clip-path="url(#finished-reveal)">
+    <!-- Outer orange base circle -->
+    <circle cx="100" cy="100" r="80" fill="#CE5C23"/>
+
+    <!-- 12 TRAPEZOID teeth -->
+    <g fill="#CE5C23">
+      <polygon points="93,5 107,5 111,22 89,22" transform-origin="100 100"/>
+      <polygon points="93,5 107,5 111,22 89,22" transform="rotate(30 100 100)"/>
+      <polygon points="93,5 107,5 111,22 89,22" transform="rotate(60 100 100)"/>
+      <polygon points="93,5 107,5 111,22 89,22" transform="rotate(90 100 100)"/>
+      <polygon points="93,5 107,5 111,22 89,22" transform="rotate(120 100 100)"/>
+      <polygon points="93,5 107,5 111,22 89,22" transform="rotate(150 100 100)"/>
+      <polygon points="93,5 107,5 111,22 89,22" transform="rotate(180 100 100)"/>
+      <polygon points="93,5 107,5 111,22 89,22" transform="rotate(210 100 100)"/>
+      <polygon points="93,5 107,5 111,22 89,22" transform="rotate(240 100 100)"/>
+      <polygon points="93,5 107,5 111,22 89,22" transform="rotate(270 100 100)"/>
+      <polygon points="93,5 107,5 111,22 89,22" transform="rotate(300 100 100)"/>
+      <polygon points="93,5 107,5 111,22 89,22" transform="rotate(330 100 100)"/>
+    </g>
+
+    <!-- Black ring (r=72 outer, r=48 inner) -->
+    <circle cx="100" cy="100" r="72" fill="#2C2C2C"/>
+
+    <!-- Hollow white center INSIDE the black ring -->
+    <circle cx="100" cy="100" r="48" fill="white"/>
+
+    <!-- Five white bolt holes in the middle of the black ring (radius 60, evenly spaced 72° apart) -->
+    <circle cx="100" cy="40" r="5" fill="white"/>
+    <circle cx="157.1" cy="81.5" r="5" fill="white"/>
+    <circle cx="135.3" cy="148.5" r="5" fill="white"/>
+    <circle cx="64.7" cy="148.5" r="5" fill="white"/>
+    <circle cx="42.9" cy="81.5" r="5" fill="white"/>
+
+    <!-- Proportional R letter - centered and reaching the ring -->
+    <g fill="#2C2C2C">
+      <!-- Top-left horizontal bar extending toward black ring -->
+      <rect x="56" y="62" width="22" height="10"/>
+      <!-- Main R body (top part, rounded section, and left leg) -->
+      <path d="M 78 62 L 90 62 L 90 105 L 103 105 L 103 92 L 90 92 L 90 113 L 78 113 Z M 90 62 Q 125 62 125 82 Q 125 102 113 105 L 103 105 L 103 92 Q 115 92 115 82 Q 115 72 108 72 L 90 72 Z"/>
+      <!-- Right diagonal leg as a polygon with proper width -->
+      <polygon points="103,105 115,105 123,123 111,123"/>
+      <!-- Bottom-right horizontal bar extending toward black ring (also serves as bottom of right leg) -->
+      <rect x="111" y="123" width="34" height="10"/>
+      <!-- Bottom-left horizontal bar extending toward black ring (also serves as bottom of left leg) -->
+      <rect x="50" y="113" width="40" height="10"/>
+    </g>
+  </g>
+
+  <!-- Moving construction line that sweeps from left to right -->
+  <line x1="0" y1="0" x2="0" y2="200" stroke="#4A90E2" stroke-width="2" opacity="0.8">
+    <animate attributeName="x1" from="0" to="200" dur="2s" begin="0s" fill="freeze"/>
+    <animate attributeName="x2" from="0" to="200" dur="2s" begin="0s" fill="freeze"/>
+    <animate attributeName="opacity" from="0.8" to="0" dur="0.3s" begin="1.7s" fill="freeze"/>
+  </line>
+</svg>
