@@ -136,8 +136,8 @@ High Memory Addresses "(0x0000_7FFF_FFFF_FFFF)"
 |               +---+---+---+---+---+       |
 |                                           |
 +-------------------------------------------+
-|              TEXT "(Code)"                |   
-|                                           |   
+|              TEXT "(Code)"                |
+|                                           |
 |             "(User's code)"               |
 |  "fn main()" { ... }                      |
 |  "fn process_data ()" { ... }             |
@@ -160,12 +160,12 @@ When `main()` is called, the function's **prologue** (compiler-generated instruc
 +------------------------+
 |  main's frame          |<-- "0x7FFF_FFFF_FFF0 (high address)"
 |                        |  .--------------------------~------------.
-|  +---------------------+  |"; Function prologue (assembly)"       +----.  
-|  |Return address       |  |"push rbp        ; Save old base ptr"  :    |  
-|  +---------------------+  :"mov rbp, rsp    ; Set new base ptr"   |    |  
-|  |rbp                  |  |"sub rsp, 128    ; Allocate locals"    |    |  
-|  +---------------------+  '--------------------------~------------'    |  
-|  |"x: i32 = 42"        |                                               |  
+|  +---------------------+  |"; Function prologue (assembly)"       +----.
+|  |Return address       |  |"push rbp        ; Save old base ptr"  :    |
+|  +---------------------+  :"mov rbp, rsp    ; Set new base ptr"   |    |
+|  |rbp                  |  |"sub rsp, 128    ; Allocate locals"    |    |
+|  +---------------------+  '--------------------------~------------'    |
+|  |"x: i32 = 42"        |                                               |
 |  +---------------------+   .-----------------------------------------. |
 |  |"y: i32 = 100"       |   |"static GLOBAL_S: &str = 'Global';"      | |
 |  +---------------------+   |"static mut GLOBAL_N: u32 = 10;"         | |
@@ -173,17 +173,17 @@ When `main()` is called, the function's **prologue** (compiler-generated instruc
 |  +---------------------+   |                                         | |
 |  |  "arr: [i32; 5]"    |   |"fn main() {"                            | |
 |  +---+---+---+---+---+ |   |"    // function prologue" <-------------+-+
-|  |10 |20 |30 |40 |50 | |   |"    let x = 42;"                        |    
-|  +---+---+---+---+---+-+   |"    let y = 100;"                       |    
-|  |"s: String"          |   |"    let s = String::from('Local');"     |    
-|  |  "len:"  5          |   |"    let v = vec![1, 2, 3, 4, 5];"       |    
-|  |  "cap:"  5          |   |"    let arr = [10, 20, 30, 40, 50];"    |    
-|  |  "ptr:"  *----------+-. :"    let doubled = process_data(x, &s);" |    
-|  +---------------------+ | |     ...                                 |    
-|  | "v: Vec<i32>"       | | |"}"                                      |    
-|  |   "len:"  5         | | '-----------------------------------------'    
-|  |   "cap:"  5         | | 
-|  |   "ptr:"  *         | | 
+|  |10 |20 |30 |40 |50 | |   |"    let x = 42;"                        |
+|  +---+---+---+---+---+-+   |"    let y = 100;"                       |
+|  |"s: String"          |   |"    let s = String::from('Local');"     |
+|  |  "len:"  5          |   |"    let v = vec![1, 2, 3, 4, 5];"       |
+|  |  "cap:"  5          |   |"    let arr = [10, 20, 30, 40, 50];"    |
+|  |  "ptr:"  *----------+-. :"    let doubled = process_data(x, &s);" |
+|  +---------------------+ | |     ...                                 |
+|  | "v: Vec<i32>"       | | |"}"                                      |
+|  |   "len:"  5         | | '-----------------------------------------'
+|  |   "cap:"  5         | |
+|  |   "ptr:"  *         | |
 +--+-----------|---------+<++- "RSP points here after prologue (allocated for locals)"
                |           |
   .------------'           |
@@ -229,7 +229,7 @@ When we call `process_data(x, &s)`, here's what the CPU actually does (x86-64 ca
 |  "RSP:  0x7FFF_FFFF_FE00"    |
 |  "EDI:  42 (param_num)"      |
 |  "RSI:  param_text" *--------+-+
-+------------------------------+ |   
++------------------------------+ |
                                  |   .-----------------------------------------.
   STACK                          |   |"; Function prologue (assembly)"         +---.
 +-----------------------------+  |   |"push rbp         ; Save caller's RBP"   :   |
@@ -242,16 +242,16 @@ When we call `process_data(x, &s)`, here's what the CPU actually does (x86-64 ca
 |  | "x: i32 = 42"            |  |   |"    param_text: &String"                 |  |
 |  +--------------------------+  |   |") -> i32 {"                              |  |
 |  | "y: i32 = 100"           |  |   |"    // function prologue" <--------------+--'
-|  +--------------------------+  |   |"    let result = param_num * 2;"         |  
-|  | "doubled: i32 = ???"     |  |   |"    println!(...)"                       |  
-|  +--------------------------+  |   |"    result  // Returns 84"               |  
-|  | "arr:" [i32; 5]          |  |   |"}"                                       |  
-|  +---+---+---+---+---+      |  |   '------------------------------------------'  
+|  +--------------------------+  |   |"    let result = param_num * 2;"         |
+|  | "doubled: i32 = ???"     |  |   |"    println!(...)"                       |
+|  +--------------------------+  |   |"    result  // Returns 84"               |
+|  | "arr:" [i32; 5]          |  |   |"}"                                       |
+|  +---+---+---+---+---+      |  |   '------------------------------------------'
 |  |10 |20 |30 |40 |50 |      |  |
 |  +---+---+---+---+---+------+  |
-|  | "s: String"              |<-+   "&s points here (param_text)"          
-|  |   "len:"  5              |   
-|  |   "cap:"  5              |                                               
+|  | "s: String"              |<-+   "&s points here (param_text)"
+|  |   "len:"  5              |
+|  |   "cap:"  5              |
 |  |   "ptr:"  *--------------+-------------------------------------------+
 |  +--------------------------+                                           |
 |  | "v: Vec<i32>"            |                                           |
@@ -280,7 +280,7 @@ When we call `process_data(x, &s)`, here's what the CPU actually does (x86-64 ca
 +----------------------------------------------+
 ```
 
-Key observations about arguments and returns:**
+Key observations about arguments and returns:\*\*
 
 1. **`param_num` and `param_text` are in CPU REGISTERS, not in memory!**
    - `param_num` (value 42) lives in the EDI register
@@ -385,12 +385,12 @@ When `process_data()` returns, two things happen:
 |  |"s: String"          |
 |  |  "len:"  5          |
 |  |  "cap:"  5          |
-|  |  "ptr:"  *----------+-. 
+|  |  "ptr:"  *----------+-.
 |  +---------------------+ |
 |  | "v: Vec<i32>"       | |
 |  |   "len:"  5         | |
-|  |   "cap:"  5         | | 
-|  |   "ptr:"  *         | | 
+|  |   "cap:"  5         | |
+|  |   "ptr:"  *         | |
 +--+-----------|---------+ |
                |           |
   .------------'           |
@@ -514,15 +514,15 @@ v.push(2);                      // adds to heap, len=2, cap=4
 
 +-------------------------+
 | "number:" Number        |
-|  "n: 42 (4 bytes)"      | 
+|  "n: 42 (4 bytes)"      |
 +-------------------------+
-| "v: Vec<i32>"           |              +--+--+--+--+--+
-|  "ptr: (8 bytes)"  *----+------------->|1 |2 |  |  |  |
-|  "len: 2 (8 bytes)"     |              +--+--+--+--+--+
+| "v: Vec<i32>"           |              +--+--+--+--+
+|  "ptr: (8 bytes)"  *----+------------->|1 |2 |  |  |
+|  "len: 2 (8 bytes)"     |              +--+--+--+--+
 |  "cap: 4 (8 bytes)"     |        "(8 bytes + capacity for 2 more)"
-+-------------------------+  
++-------------------------+
 "Total: 24 bytes on stack"
-                           
+
 ```
 
 We'll explore heap and allocation in more detail in the next section.
@@ -592,17 +592,12 @@ You can think a reference as a safe pointer guaranteed by the compiler.
 **What's in memory :**
 
 ```bob
-"Stack (User Space - lower canonical addresses start with 0x0000):"
-                           +------------------------------+
- | "0x0000_7FFF_FFFF_FF00" |  "x: i32 = 42"               |
- |                         |  "[0x00][0x00][0x00][0x2A]"  |
- |                         |        "(4 bytes)"           |
- |                         +------------------------------+
- | "0x0000_7FFF_FFFF_FF04" |  "x_ref: &i32"               |
- |                         |  "[0x00][0x00][0x7F][0xFF]"  | "Contains address: 0x0000_7FFF_FFFF_FF00"
- |                         |  "[0xFF][0xFF][0xFF][0x00]"  |  "(points to x)"
- |                         |        "(8 bytes)"           |
- v                         +------------------------------+
+STACK
+                         +-----------------------+
+"0x7FFF_FFFF_FF00"     x |  42                   |<--+
+                         +-----------------------+   |
+"0x7FFF_FFFF_FF04  x_ref"| "0x7FFF_FFFF_FF00" *--+---+
+                         +-----------------------+
 ```
 
 **Key points about references:**
@@ -619,20 +614,28 @@ You can think a reference as a safe pointer guaranteed by the compiler.
 ```rust
 let mut y: i32 = 100;
 let y_mut_ref: &mut i32 = &mut y;
-*y_mut_ref = 200;  // Dereference and modify
-// y is now 200
 ```
 
 ```bob
-Stack:
-+------------------------------+
-|  "y: i32 = 100"              |  "0x0000_7FFF_FFFF_FF10 (initially 100, then 200)"
-+------------------------------+
-|  "y_mut_ref: &mut i32"       |  "0x0000_7FFF_FFFF_FF14 (8 bytes)"
-|  "[pointer to y]"  --------+ |  "Contains: 0x0000_7FFF_FFFF_FF10"
-+---------------------------+-+
-                           |
-    "*y_mut_ref = 200"  ---'  "Writes through the pointer"
+       STACK
+  y               "y_mut_ref"
++------+       +---------------+
+| 100  |<------|  Address of y |
++------+       +---------------+
+```
+
+```rust
+*y_mut_ref = 200;
+```
+
+Dereferencing `y_mut_ref` modifies the value of `y` in place — `y_mut_ref` itself still holds the same address, the address of `y`.
+
+```bob
+       STACK
+  y               "y_mut_ref"
++------+       +---------------+
+| 200  |<------|  Address of y |
++------+       +---------------+
 ```
 
 **References vs Raw Pointers:**
@@ -808,22 +811,23 @@ After \*ptr.add(2) = 3, the heap looks like this:
 "Stack (0x7FFF_FFFF_FF00)"              "Heap (0x5555_8000_0000)"
                                    "(12 bytes total: 3 × 4-byte i32s)"
     +---------------------+         +-----+
-ptr |  "0x5555_8000_0000" --------> |  1  |
+ptr |  "0x5555_8000_0000" +-------> |  1  |
     +---------------------+         +-----+
-                                 +4 |  2  |
+                                    |  2  | +4
                                     +-----+
-                                 +8 |  3  |
+Last element of our allocation  --> |  3  | +8
                                     +-----+
-                                +12 |  4  | "*ptr.add(3) = 4 changed this, which is not owned by us!"
+Beyond our allocation  -----------> |  4  | +12
                                     +-----+
 ```
 
 **Key points:**
 
 1. **`alloc()` returns a pointer to heap memory** - the allocated bytes live on the heap
-2. **Manual deallocation is required** - forgetting `dealloc()` causes a memory leak
-3. **After `dealloc()`, the pointer is dangling** - using it causes undefined behavior
-4. **This is extremely unsafe** - you must ensure:
+1. **Writing beyond the allocation is undefined behavior** - `ptr.add(3)` points past the 3 bytes we allocated, and writing there silently corrupts memory that may belong to another allocation
+1. **Manual deallocation is required** - forgetting `dealloc()` causes a memory leak
+1. **After `dealloc()`, the pointer is dangling** - using it causes undefined behavior
+1. **This is extremely unsafe** - you must ensure:
    - The layout matches what you allocated
    - You don't use the pointer after dealloc
    - You don't call dealloc twice on the same pointer
@@ -984,14 +988,9 @@ let z: f64 = 3.14;
 ```
 
 ```bob
-Stack:
-+--------------+
-| "x: i32 = 42"  |  4 bytes
-| "y: bool = 1"  |  "1 byte (+ padding)"
-| "z: f64 = ..." |  8 bytes
-+--------------+
-
-"Heap: (nothing)"
++--------+----------+----------+
+|"42(4B)"|"true(1B)"|"3.14(8B)"|
++--------+----------+----------+
 ```
 
 ### Arrays (Fixed Size)
@@ -1001,30 +1000,10 @@ let arr: [i32; 5] = [1, 2, 3, 4, 5];
 ```
 
 ```bob
-Stack:
-+--------------------------+
-| "arr: [i32; 5]"            |
-|   [1][2][3][4][5]        |  20 bytes
-+--------------------------+
++---+---+---+---+---+
+| 1 | 2 | 3 | 4 | 5 | Each element has 4 bytes
++---+---+---+---+---+
 
-"Heap: (nothing)"
-```
-
-### String
-
-```rust
-let s = String::from("hello");
-```
-
-```bob
-Stack:                      "Heap:"
-+------------------+       +------------------+
-| "s: String"        |       |                  |
-|   "ptr" ----------+------>| [h][e][l][l][o]  |
-|   "len:" 5         |       |  5 bytes         |
-|   "cap:" 5         |       |                  |
-+------------------+       +------------------+
-    24 bytes                   "5 bytes (+ capacity)"
 ```
 
 ### Vec
@@ -1034,15 +1013,89 @@ let v = vec![1, 2, 3];
 ```
 
 ```bob
-Stack:                      "Heap:"
-+------------------+       +------------------+
-| "v: Vec<i32>"      |       |                  |
-|   "ptr" ----------+------>| [1][2][3]        |
-|   "len:" 3         |       |  12 bytes        |
-|   "cap:" 3         |       |                  |
-+------------------+       +------------------+
-    24 bytes                   12 bytes
+     STACK                   HEAP
++-------------+
+|"v: Vec<i32>"|      +---+---+---+---+---+
+|   "ptr:" *--+----->| 1 | 2 | 3 |   |   |
+|   "len:" 3  |      +---+---+---+---+---+
+|   "cap:" 5  |          20 bytes
++-------------+
+    24 bytes
 ```
+
+Notice that `ptr`, `len`, and `cap` are all `usize`-sized — that's 8 bytes each
+on a 64-bit system, giving us 3 × 8 = **24 bytes** on the stack.
+
+`usize` is the pointer-sized unsigned integer: 8 bytes on 64-bit, 4 bytes on
+32-bit. It matches the platform's address space.
+
+For `ptr`, this is obvious — a pointer must be able to address any memory
+location. But why are `len` and `cap` also `usize`?
+
+- **They count bytes in memory.** The maximum number of bytes you can allocate
+  is bounded by the address space. If `len` were `u32`, a `Vec` couldn't hold
+  more than ~4 GB, even on a machine with terabytes of RAM. If it were `u64`,
+  you'd waste 4 bytes on every `Vec` on 32-bit platforms for a size that could
+  never be used. `usize` scales correctly to whatever platform you're on.
+
+- **Rust uses `usize` for all indexing.** `v[i]` expects `i: usize`. If `len`
+  were a different type, every bounds check and slice operation would need a
+  cast.
+
+| Platform | `usize` | Vec/String stack size |
+| -------- | ------- | --------------------- |
+| 64-bit   | 8 bytes | 3 × 8 = **24 bytes**  |
+| 32-bit   | 4 bytes | 3 × 4 = **12 bytes**  |
+
+### String
+
+Remember, a `String` is basically a `Vec` of `u8`.
+
+```rust
+let s = String::from("café");
+```
+
+```bob
+   STACK                          HEAP
++-----------+
+|"s: String"|      +----+----+----+----+----+
+|  "ptr:"*--+----->| 63 | 61 | 66 | C3 | A9 |
+|  "len:"5  |      +----+----+----+----+----+
+|  "cap:"5  |        c    a    f   "é (2 bytes)"
++-----------+
+    24 bytes           "5 bytes, but only 4 chars!"
+```
+
+`String` stores UTF-8 encoded bytes, not characters. The `é` character needs
+2 bytes (`0xC3 0xA9`), so `s.len() == 5` (bytes) while `s.chars().count() == 4`
+(characters).
+
+### String Literal (`&str`)
+
+```rust
+let s = "café";
+```
+
+```bob
+    STACK                     DATA segment
++------------+
+| "s: &str"  |           +----+----+----+----+----+
+|  "ptr:" *--+---------->| 63 | 61 | 66 | C3 | A9 |
+|  "len:" 5  |           +----+----+----+----+----+
++------------+             c    a    f   "é (2 bytes)"
+   16 bytes
+```
+
+A `&str` is a **fat pointer**: just a pointer and a length, no capacity. It's a
+read-only view into bytes that already exist somewhere — in this case, the DATA
+segment baked into the binary at compile time.
+
+|                 | `String`                   | `&str`               |
+| --------------- | -------------------------- | -------------------- |
+| Stack size      | 24 bytes (ptr + len + cap) | 16 bytes (ptr + len) |
+| Heap allocation | Yes                        | No                   |
+| Growable        | Yes (`push_str`, `push`)   | No (read-only)       |
+| Owns data       | Yes                        | No (borrows)         |
 
 ### Box
 
@@ -1051,13 +1104,13 @@ let b = Box::new(42);
 ```
 
 ```bob
-Stack:                      "Heap:"
-+------------------+       +------+
-| "b: Box<i32>"      |       |      |
-|   "ptr" ----------+------>|  42  |
-+------------------+       |      |
-    8 bytes                +------+
-                            4 bytes
+    STACK               HEAP
++---------------+
+| "b: Box<i32>" |       +----+
+|   "ptr:" *----+------>| 42 |
++---------------+       +----+
+    8 bytes              4 bytes
+
 ```
 
 ### Nested Types
@@ -1070,22 +1123,18 @@ let v: Vec<String> = vec![
 ```
 
 ```bob
-Stack:                          "Heap:"
-+--------------------+         +-----------------------------------------+
-| "v: Vec<String>"     |         |  "String 0:"                              |
-|   "ptr" -----------+--------> |    +- "ptr"  --+                          |
-|   "len:" 2           |         |    +- "len:" 5 |  "(24 bytes)"              |
-|   "cap:" 2           |         |    +- "cap:" 5 |                          |
-+--------------------+         |              |                          |
-                               |  "String 1:"   |                          |
-                               |    +- "ptr"  --+--+                       |
-                               |    +- "len:" 5 |  |  "(24 bytes)"           |
-                               |    +- "cap:" 5 |  |                       |
-                               |              v  |                       |
-                               |   'hello'  [h][e][l][l][o] "(5 bytes)"    |
-                               |                 v                       |
-                               |       'world'  [w][o][r][l][d] "(5 bytes)"|
-                               +-----------------------------------------+
+STACK                                    HEAP
++-------------------+            +-------------+
+| "v: Vec<String>"  |            | "s: String" |      +---+---+---+---+---+
+|   "ptr:" *--------+----------->|   "ptr:" *--+----->| h | e | l | l | o |
+|   "len:" 2        |            |   "len:" 5  |      +---+---+---+---+---+
+|   "cap:" 2        |            |   "cap:" 5  |
++-------------------+            +-------------+
+                                 | "s: String" |      +---+---+---+---+---+
+                                 |   "ptr:" *--+----->| w | o | r | l | d |
+                                 |   "len:" 5  |      +---+---+---+---+---+
+                                 |   "cap:" 5  |
+                                 +-------------+
 ```
 
 - Stack: 24 bytes (Vec metadata)
@@ -1098,54 +1147,37 @@ Stack:                          "Heap:"
 2. Each `String` points to its character data
 3. All on the heap
 
+Compare this with an array of string literals:
+
+```rust
+let arr: [&str; 2] = ["hello", "world"];
+```
+
+```bob
+STACK                             DATA segment
++------------------+
+| "arr: [&str; 2]" |
++------------------+          +---+---+---+---+---+
+|   "ptr:" *-------+--------->| h | e | l | l | o |
+|   "len:" 5       |          +---+---+---+---+---+
++------------------+
+|   "ptr:" *-------+-----+    +---+---+---+---+---+
+|   "len:" 5       |     +--->| w | o | r | l | d |
++------------------+          +---+---+---+---+---+
+    32 bytes
+```
+
+- Stack: 32 bytes (2 × `&str`, each is a fat pointer: 8-byte ptr + 8-byte len)
+- Heap: **0 bytes!** String literals live in the DATA segment, baked into the
+  binary at compile time
+- No `cap` field — `&str` is a read-only view, it can't grow
+
+This is why `&str` is so cheap compared to `String`: no heap allocation, no
+capacity tracking, just a pointer and a length.
+
 ## Common Misconceptions
 
-### Misconception #1: "Vec allocates on the stack"
-
-```rust
-let v = Vec::new();
-```
-
-**Wrong mental model:**
-
-```bob
-Stack:
-+--------------------+
-| "v: Vec<i32>"        |
-|   "[data goes here]" |  <- "NO! Data doesn't live here"
-+--------------------+
-```
-
-**Correct mental model:**
-
-```bob
-Stack:                    "Heap:"
-+--------------+         +----------+
-| "v: Vec<i32>"  |         |          |
-|   "ptr" ------+-------->| "(data)"   |  <- "Data lives here!"
-|   "len:" 0     |         |          |
-|   "cap:" 0     |         +----------+
-+--------------+
-```
-
-### Misconception #2: "String is just text"
-
-```rust
-let s = String::from("hello");
-```
-
-**Wrong:**
-"s is the text 'hello'"
-
-**Correct:**
-"s is a struct containing a pointer to the text 'hello' on the heap"
-
-```
-Stack: s = { ptr: 0x1000, len: 5, cap: 5 }  (24 bytes)
-Heap:  0x1000 = "hello"                     (5 bytes)
-```
-
-### Misconception #3: "Box makes things bigger"
+### Misconception #1: "Box makes things bigger"
 
 ```rust
 let x = 42;           // 4 bytes
@@ -1161,7 +1193,7 @@ let huge = [0u8; 1_000_000];        // 1 MB on stack! Dangerous!
 let boxed = Box::new([0u8; 1_000_000]); // 8 bytes on stack, 1 MB on heap
 ```
 
-### Misconception #4: "All heap allocations are slow"
+### Misconception #2: "All heap allocations are slow"
 
 Not all heap operations allocate:
 
@@ -1187,9 +1219,9 @@ Pre-allocating capacity is a common optimization!
 
 ```rust
 fn stack_test() {
-    let x = 42;        // ~1 CPU cycle (just move stack pointer)
+    let x = 42;        // ~1 CPU cycle (write to pre-allocated stack slot)
     let y = x;         // ~1 CPU cycle (copy 4 bytes)
-}  // ~1 CPU cycle (move stack pointer back)
+}
 ```
 
 **Cost:** ~3 CPU cycles
@@ -1265,41 +1297,6 @@ fn process(s: &str) {
 }
 process(&s);
 ```
-
-## Memory Leaks
-
-Rust prevents many memory leaks, but they're still possible:
-
-### Safe Memory Leak (Reference Cycles)
-
-```rust
-use std::rc::Rc;
-use std::cell::RefCell;
-
-struct Node {
-    next: Option<Rc<RefCell<Node>>>,
-}
-
-let a = Rc::new(RefCell::new(Node { next: None }));
-let b = Rc::new(RefCell::new(Node { next: Some(Rc::clone(&a)) }));
-a.borrow_mut().next = Some(Rc::clone(&b));
-
-// Memory leak! a and b reference each other
-// Neither will ever be dropped (reference count never reaches 0)
-```
-
-**Solution:** Use `Weak` references to break cycles.
-
-### Intentional Memory Leak
-
-```rust
-let s = String::from("hello");
-let leaked: &'static str = Box::leak(Box::new(s));
-// s is now leaked - memory will never be freed
-// But we got a 'static reference!
-```
-
-**Use case:** Creating `'static` data at runtime (rare).
 
 ## Key Takeaways
 
