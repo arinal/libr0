@@ -26,9 +26,7 @@ jobs:
             ~/.cargo/bin/mdbook
             ~/.cargo/bin/mdbook-svgbob
             ~/.cargo/bin/mdbook-mermaid
-          key: ${{ runner.os }}-cargo-bins-mdbook-0.5.2-svgbob-0.5-mermaid-0.17.0
-          restore-keys: |
-            ${{ runner.os }}-cargo-bins-
+          key: ${{ runner.os }}-cargo-bins-mdbook-0.5.2-svgbob-0.5.1-mermaid-0.17.0
 
       - name: Install mdBook
         run: |
