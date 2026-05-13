@@ -12,12 +12,14 @@ mv book/index.html book/introduction.html
 cp theme/landing.html book/index.html
 
 # Replace the default favicon with our custom libr0 logo
+for f in book/favicon-*.svg; do
+    cp theme/libr0-logo.svg "$f"
+done
 cp theme/libr0-logo.svg book/favicon.svg
 
 echo "✓ Book built successfully with custom landing page"
 echo "  - Landing page: book/index.html"
 echo "  - Introduction: book/introduction.html"
-echo "  - Favicon: book/favicon.svg"
 
 # If 'serve' argument provided, start a local server
 if [ "$1" = "serve" ]; then
