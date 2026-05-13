@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # Build script for libr0 - creates custom landing page as index
 
 # Build the book
