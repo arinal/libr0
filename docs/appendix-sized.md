@@ -235,11 +235,12 @@ A reference to a DST is called a **fat pointer** because it contains extra metad
 
 **For slices (`&[T]`) and string slices (`&str`):**
 ```bob
-┌─────────────────────┬─────────────────────┐
-│   Data Pointer      │      Length         │
-│    (8 bytes)        │     (8 bytes)       │
-└─────────────────────┴─────────────────────┘
-        ↓
++---------------------+---------------------+
+|   Data Pointer      |      Length         |
+|    "(8 bytes)"      |     "(8 bytes)"     |
++---------------------+---------------------+
+        |
+        v
   Points to actual data on heap/stack
 ```
 
@@ -370,7 +371,7 @@ String (24 bytes)          str (unsized)           &str (16 bytes)
                             (on heap)
 ```
 
-### Confusion #3: "Box<T> is Sized, but Box<[T]> Also Exists"
+### Confusion #3: "Box\<T\> is Sized, but Box\<[T]\> Also Exists"
 
 ```rust
 println!("{}", std::mem::size_of::<Box<i32>>());    // 8 bytes (thin pointer)
