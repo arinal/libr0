@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Result - libr0: Building Rust&#x27;s Standard Library from Scratch</title>
+        <title>The ? Operator - libr0: Building Rust&#x27;s Standard Library from Scratch</title>
 
 
         <!-- Custom HTML head -->
@@ -29,8 +29,6 @@
         <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="../theme/custom.css">
-        <link rel="stylesheet" href="../theme/landing.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -180,463 +178,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="chapter-2-result---error-handling-done-right"><a class="header" href="#chapter-2-result---error-handling-done-right">Chapter 2: Result - Error Handling Done Right</a></h1>
-<h2 id="the-problem-exceptions-are-invisible"><a class="header" href="#the-problem-exceptions-are-invisible">The Problem: Exceptions Are Invisible</a></h2>
-<p>In many languages, any function can throw an exception:</p>
-<pre><code class="language-java">String content = readFile("non-existent-file.txt"); // throws exception
-println("File content: " + content);
-</code></pre>
-<p>In Java, the above code compiles fine, even though the programmer "forgot" to handle exception.</p>
-<p>Rust's approach: readFile returns a wrapper to indicate it can fail:</p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>let result = readFile("non-existent-file.txt"); // returns Result&lt;String, Error&gt;
-// result is not the content, but a wrapper that can be Ok(content) or Err(error)
-// to extract the content, you're forced to handle both cases:
-match result {
-    Ok(content) =&gt; println!("File content: {}", content),
-    Err(e) =&gt; println!("Failed to read file: {:?}", e),
-}
-// this way, the programmer can't "forget" to handle errors, as the case with the java example.
-<span class="boring">}</span></code></pre></pre>
-<h2 id="our-result-type"><a class="header" href="#our-result-type">Our Result Type</a></h2>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>enum Result0&lt;T, E&gt; {
-    Ok(T),
-    Err(E),
-}
-<span class="boring">}</span></code></pre></pre>
-<p>Two variants:</p>
-<ul>
-<li><code>Ok(T)</code> - operation succeeded with value <code>T</code></li>
-<li><code>Err(E)</code> - operation failed with error <code>E</code></li>
-</ul>
-<p>The caller <strong>must</strong> handle both cases. The compiler won't let you ignore errors.</p>
-<h2 id="what-can-be-an-error"><a class="header" href="#what-can-be-an-error">What Can Be an Error?</a></h2>
-<p>The <code>E</code> in <code>Result&lt;T, E&gt;</code> can be <strong>any type</strong>. It doesn't need to implement <code>std::error::Error</code> or any special trait, as long as you wrap it in <code>Err()</code>.</p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>// String as error
-let error: Result0&lt;i32, String&gt; = Err(String::from("something broke"));
-
-// &amp;str as error
-let error: Result0&lt;i32, &amp;str&gt; = Err("file not found");
-
-// Number as error code
-let error: Result0&lt;i32, i32&gt; = Err(404);
-
-// Custom enum - most common in real code
-#[derive(Debug)]
-enum ParseError {
-    Empty,
-    TooLong,
-    InvalidFormat,
-}
-let error: Result0&lt;i32, ParseError&gt; = Err(ParseError::Empty);
-<span class="boring">}</span></code></pre></pre>
-<p><strong>Key rule</strong>: Always wrap your error in <code>Err()</code>. Don't return the error type directly:</p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>// ❌ Wrong
-fn parse(s: &amp;str) -&gt; Result0&lt;i32, &amp;str&gt; {
-    if s.is_empty() {
-        "empty string"  // ERROR: expected Result0, found &amp;str
-    } else {
-        Ok(42)
-    }
-}
-
-// ✅ Correct
-fn parse(s: &amp;str) -&gt; Result0&lt;i32, &amp;str&gt; {
-    if s.is_empty() {
-        Err("empty string")  // Wrapped in Err!
-    } else {
-        Ok(42)
-    }
-}
-<span class="boring">}</span></code></pre></pre>
-<h2 id="basic-usage"><a class="header" href="#basic-usage">Basic Usage</a></h2>
-<p>Let's validate a person with a custom error type:</p>
-<pre><pre class="playground"><code class="language-rust">use Result0::{Ok, Err};
-
-#[derive(Debug)]
-struct Person {
-    name: String,
-    age: i32,
-}
-
-#[derive(Debug)]
-enum InvalidPersonError {
-    EmptyName,
-    InvalidAge(i32),
-}
-
-fn validate_person(person: Person) -&gt; Result0&lt;Person, InvalidPersonError&gt; {
-    if person.name.is_empty() {
-        Err(InvalidPersonError::EmptyName)  // Wrap in Err!
-    } else if person.age &lt; 0 {
-        Err(InvalidPersonError::InvalidAge(person.age))  // Capture the bad value
-    } else {
-        Ok(person)  // Wrap valid person in Ok!
-    }
-}
-
-fn main() {
-    let person = Person { name: String::from("Alice"), age: 30 };
-    match validate_person(person) {
-        Ok(valid_person) =&gt; println!("Valid person: {:?}", valid_person),
-        Err(e) =&gt; println!("Invalid person: {:?}", e),
-    }
-    // Output: Valid person: Person { name: "Alice", age: 30 }
-
-    let bad_person = Person { name: String::from(""), age: -5 };
-    match validate_person(bad_person) {
-        Ok(valid_person) =&gt; println!("Valid person: {:?}", valid_person),
-        Err(e) =&gt; println!("Invalid person: {:?}", e),
-    }
-    // Output: Invalid person: EmptyName
-}</code></pre></pre>
-<h2 id="implementing-result-methods"><a class="header" href="#implementing-result-methods">Implementing Result Methods</a></h2>
-<h3 id="is_ok-and-is_err"><a class="header" href="#is_ok-and-is_err">is_ok and is_err</a></h3>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>impl&lt;T, E&gt; Result0&lt;T, E&gt; {
-    fn is_ok(&amp;self) -&gt; bool {
-        matches!(self, Ok(_))
-    }
-
-    fn is_err(&amp;self) -&gt; bool {
-        !self.is_ok()
-    }
-}
-<span class="boring">}</span></code></pre></pre>
-<p><strong>Examples:</strong></p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>let success: Result0&lt;i32, &amp;str&gt; = Ok(42);
-success.is_ok()   // true
-success.is_err()  // false
-
-let failure: Result0&lt;i32, &amp;str&gt; = Err("bad input");
-failure.is_ok()   // false
-failure.is_err()  // true
-
-// ❌ Common mistake: verbose pattern
-if result.is_ok() {
-    let value = result.unwrap();  // Don't do this!
-    // use value...
-}
-
-// ✅ Better: use match or if let
-match result {
-    Ok(value) =&gt; { /* use value */ },
-    Err(e) =&gt; { /* handle error */ }
-}
-<span class="boring">}</span></code></pre></pre>
-<h3 id="unwrap-and-expect"><a class="header" href="#unwrap-and-expect">unwrap and expect</a></h3>
-<p>Extract value, panic on error:</p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>impl&lt;T, E: std::fmt::Debug&gt; Result0&lt;T, E&gt; {
-    fn unwrap(self) -&gt; T {
-        match self {
-            Ok(val) =&gt; val,
-            Err(e) =&gt; panic!("called unwrap on Err: {:?}", e),
-        }
-    }
-
-    fn expect(self, msg: &amp;str) -&gt; T {
-        match self {
-            Ok(val) =&gt; val,
-            Err(e) =&gt; panic!("{}: {:?}", msg, e),
-        }
-    }
-}
-<span class="boring">}</span></code></pre></pre>
-<p><code>expect</code> is slightly better than <code>unwrap</code> - at least you leave a message explaining what went wrong.</p>
-<p><strong>Examples:</strong></p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>let success: Result0&lt;i32, &amp;str&gt; = Ok(42);
-success.unwrap()  // 42
-
-let failure: Result0&lt;i32, &amp;str&gt; = Err("oops");
-failure.unwrap()  // ❌ Panics: "called unwrap on Err: \"oops\""
-
-// expect provides context
-let result: Result0&lt;Config, &amp;str&gt; = Err("missing file");
-result.expect("Config must be loaded");
-// ❌ Panics: "Config must be loaded: \"missing file\""
-
-// Anti-pattern: checking then unwrapping
-let result: Result0&lt;i32, &amp;str&gt; = Ok(42);
-if result.is_ok() {
-    let val = result.unwrap();  // Won't panic, but verbose and clunky
-    // use val...
-}
-// What about the Err case? You still need another if/else!
-
-// Pattern matching is cleaner - extracts value and handles both cases
-let result: Result0&lt;i32, &amp;str&gt; = Ok(42);
-match result {
-    Ok(val) =&gt; { /* use val */ },
-    Err(e) =&gt; { /* handle error */ }
-}
-
-// Or use if let for the Ok case only
-if let Ok(val) = result {
-    // use val...
-}
-<span class="boring">}</span></code></pre></pre>
-<h3 id="unwrap_or-and-unwrap_or_else"><a class="header" href="#unwrap_or-and-unwrap_or_else">unwrap_or and unwrap_or_else</a></h3>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>impl&lt;T, E&gt; Result0&lt;T, E&gt; {
-    fn unwrap_or(self, default: T) -&gt; T {
-        match self {
-            Ok(val) =&gt; val,
-            Err(_) =&gt; default,
-        }
-    }
-
-    fn unwrap_or_else&lt;F: FnOnce(E) -&gt; T&gt;(self, f: F) -&gt; T {
-        match self {
-            Ok(val) =&gt; val,
-            Err(e) =&gt; f(e),
-        }
-    }
-}
-<span class="boring">}</span></code></pre></pre>
-<p><strong>Examples:</strong></p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>let success: Result0&lt;i32, &amp;str&gt; = Ok(10);
-success.unwrap_or(0)  // 10
-
-let failure: Result0&lt;i32, &amp;str&gt; = Err("bad");
-failure.unwrap_or(0)  // 0
-
-let result: Result0&lt;i32, &amp;str&gt; = Err("parse error");
-let val = result.unwrap_or_else(|e| {
-    eprintln!("Error: {}", e);  // ✅ Has access to error!
-    0
-});
-
-// Key difference: unwrap_or vs unwrap_or_else
-fn expensive_default() -&gt; i32 {
-    println!("Computing default...");
-    42
-}
-
-let result = Ok(10);
-
-// expensive_default() is being called
-// even though the result is not used!
-let out = result.unwrap_or(expensive_default())
-// expensive_default() is only called if result is Err
-// which in this case it is not, so we avoid the unnecessary computation!
-let out = result.unwrap_or_else(|_| expensive_default())
-
-<span class="boring">}</span></code></pre></pre>
-<h3 id="map---transform-success"><a class="header" href="#map---transform-success">map - Transform Success</a></h3>
-<p>Transform the <code>Ok</code> value, leave <code>Err</code> unchanged:</p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>impl&lt;T, E&gt; Result0&lt;T, E&gt; {
-    fn map&lt;U, F: FnOnce(T) -&gt; U&gt;(self, f: F) -&gt; Result0&lt;U, E&gt; {
-        match self {
-            Ok(x) =&gt; Ok(f(x)),
-            Err(e) =&gt; Err(e),
-        }
-    }
-}
-<span class="boring">}</span></code></pre></pre>
-<p><strong>Examples:</strong></p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>let success: Result0&lt;i32, &amp;str&gt; = Ok(5);
-success.map(|x| x * 2)  // Ok(10)
-
-let failure: Result0&lt;i32, &amp;str&gt; = Err("bad");
-failure.map(|x| x * 2)  // Err("bad") - unchanged!
-
-// Misconception: map transforms both Ok and Err
-// ❌ Wrong! map ONLY transforms Ok values
-let result: Result0&lt;i32, &amp;str&gt; = Err("error");
-result.map(|x| x.to_string())  // Still Err("error"), not transformed
-
-// Chain transformations
-Ok(5).map(|x| x * 2).map(|x| x + 1)  // Ok(11)
-<span class="boring">}</span></code></pre></pre>
-<h3 id="map_err---transform-error"><a class="header" href="#map_err---transform-error">map_err - Transform Error</a></h3>
-<p>Transform the <code>Err</code> value, leave <code>Ok</code> unchanged:</p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>impl&lt;T, E&gt; Result0&lt;T, E&gt; {
-    fn map_err&lt;F2, O: FnOnce(E) -&gt; F2&gt;(self, op: O) -&gt; Result0&lt;T, F2&gt; {
-        match self {
-            Ok(x) =&gt; Ok(x),
-            Err(e) =&gt; Err(op(e)),
-        }
-    }
-}
-<span class="boring">}</span></code></pre></pre>
-<p><strong>Examples:</strong></p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>let success: Result0&lt;i32, &amp;str&gt; = Ok(5);
-success.map_err(|e| e.to_uppercase())  // Ok(5) - unchanged!
-
-let failure: Result0&lt;i32, &amp;str&gt; = Err("bad");
-failure.map_err(|e| e.to_uppercase())  // Err("BAD")
-
-// map_err ONLY transforms Err values
-Ok(42).map_err(String::from)  // Still Ok(42), not transformed
-
-// Convert error types
-#[derive(Debug)]
-enum AppError { IoError(String), ParseError(String) }
-
-let result: Result0&lt;i32, &amp;str&gt; = Err("file not found");
-result.map_err(|e| AppError::IoError(e.to_string()))  // Err(AppError::IoError(...))
-<span class="boring">}</span></code></pre></pre>
-<h3 id="and_then---chain-fallible-operations"><a class="header" href="#and_then---chain-fallible-operations">and_then - Chain Fallible Operations</a></h3>
-<p>The most important combinator. Chain operations that might fail:</p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>impl&lt;T, E&gt; Result0&lt;T, E&gt; {
-    fn and_then&lt;U, F: FnOnce(T) -&gt; Result0&lt;U, E&gt;&gt;(self, f: F) -&gt; Result0&lt;U, E&gt; {
-        match self {
-            Ok(x) =&gt; f(x),
-            Err(e) =&gt; Err(e),
-        }
-    }
-}
-<span class="boring">}</span></code></pre></pre>
-<p><strong>Examples:</strong></p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>fn safe_divide(a: i32, b: i32) -&gt; Result0&lt;i32, &amp;'static str&gt; {
-    if b == 0 {
-        Err("division by zero")
-    } else {
-        Ok(a / b)
-    }
-}
-
-// Misconception: use map for Result-returning functions
-let x: Result0&lt;i32, &amp;str&gt; = Ok(10);
-// x.map(|n| safe_divide(n, 2))  // ❌ Result0&lt;Result0&lt;i32, &amp;str&gt;, &amp;str&gt; - nested!
-
-// ✅ Use and_then to avoid nesting
-x.and_then(|n| safe_divide(n, 2))  // Result0&lt;i32, &amp;str&gt; - flattened
-
-// Chain multiple fallible operations
-Ok(20)
-    .and_then(|n| safe_divide(n, 2))   // Ok(10)
-    .and_then(|n| safe_divide(n, 5))   // Ok(2)
-
-// Errors propagate
-Ok(10)
-    .and_then(|n| safe_divide(n, 0))  // Err("division by zero")
-    .and_then(|n| safe_divide(n, 2))  // Still Err, second operation skipped
-<span class="boring">}</span></code></pre></pre>
-<h3 id="ok---convert-to-option"><a class="header" href="#ok---convert-to-option">ok - Convert to Option</a></h3>
-<p>Discard the error, convert to <code>Option</code>:</p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>impl&lt;T, E&gt; Result0&lt;T, E&gt; {
-    fn ok(self) -&gt; Option0&lt;T&gt; {
-        match self {
-            Ok(x) =&gt; Option0::Some(x),
-            Err(_) =&gt; Option0::None,
-        }
-    }
-
-    fn err(self) -&gt; Option0&lt;E&gt; {
-        match self {
-            Ok(_) =&gt; Option0::None,
-            Err(e) =&gt; Option0::Some(e),
-        }
-    }
-}
-<span class="boring">}</span></code></pre></pre>
-<p><strong>Examples:</strong></p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>// ok() - Extract success value, discard error type
-let success: Result0&lt;i32, &amp;str&gt; = Ok(42);
-success.ok()  // Some(42)
-
-let failure: Result0&lt;i32, &amp;str&gt; = Err("something went wrong");
-failure.ok()  // None - error information lost!
-
-// ✅ Use ok() when you don't care about the error
-let port = parse_port("8080")
-    .ok()
-    .unwrap_or(3000);  // Use default if parse fails, don't care why
-
-// err() - Extract error value, discard success value
-let success: Result0&lt;i32, &amp;str&gt; = Ok(42);
-success.err()  // None
-
-let failure: Result0&lt;i32, &amp;str&gt; = Err("bad input");
-failure.err()  // Some("bad input")
-
-// Use case: Collecting errors
-let results = vec![Ok(1), Err("error1"), Ok(2), Err("error2")];
-let errors: Vec&lt;&amp;str&gt; = results
-    .into_iter()
-    .filter_map(|r| r.err())
-    .collect();
-errors  // ["error1", "error2"]
-<span class="boring">}</span></code></pre></pre>
-<h3 id="as_ref---borrow-the-inner-values"><a class="header" href="#as_ref---borrow-the-inner-values">as_ref - Borrow the Inner Values</a></h3>
-<p>Convert <code>&amp;Result0&lt;T, E&gt;</code> to <code>Result0&lt;&amp;T, &amp;E&gt;</code>:</p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>impl&lt;T, E&gt; Result0&lt;T, E&gt; {
-    fn as_ref(&amp;self) -&gt; Result0&lt;&amp;T, &amp;E&gt; {
-        match self {
-            Ok(x) =&gt; Result0::Ok(x),
-            Err(e) =&gt; Result0::Err(e),
-        }
-    }
-}
-<span class="boring">}</span></code></pre></pre>
-<p><strong>Examples:</strong></p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>// Problem: map consumes the Result
-let result: Result0&lt;String, String&gt; = Ok(String::from("hello"));
-let len = result.map(|s| s.len());
-// println!("{:?}", result);  // ❌ result was moved!
-
-// ✅ Solution: Use as_ref() to borrow
-let result: Result0&lt;String, String&gt; = Ok(String::from("hello"));
-let len = result.as_ref().map(|s| s.len());  // s is &amp;String
-len  // Ok(5)
-println!("{:?}", result);  // ✅ Works! result still valid
-
-// Multiple operations on the same Result
-let data: Result0&lt;String, &amp;str&gt; = Ok(String::from("test"));
-
-let len = data.as_ref().map(|s| s.len());
-let uppercase = data.as_ref().map(|s| s.to_uppercase());
-let is_empty = data.as_ref().map(|s| s.is_empty());
-
-len  // Ok(4)
-uppercase  // Ok("TEST")
-is_empty  // Ok(false)
-// data is still usable!
-
-// Works with errors too
-let failure: Result0&lt;i32, String&gt; = Err(String::from("error"));
-let borrowed = failure.as_ref();  // Result0&lt;&amp;i32, &amp;String&gt;
-borrowed  // Err(&amp;String::from("error"))
-<span class="boring">}</span></code></pre></pre>
-<h2 id="the--operator"><a class="header" href="#the--operator">The ? Operator</a></h2>
+                        <h1 id="the--operator"><a class="header" href="#the--operator">The ? Operator</a></h1>
 <p>Chaining with <code>and_then</code> works, but gets verbose:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -817,18 +359,16 @@ Also, see the exercises in <a href="./examples/02_result.rs">02_result.rs</a></p
 <li><strong>? is syntax sugar for and_then + early return</strong> - Imperative style that does the same thing. Use it in real code.</li>
 <li><strong>Short-circuit behavior is free</strong> - Errors automatically propagate up without explicit checking at every step. That's why Result-based error handling is so ergonomic.</li>
 </ol>
-<h2 id="next-chapter"><a class="header" href="#next-chapter">Next Chapter</a></h2>
-<p><a href="./03-box.html">Box</a> - Heap allocation and the <code>Deref</code> trait.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../docs/01-option.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../docs/02-result-2-transforming.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../docs/03-box.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../docs/03-box-0-intro.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -838,11 +378,11 @@ Also, see the exercises in <a href="./examples/02_result.rs">02_result.rs</a></p
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../docs/01-option.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../docs/02-result-2-transforming.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../docs/03-box.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../docs/03-box-0-intro.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

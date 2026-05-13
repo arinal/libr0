@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Nested Types - libr0: Building Rust&#x27;s Standard Library from Scratch</title>
+        <title>Operations &amp; Performance - libr0: Building Rust&#x27;s Standard Library from Scratch</title>
 
 
         <!-- Custom HTML head -->
@@ -178,116 +178,202 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="appendix-nested-types---understanding-order-and-flexibility"><a class="header" href="#appendix-nested-types---understanding-order-and-flexibility">Appendix: Nested Types - Understanding Order and Flexibility</a></h1>
-<p>When combining smart pointers like <code>Rc</code>, interior mutability types like <code>RefCell</code>, and containers like <code>Option</code>, the order matters! This appendix explores the different combinations and what they mean.</p>
-<blockquote>
-<p><strong>Note:</strong> This is a placeholder for future completion. The content below covers basic patterns, but will be expanded with more cases and exercises.</p>
-</blockquote>
-<h2 id="the-order-matters"><a class="header" href="#the-order-matters">The Order Matters</a></h2>
-<p>Each wrapper in a nested type determines what operations are possible on what's inside. <strong>Read from outside-in</strong> to understand capabilities:</p>
+                        <h1 id="operations--performance"><a class="header" href="#operations--performance">Operations &amp; Performance</a></h1>
+<h2 id="common-operations"><a class="header" href="#common-operations">Common Operations</a></h2>
+<h3 id="creating-a-vec"><a class="header" href="#creating-a-vec">Creating a Vec</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let vec = Vec0::new();
+// ptr = dangling, len = 0, capacity = 0
+
+let mut vec = Vec0::new();
+vec.push(1);
+// First allocation: capacity = 1
+
+vec.push(2);
+// Grows: capacity = 2
+
+vec.push(3);
+// Grows: capacity = 4
+<span class="boring">}</span></code></pre></pre>
+<h3 id="preallocating-capacity"><a class="header" href="#preallocating-capacity">Preallocating Capacity</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;T&gt; Vec0&lt;T&gt; {
+    pub fn with_capacity(capacity: usize) -&gt; Vec0&lt;T&gt; {
+        if capacity == 0 {
+            return Vec0::new();
+        }
+
+        let layout = Layout::array::&lt;T&gt;(capacity).unwrap();
+        let ptr = unsafe { alloc(layout) as *mut T };
+
+        if ptr.is_null() {
+            std::alloc::handle_alloc_error(layout);
+        }
+
+        Vec0 {
+            ptr,
+            len: 0,
+            capacity,
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p>Use when you know the size upfront:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let mut vec = Vec0::with_capacity(100);
+// 100 pushes without reallocation
+for i in 0..100 {
+    vec.push(i);
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="clear"><a class="header" href="#clear">Clear</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;T&gt; Vec0&lt;T&gt; {
+    pub fn clear(&amp;mut self) {
+        // Drop all elements
+        unsafe {
+            ptr::drop_in_place(
+                std::slice::from_raw_parts_mut(self.ptr, self.len)
+            );
+        }
+        self.len = 0;
+        // Capacity unchanged
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="key-differences-box-vs-vec"><a class="header" href="#key-differences-box-vs-vec">Key Differences: Box vs Vec</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Feature</th><th>Box&lt;T&gt;</th><th>Vec&lt;T&gt;</th></tr></thead><tbody>
+<tr><td>Size</td><td>Fixed (one T)</td><td>Dynamic</td></tr>
+<tr><td>Capacity</td><td>Always equals size</td><td>Can exceed size</td></tr>
+<tr><td>Growth</td><td>N/A</td><td>Doubles when full</td></tr>
+<tr><td>Use case</td><td>Single heap value</td><td>Collection of values</td></tr>
+<tr><td>Deref</td><td>To <code>T</code></td><td>To <code>[T]</code></td></tr>
+</tbody></table>
+</div>
+<h2 id="performance-characteristics"><a class="header" href="#performance-characteristics">Performance Characteristics</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Operation</th><th>Time Complexity</th><th>Notes</th></tr></thead><tbody>
+<tr><td><code>push</code></td><td>O(1) amortized</td><td>O(n) on reallocation</td></tr>
+<tr><td><code>pop</code></td><td>O(1)</td><td>No reallocation</td></tr>
+<tr><td><code>index</code></td><td>O(1)</td><td>Direct memory access</td></tr>
+<tr><td><code>insert(0, x)</code></td><td>O(n)</td><td>Must shift all elements</td></tr>
+<tr><td><code>remove(i)</code></td><td>O(n)</td><td>Must shift elements</td></tr>
+</tbody></table>
+</div>
+<h2 id="the-complete-implementation"><a class="header" href="#the-complete-implementation">The Complete Implementation</a></h2>
+<p>See <code>examples/04_vec.rs</code> for the full implementation with:</p>
 <ul>
-<li><code>RefCell&lt;...&gt;</code> - Can mutate what's inside</li>
-<li><code>Rc&lt;...&gt;</code> - Can share (multiple owners)</li>
-<li><code>Option&lt;...&gt;</code> - Might not be present (fixed at construction)</li>
+<li><code>push</code>, <code>pop</code>, <code>insert</code>, <code>remove</code></li>
+<li><code>Index</code> and <code>IndexMut</code></li>
+<li><code>Deref</code> to <code>[T]</code></li>
+<li><code>IntoIterator</code> implementation</li>
+<li><code>Clone</code> for <code>T: Clone</code></li>
+<li><code>Debug</code> for <code>T: Debug</code></li>
 </ul>
-<h2 id="common-patterns"><a class="header" href="#common-patterns">Common Patterns</a></h2>
-<h3 id="refcelloptionrct---can-addremovechange-the-link"><a class="header" href="#refcelloptionrct---can-addremovechange-the-link"><code>RefCell&lt;Option&lt;Rc&lt;T&gt;&gt;&gt;</code> - Can add/remove/change the link</a></h3>
+<h2 id="key-takeaways"><a class="header" href="#key-takeaways">Key Takeaways</a></h2>
+<ol>
+<li><strong>Vec uses raw allocator APIs</strong> - Not implemented with <code>Box</code></li>
+<li><strong>Three fields</strong> - <code>ptr</code>, <code>len</code>, <code>capacity</code></li>
+<li><strong>Growth strategy</strong> - Double capacity when full</li>
+<li><strong>String = Vec&lt;u8&gt;</strong> - Same structure, UTF-8 constraint</li>
+<li><strong>Slices are views</strong> - <code>&amp;[T]</code> and <code>&amp;str</code> don't own data</li>
+<li><strong>Fat pointers</strong> - Slices contain <code>(ptr, len)</code></li>
+</ol>
+<h2 id="exercises"><a class="header" href="#exercises">Exercises</a></h2>
+<p>See ./examples/04_vec.rs for exercises.</p>
+<p><strong>Complete solutions:</strong> Switch to the <code>answers</code> branch with <code>git checkout answers</code> to see completed exercises</p>
+<h3 id="implement-a-slice-like-type"><a class="header" href="#implement-a-slice-like-type">Implement a slice-like type</a></h3>
+<p>Here's a starting point for a slice-like type:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>struct Node {
-    next: RefCell&lt;Option&lt;Rc&lt;Node&gt;&gt;&gt;,
+</span>use std::marker::PhantomData;
+
+pub struct MySlice&lt;'a, T&gt; {
+    ptr: *const T,
+    len: usize,
+    _marker: PhantomData&lt;&amp;'a T&gt;,  // Zero-sized, but tells compiler about 'a and T
 }
 
-let node = Rc::new(Node { next: RefCell::new(None) });
+impl&lt;'a, T&gt; MySlice&lt;'a, T&gt; {
+    pub fn from_vec(vec: &amp;'a Vec0&lt;T&gt;) -&gt; MySlice&lt;'a, T&gt; {
+        MySlice {
+            ptr: vec.ptr,
+            len: vec.len,
+            _marker: PhantomData,
+        }
+    }
 
-// ✅ Can add a link (None → Some)
-*node.next.borrow_mut() = Some(Rc::clone(&amp;other_node));
+    pub fn len(&amp;self) -&gt; usize {
+        self.len
+    }
 
-// ✅ Can change which node (Some(a) → Some(b))
-*node.next.borrow_mut() = Some(Rc::clone(&amp;another_node));
-
-// ✅ Can remove the link (Some → None)
-*node.next.borrow_mut() = None;
+    pub fn get(&amp;self, index: usize) -&gt; Option&lt;&amp;'a T&gt; {
+        if index &lt; self.len {
+            unsafe { Some(&amp;*self.ptr.add(index)) }
+        } else {
+            None
+        }
+    }
+}
 <span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> You need full flexibility - add, remove, or change links.</p>
-<h3 id="optionrefcellrct---can-change-the-link-but-cant-addremove"><a class="header" href="#optionrefcellrct---can-change-the-link-but-cant-addremove"><code>Option&lt;RefCell&lt;Rc&lt;T&gt;&gt;&gt;</code> - Can change the link, but can't add/remove</a></h3>
+<p><strong>Why PhantomData?</strong></p>
+<p>Raw pointers (<code>*const T</code> and <code>*mut T</code>) don't carry lifetime information. Without <code>PhantomData</code>, the compiler wouldn't know that <code>MySlice&lt;'a, T&gt;</code> should:</p>
+<ol>
+<li><strong>Not outlive the data it points to</strong> - The <code>'a</code> lifetime connects the slice to the vec</li>
+<li><strong>Act like it owns a <code>&amp;'a T</code></strong> - For variance and drop check purposes</li>
+</ol>
+<p>Example of what could go wrong without it:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>struct Node {
-    next: Option&lt;RefCell&lt;Rc&lt;Node&gt;&gt;&gt;,
-}
+</span>// WITHOUT PhantomData, this dangerous code might compile:
+let slice = {
+    let vec = Vec0::new();
+    vec.push(42);
+    MySlice::from_vec(&amp;vec)  // vec dies here!
+}; // slice now points to freed memory! ❌ Use-after-free!
 
-let node_with_link = Rc::new(Node {
-    next: Some(RefCell::new(Rc::clone(&amp;other_node))),
-});
-
-let node_without_link = Rc::new(Node { next: None });
-
-// ✅ If Some, can change which node
-if let Some(ref cell) = &amp;node_with_link.next {
-    *cell.borrow_mut() = Rc::clone(&amp;another_node);
-}
-
-// ❌ Can't add a link to node_without_link (it's None forever)
-// ❌ Can't remove the link from node_with_link (it's Some forever)
+// WITH PhantomData, the compiler catches this:
+// error: `vec` does not live long enough
 <span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> The presence/absence of the link is determined at construction and never changes, but you need to change which <code>Rc</code> it points to.</p>
-<h3 id="rcrefcelloptiont---multiple-owners-of-a-changeable-optional-value"><a class="header" href="#rcrefcelloptiont---multiple-owners-of-a-changeable-optional-value"><code>Rc&lt;RefCell&lt;Option&lt;T&gt;&gt;&gt;</code> - Multiple owners of a changeable optional value</a></h3>
+<p><code>PhantomData&lt;&amp;'a T&gt;</code> is <strong>zero-sized</strong> (no runtime cost) but tells the compiler: "pretend I own a <code>&amp;'a T</code> reference" so it enforces proper lifetimes. With it, the above code becomes a <strong>compile-time error</strong> instead of undefined behavior.</p>
+<p><strong>Alternative without PhantomData:</strong></p>
+<p>You could use real references instead of raw pointers:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>let cache: Rc&lt;RefCell&lt;Option&lt;String&gt;&gt;&gt; = Rc::new(RefCell::new(None));
-let cache1 = Rc::clone(&amp;cache);
-let cache2 = Rc::clone(&amp;cache);
-
-// Multiple owners can all change the value
-*cache1.borrow_mut() = Some(String::from("cached"));
-*cache2.borrow_mut() = None;  // Clear the cache
-<span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> Multiple owners need to mutate the same optional value (shared cache, shared state).</p>
-<h3 id="optionrcrefcellt---optional-shared-mutable-value"><a class="header" href="#optionrcrefcellt---optional-shared-mutable-value"><code>Option&lt;Rc&lt;RefCell&lt;T&gt;&gt;&gt;</code> - Optional shared mutable value</a></h3>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>struct Config {
-    logger: Option&lt;Rc&lt;RefCell&lt;Logger&gt;&gt;&gt;,
+</span>pub struct MySlice&lt;'a, T&gt; {
+    data: &amp;'a [T],  // Real reference, carries lifetime automatically
 }
-
-let logger = Rc::new(RefCell::new(Logger::new()));
-let config = Config {
-    logger: Some(Rc::clone(&amp;logger)),
-};
-
-// ✅ If Some, multiple owners can mutate the logger
-if let Some(ref logger_rc) = config.logger {
-    logger_rc.borrow_mut().log("message");
-}
-
-// ❌ Can't change from Some to None (fixed at construction)
 <span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> The optional value is determined at construction, but if present, it needs to be shared and mutable.</p>
-<h2 id="todo-future-sections"><a class="header" href="#todo-future-sections">TODO: Future Sections</a></h2>
+<p>But this defeats the purpose of the exercise - we want to see what we can build with just <code>(ptr, len)</code>!</p>
+<p><strong>What you can implement:</strong></p>
 <ul>
-<li><input disabled="" type="checkbox"/>
-More combinations with <code>Box</code>, <code>Vec</code>, <code>Arc</code>, <code>Mutex</code></li>
-<li><input disabled="" type="checkbox"/>
-Decision flowchart for choosing the right pattern</li>
-<li><input disabled="" type="checkbox"/>
-Performance implications of different orderings</li>
-<li><input disabled="" type="checkbox"/>
-Exercises for each pattern</li>
-<li><input disabled="" type="checkbox"/>
-Common mistakes and how to fix them</li>
-<li><input disabled="" type="checkbox"/>
-Real-world examples from popular crates</li>
+<li>Index access (<code>impl Index&lt;usize&gt;</code>)</li>
+<li><code>len()</code>, <code>is_empty()</code></li>
+<li><code>first()</code>, <code>last()</code></li>
+<li><code>iter()</code> returning an iterator</li>
 </ul>
+<p><strong>What you CANNOT implement:</strong></p>
+<ul>
+<li>Slice syntax: <code>&amp;my_slice[1..3]</code> (requires compiler support)</li>
+<li>Pattern matching: <code>match my_slice { [first, rest @ ..] =&gt; ... }</code> (DST feature)</li>
+<li>Automatic coercion from arrays: <code>&amp;[1, 2, 3]</code> → <code>MySlice</code> (compiler magic)</li>
+</ul>
+<p>This demonstrates why slices are special - they need compiler integration for the syntax we take for granted!</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../docs/appendix-sized.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../docs/04-vec-1-slices.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
+                            <a rel="next prefetch" href="../docs/05-cell-0-intro.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
 
                         <div style="clear: both"></div>
                     </nav>
@@ -295,10 +381,13 @@ Real-world examples from popular crates</li>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../docs/appendix-sized.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../docs/04-vec-1-slices.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
+                    <a rel="next prefetch" href="../docs/05-cell-0-intro.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
             </nav>
 
         </div>

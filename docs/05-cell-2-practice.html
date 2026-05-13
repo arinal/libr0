@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Nested Types - libr0: Building Rust&#x27;s Standard Library from Scratch</title>
+        <title>Practice &amp; Thread Safety - libr0: Building Rust&#x27;s Standard Library from Scratch</title>
 
 
         <!-- Custom HTML head -->
@@ -178,116 +178,210 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="appendix-nested-types---understanding-order-and-flexibility"><a class="header" href="#appendix-nested-types---understanding-order-and-flexibility">Appendix: Nested Types - Understanding Order and Flexibility</a></h1>
-<p>When combining smart pointers like <code>Rc</code>, interior mutability types like <code>RefCell</code>, and containers like <code>Option</code>, the order matters! This appendix explores the different combinations and what they mean.</p>
-<blockquote>
-<p><strong>Note:</strong> This is a placeholder for future completion. The content below covers basic patterns, but will be expanded with more cases and exercises.</p>
-</blockquote>
-<h2 id="the-order-matters"><a class="header" href="#the-order-matters">The Order Matters</a></h2>
-<p>Each wrapper in a nested type determines what operations are possible on what's inside. <strong>Read from outside-in</strong> to understand capabilities:</p>
-<ul>
-<li><code>RefCell&lt;...&gt;</code> - Can mutate what's inside</li>
-<li><code>Rc&lt;...&gt;</code> - Can share (multiple owners)</li>
-<li><code>Option&lt;...&gt;</code> - Might not be present (fixed at construction)</li>
-</ul>
-<h2 id="common-patterns"><a class="header" href="#common-patterns">Common Patterns</a></h2>
-<h3 id="refcelloptionrct---can-addremovechange-the-link"><a class="header" href="#refcelloptionrct---can-addremovechange-the-link"><code>RefCell&lt;Option&lt;Rc&lt;T&gt;&gt;&gt;</code> - Can add/remove/change the link</a></h3>
+                        <h1 id="practice--thread-safety"><a class="header" href="#practice--thread-safety">Practice &amp; Thread Safety</a></h1>
+<h2 id="cell-in-practice-simple-examples"><a class="header" href="#cell-in-practice-simple-examples">Cell in Practice: Simple Examples</a></h2>
+<p><strong>Example 1: Counter</strong></p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>struct Node {
-    next: RefCell&lt;Option&lt;Rc&lt;Node&gt;&gt;&gt;,
+</span>use std::cell::Cell;
+
+struct HitCounter {
+    count: Cell&lt;usize&gt;,
 }
 
-let node = Rc::new(Node { next: RefCell::new(None) });
+impl HitCounter {
+    fn new() -&gt; Self {
+        HitCounter { count: Cell::new(0) }
+    }
 
-// ✅ Can add a link (None → Some)
-*node.next.borrow_mut() = Some(Rc::clone(&amp;other_node));
+    fn record_hit(&amp;self) {
+        self.count.set(self.count.get() + 1);
+    }
 
-// ✅ Can change which node (Some(a) → Some(b))
-*node.next.borrow_mut() = Some(Rc::clone(&amp;another_node));
+    fn get_count(&amp;self) -&gt; usize {
+        self.count.get()
+    }
+}
 
-// ✅ Can remove the link (Some → None)
-*node.next.borrow_mut() = None;
+// Usage
+let counter = HitCounter::new();
+counter.record_hit();  // count: 0 -&gt; 1
+counter.record_hit();  // count: 1 -&gt; 2
+counter.record_hit();  // count: 2 -&gt; 3
+counter.get_count()    // 3
 <span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> You need full flexibility - add, remove, or change links.</p>
-<h3 id="optionrefcellrct---can-change-the-link-but-cant-addremove"><a class="header" href="#optionrefcellrct---can-change-the-link-but-cant-addremove"><code>Option&lt;RefCell&lt;Rc&lt;T&gt;&gt;&gt;</code> - Can change the link, but can't add/remove</a></h3>
+<p><strong>Example 2: Toggle Flag</strong></p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>struct Node {
-    next: Option&lt;RefCell&lt;Rc&lt;Node&gt;&gt;&gt;,
+</span>struct Toggle {
+    state: Cell&lt;bool&gt;,
 }
 
-let node_with_link = Rc::new(Node {
-    next: Some(RefCell::new(Rc::clone(&amp;other_node))),
+impl Toggle {
+    fn new() -&gt; Self {
+        Toggle { state: Cell::new(false) }
+    }
+
+    fn toggle(&amp;self) {
+        self.state.set(!self.state.get());
+    }
+
+    fn is_on(&amp;self) -&gt; bool {
+        self.state.get()
+    }
+}
+
+// Usage
+let toggle = Toggle::new();
+toggle.is_on()   // false
+toggle.toggle();
+toggle.is_on()   // true
+toggle.toggle();
+toggle.is_on()   // false
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Example 3: Lazy Initialization</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct LazyValue {
+    initialized: Cell&lt;bool&gt;,
+    value: Cell&lt;i32&gt;,
+}
+
+impl LazyValue {
+    fn new() -&gt; Self {
+        LazyValue {
+            initialized: Cell::new(false),
+            value: Cell::new(0),
+        }
+    }
+
+    fn get_or_init(&amp;self, compute: impl FnOnce() -&gt; i32) -&gt; i32 {
+        if !self.initialized.get() {
+            let val = compute();
+            self.value.set(val);
+            self.initialized.set(true);
+        }
+        self.value.get()
+    }
+}
+
+// Usage
+let lazy = LazyValue::new();
+let result1 = lazy.get_or_init(|| 42);  // Computes: 42
+let result2 = lazy.get_or_init(|| 99);  // Returns cached: 42
+<span class="boring">}</span></code></pre></pre>
+<p>All these examples mutate state through <code>&amp;self</code> (shared reference) - impossible without <code>Cell</code>!</p>
+<h2 id="cell-and-thread-safety-send-and-sync"><a class="header" href="#cell-and-thread-safety-send-and-sync">Cell and Thread Safety: Send and Sync</a></h2>
+<p><code>Cell&lt;T&gt;</code> is <strong>not thread-safe</strong>. It can be used in a single thread, but cannot be safely shared between threads.</p>
+<p><strong>Quick overview:</strong></p>
+<p>Rust has two special marker traits for thread safety:</p>
+<ul>
+<li><strong><code>Send</code></strong>: A type can be transferred between threads (moved to another thread)</li>
+<li><strong><code>Sync</code></strong>: A type can be shared between threads (multiple threads can have <code>&amp;T</code>)</li>
+</ul>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Cell&lt;T&gt; is Send (can be moved between threads)
+let cell = Cell::new(42);
+std::thread::spawn(move || {
+    cell.set(100);  // ✅ OK - moved to this thread
 });
 
-let node_without_link = Rc::new(Node { next: None });
-
-// ✅ If Some, can change which node
-if let Some(ref cell) = &amp;node_with_link.next {
-    *cell.borrow_mut() = Rc::clone(&amp;another_node);
-}
-
-// ❌ Can't add a link to node_without_link (it's None forever)
-// ❌ Can't remove the link from node_with_link (it's Some forever)
+// Cell&lt;T&gt; is NOT Sync (cannot be shared between threads)
+let cell = Cell::new(42);
+std::thread::spawn(|| {
+    cell.set(100);  // ❌ Cell is not Sync
+});
 <span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> The presence/absence of the link is determined at construction and never changes, but you need to change which <code>Rc</code> it points to.</p>
-<h3 id="rcrefcelloptiont---multiple-owners-of-a-changeable-optional-value"><a class="header" href="#rcrefcelloptiont---multiple-owners-of-a-changeable-optional-value"><code>Rc&lt;RefCell&lt;Option&lt;T&gt;&gt;&gt;</code> - Multiple owners of a changeable optional value</a></h3>
+<p><strong>Why is Cell not Sync?</strong></p>
+<p>If two threads could share <code>&amp;Cell&lt;T&gt;</code>, they could both call <code>set()</code> simultaneously:</p>
+<ol>
+<li>Thread 1: <code>cell.set(10)</code></li>
+<li>Thread 2: <code>cell.set(20)</code></li>
+<li><strong>Data race!</strong> Both write to the same memory without synchronization</li>
+</ol>
+<p><strong>Hypothetical example if Cell was Sync (this won't compile!):</strong></p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>let cache: Rc&lt;RefCell&lt;Option&lt;String&gt;&gt;&gt; = Rc::new(RefCell::new(None));
-let cache1 = Rc::clone(&amp;cache);
-let cache2 = Rc::clone(&amp;cache);
+</span>use std::cell::Cell;
+use std::thread;
 
-// Multiple owners can all change the value
-*cache1.borrow_mut() = Some(String::from("cached"));
-*cache2.borrow_mut() = None;  // Clear the cache
+// Imagine Cell&lt;T&gt; was Sync (it's not!)
+let counter = Cell::new(0);
+
+// Try to share it between threads (won't compile)
+let handle1 = thread::spawn(|| {
+    for _ in 0..1000 {
+        counter.set(counter.get() + 1);  // Thread 1 increments
+    }
+});
+
+let handle2 = thread::spawn(|| {
+    for _ in 0..1000 {
+        counter.set(counter.get() + 1);  // Thread 2 increments
+    }
+});
+
+handle1.join().unwrap();
+handle2.join().unwrap();
+
+// Expected: 2000
+// Actual: Could be anything! (if data races were allowed)
+// Both threads read, modify, write with no synchronization
+println!("{}", counter.get());  // Undefined behavior!
 <span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> Multiple owners need to mutate the same optional value (shared cache, shared state).</p>
-<h3 id="optionrcrefcellt---optional-shared-mutable-value"><a class="header" href="#optionrcrefcellt---optional-shared-mutable-value"><code>Option&lt;Rc&lt;RefCell&lt;T&gt;&gt;&gt;</code> - Optional shared mutable value</a></h3>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>struct Config {
-    logger: Option&lt;Rc&lt;RefCell&lt;Logger&gt;&gt;&gt;,
-}
-
-let logger = Rc::new(RefCell::new(Logger::new()));
-let config = Config {
-    logger: Some(Rc::clone(&amp;logger)),
-};
-
-// ✅ If Some, multiple owners can mutate the logger
-if let Some(ref logger_rc) = config.logger {
-    logger_rc.borrow_mut().log("message");
-}
-
-// ❌ Can't change from Some to None (fixed at construction)
-<span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> The optional value is determined at construction, but if present, it needs to be shared and mutable.</p>
-<h2 id="todo-future-sections"><a class="header" href="#todo-future-sections">TODO: Future Sections</a></h2>
+<p><code>Cell</code> provides no internal synchronization, so it's unsafe for concurrent access. For thread-safe interior mutability, use:</p>
 <ul>
-<li><input disabled="" type="checkbox"/>
-More combinations with <code>Box</code>, <code>Vec</code>, <code>Arc</code>, <code>Mutex</code></li>
-<li><input disabled="" type="checkbox"/>
-Decision flowchart for choosing the right pattern</li>
-<li><input disabled="" type="checkbox"/>
-Performance implications of different orderings</li>
-<li><input disabled="" type="checkbox"/>
-Exercises for each pattern</li>
-<li><input disabled="" type="checkbox"/>
-Common mistakes and how to fix them</li>
-<li><input disabled="" type="checkbox"/>
-Real-world examples from popular crates</li>
+<li><strong><code>Mutex&lt;T&gt;</code></strong> or <strong><code>RwLock&lt;T&gt;</code></strong> - Provides locking</li>
+<li><strong>Atomics</strong> (<code>AtomicUsize</code>, <code>AtomicBool</code>, etc.) - Hardware-level synchronization</li>
 </ul>
+<p><strong>Note:</strong> <code>Send</code> and <code>Sync</code> are covered in depth in a later chapter on concurrency. For now, just remember: <code>Cell</code> = single-threaded only.</p>
+<h2 id="the-complete-implementation"><a class="header" href="#the-complete-implementation">The Complete Implementation</a></h2>
+<p>See the full implementation in <a href="./src/cell.rs">cell.rs</a>.</p>
+<h2 id="cell-vs-other-interior-mutability-types"><a class="header" href="#cell-vs-other-interior-mutability-types">Cell vs Other Interior Mutability Types</a></h2>
+<div class="table-wrapper"><table><thead><tr><th></th><th>Cell</th><th>RefCell</th></tr></thead><tbody>
+<tr><td>Works with</td><td><code>Copy</code> types (for <code>get</code>)</td><td>Any type</td></tr>
+<tr><td>Returns</td><td>Copy of value</td><td>Reference (<code>Ref&lt;T&gt;</code>)</td></tr>
+<tr><td>Overhead</td><td>None</td><td>Runtime borrow tracking</td></tr>
+<tr><td>Panic?</td><td>Never</td><td>Yes, on borrow violation</td></tr>
+<tr><td>Thread-safe?</td><td>No</td><td>No</td></tr>
+</tbody></table>
+</div>
+<p>Use <code>Cell</code> when:</p>
+<ul>
+<li>Your type is <code>Copy</code> (integers, bools, small structs)</li>
+<li>You just need to get/set the value</li>
+<li>You want zero runtime overhead</li>
+</ul>
+<p>Use <code>RefCell</code> when:</p>
+<ul>
+<li>Your type isn't <code>Copy</code></li>
+<li>You need references to the inner value</li>
+<li>You're willing to pay for runtime borrow checking</li>
+</ul>
+<h2 id="key-takeaways"><a class="header" href="#key-takeaways">Key Takeaways</a></h2>
+<ol>
+<li><strong>Interior mutability</strong> allows mutation through shared references</li>
+<li><strong>UnsafeCell</strong> is the primitive - unsafe but flexible</li>
+<li><strong>Cell</strong> is safe by never exposing references - only copies</li>
+<li><strong>Use Cell for counters, flags, and simple state</strong> - like <code>Rc</code>'s reference count</li>
+<li><strong>Cell is not thread-safe</strong> - use atomics or mutexes for that</li>
+</ol>
+<h2 id="exercises"><a class="header" href="#exercises">Exercises</a></h2>
+<p>See <a href="./examples/05_cell.rs">exercises</a>.</p>
+<p><strong>Complete solutions:</strong> Switch to the <code>answers</code> branch with <code>git checkout answers</code> to see completed exercises</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../docs/appendix-sized.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../docs/05-cell-1-building.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
+                            <a rel="next prefetch" href="../docs/06-refcell.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
 
                         <div style="clear: both"></div>
                     </nav>
@@ -295,10 +389,13 @@ Real-world examples from popular crates</li>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../docs/appendix-sized.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../docs/05-cell-1-building.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
+                    <a rel="next prefetch" href="../docs/06-refcell.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
             </nav>
 
         </div>

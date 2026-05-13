@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Nested Types - libr0: Building Rust&#x27;s Standard Library from Scratch</title>
+        <title>Size &amp; Type Annotations - libr0: Building Rust&#x27;s Standard Library from Scratch</title>
 
 
         <!-- Custom HTML head -->
@@ -178,116 +178,165 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="appendix-nested-types---understanding-order-and-flexibility"><a class="header" href="#appendix-nested-types---understanding-order-and-flexibility">Appendix: Nested Types - Understanding Order and Flexibility</a></h1>
-<p>When combining smart pointers like <code>Rc</code>, interior mutability types like <code>RefCell</code>, and containers like <code>Option</code>, the order matters! This appendix explores the different combinations and what they mean.</p>
-<blockquote>
-<p><strong>Note:</strong> This is a placeholder for future completion. The content below covers basic patterns, but will be expanded with more cases and exercises.</p>
-</blockquote>
-<h2 id="the-order-matters"><a class="header" href="#the-order-matters">The Order Matters</a></h2>
-<p>Each wrapper in a nested type determines what operations are possible on what's inside. <strong>Read from outside-in</strong> to understand capabilities:</p>
-<ul>
-<li><code>RefCell&lt;...&gt;</code> - Can mutate what's inside</li>
-<li><code>Rc&lt;...&gt;</code> - Can share (multiple owners)</li>
-<li><code>Option&lt;...&gt;</code> - Might not be present (fixed at construction)</li>
-</ul>
-<h2 id="common-patterns"><a class="header" href="#common-patterns">Common Patterns</a></h2>
-<h3 id="refcelloptionrct---can-addremovechange-the-link"><a class="header" href="#refcelloptionrct---can-addremovechange-the-link"><code>RefCell&lt;Option&lt;Rc&lt;T&gt;&gt;&gt;</code> - Can add/remove/change the link</a></h3>
+                        <h1 id="size--type-annotations"><a class="header" href="#size--type-annotations">Size &amp; Type Annotations</a></h1>
+<h2 id="closure-size-and-zero-cost-abstractions"><a class="header" href="#closure-size-and-zero-cost-abstractions">Closure Size and Zero-Cost Abstractions</a></h2>
+<p>Each closure has a <strong>compiler-generated anonymous type</strong> with fields for each captured variable. The size of a closure equals the size of its captured data:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>struct Node {
-    next: RefCell&lt;Option&lt;Rc&lt;Node&gt;&gt;&gt;,
-}
+</span>let x = 5i32;           // 4 bytes
+let y = 10i32;          // 4 bytes
+let z = String::from("hello");  // 24 bytes (on modern Rust)
 
-let node = Rc::new(Node { next: RefCell::new(None) });
-
-// ✅ Can add a link (None → Some)
-*node.next.borrow_mut() = Some(Rc::clone(&amp;other_node));
-
-// ✅ Can change which node (Some(a) → Some(b))
-*node.next.borrow_mut() = Some(Rc::clone(&amp;another_node));
-
-// ✅ Can remove the link (Some → None)
-*node.next.borrow_mut() = None;
-<span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> You need full flexibility - add, remove, or change links.</p>
-<h3 id="optionrefcellrct---can-change-the-link-but-cant-addremove"><a class="header" href="#optionrefcellrct---can-change-the-link-but-cant-addremove"><code>Option&lt;RefCell&lt;Rc&lt;T&gt;&gt;&gt;</code> - Can change the link, but can't add/remove</a></h3>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>struct Node {
-    next: Option&lt;RefCell&lt;Rc&lt;Node&gt;&gt;&gt;,
-}
-
-let node_with_link = Rc::new(Node {
-    next: Some(RefCell::new(Rc::clone(&amp;other_node))),
-});
-
-let node_without_link = Rc::new(Node { next: None });
-
-// ✅ If Some, can change which node
-if let Some(ref cell) = &amp;node_with_link.next {
-    *cell.borrow_mut() = Rc::clone(&amp;another_node);
-}
-
-// ❌ Can't add a link to node_without_link (it's None forever)
-// ❌ Can't remove the link from node_with_link (it's Some forever)
-<span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> The presence/absence of the link is determined at construction and never changes, but you need to change which <code>Rc</code> it points to.</p>
-<h3 id="rcrefcelloptiont---multiple-owners-of-a-changeable-optional-value"><a class="header" href="#rcrefcelloptiont---multiple-owners-of-a-changeable-optional-value"><code>Rc&lt;RefCell&lt;Option&lt;T&gt;&gt;&gt;</code> - Multiple owners of a changeable optional value</a></h3>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>let cache: Rc&lt;RefCell&lt;Option&lt;String&gt;&gt;&gt; = Rc::new(RefCell::new(None));
-let cache1 = Rc::clone(&amp;cache);
-let cache2 = Rc::clone(&amp;cache);
-
-// Multiple owners can all change the value
-*cache1.borrow_mut() = Some(String::from("cached"));
-*cache2.borrow_mut() = None;  // Clear the cache
-<span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> Multiple owners need to mutate the same optional value (shared cache, shared state).</p>
-<h3 id="optionrcrefcellt---optional-shared-mutable-value"><a class="header" href="#optionrcrefcellt---optional-shared-mutable-value"><code>Option&lt;Rc&lt;RefCell&lt;T&gt;&gt;&gt;</code> - Optional shared mutable value</a></h3>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>struct Config {
-    logger: Option&lt;Rc&lt;RefCell&lt;Logger&gt;&gt;&gt;,
-}
-
-let logger = Rc::new(RefCell::new(Logger::new()));
-let config = Config {
-    logger: Some(Rc::clone(&amp;logger)),
+let closure = || {
+    let _ = x;    // Captures x: 4 bytes
+    let _ = y;    // Captures y: 4 bytes
+    let _ = z;    // Captures z: 24 bytes
 };
 
-// ✅ If Some, multiple owners can mutate the logger
-if let Some(ref logger_rc) = config.logger {
-    logger_rc.borrow_mut().log("message");
+println!("{}", std::mem::size_of_val(&amp;closure));  // 32 bytes
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Important:</strong> The <code>String</code> is 24 bytes of <strong>stack metadata</strong> (pointer + length + capacity), not the heap data itself. The actual string bytes <code>"hello"</code> live on the heap and aren't counted in the closure's size. <code>size_of_val</code> only measures the stack footprint of the closure struct.</p>
+<h3 id="zero-size-closures"><a class="header" href="#zero-size-closures">Zero Size Closures</a></h3>
+<p>Closures that capture nothing have zero size:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let zero_size = || 42;
+println!("{}", std::mem::size_of_val(&amp;zero_size));  // 0 bytes!
+<span class="boring">}</span></code></pre></pre>
+<h3 id="why-zero-cost"><a class="header" href="#why-zero-cost">Why Zero-Cost?</a></h3>
+<p>This is why Rust closures are <strong>zero-cost abstractions</strong> - they compile down to the same code as manual structs, with no runtime overhead:</p>
+<ul>
+<li>No indirection (direct field access)</li>
+<li>No heap allocation (stack-allocated struct)</li>
+<li>No wrapper overhead (just the captured data)</li>
+<li>Argument passing via <code>extern "rust-call"</code> ABI compiles to efficient assembly</li>
+</ul>
+<p>The compiler generates optimal code that's equivalent to hand-written structs with method calls.</p>
+<h2 id="common-misconceptions-closure-types"><a class="header" href="#common-misconceptions-closure-types">Common Misconceptions: Closure Types</a></h2>
+<h3 id="misconception-fni32---i32-is-the-closures-type"><a class="header" href="#misconception-fni32---i32-is-the-closures-type">Misconception: "<code>Fn(i32) -&gt; i32</code> is the closure's type"</a></h3>
+<p>When you hover over a closure in your IDE, you might see something like <code>impl Fn(i32) -&gt; i32</code>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let f = |x: i32| x + 2;
+// IDE shows: impl Fn(i32) -&gt; i32
+<span class="boring">}</span></code></pre></pre>
+<p><strong>This is NOT the closure's actual type.</strong> Here's the truth:</p>
+<ol>
+<li><strong><code>Fn</code> is a trait, not a type.</strong> Just like <code>Iterator</code> or <code>Debug</code>, it's something types can implement.</li>
+<li><strong>The closure has a unique, anonymous compiler-generated type</strong> (as we discussed in the "How Closures Work" section).</li>
+<li><strong>The IDE notation <code>impl Fn(i32) -&gt; i32</code> means</strong>: "some unknown type that implements the <code>Fn(i32) -&gt; i32</code> trait"</li>
+</ol>
+<h3 id="what-is-the-actual-type"><a class="header" href="#what-is-the-actual-type">What is the actual type?</a></h3>
+<p>Every closure has a <strong>unique, unnamed type</strong> that only the compiler knows:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let f = |x: i32| x + 2;
+let g = |x: i32| x + 2;  // Same code, but different type!
+
+// ❌ ERROR: mismatched types
+// let h: typeof(f) = g;  // Can't do this - f and g have different types
+<span class="boring">}</span></code></pre></pre>
+<p>Even though <code>f</code> and <code>g</code> have identical code, they're <strong>different types</strong> with different anonymous names generated by the compiler. This is why you can't write the type explicitly - it doesn't have a name you can refer to.</p>
+<h3 id="how-to-annotate-closure-types"><a class="header" href="#how-to-annotate-closure-types">How to annotate closure types</a></h3>
+<p>Since you can't name the exact type, you have three options:</p>
+<h4 id="option-1-let-the-compiler-infer-recommended"><a class="header" href="#option-1-let-the-compiler-infer-recommended">Option 1: Let the compiler infer (recommended)</a></h4>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let f = |x: i32| x + 2;  // Type is inferred
+<span class="boring">}</span></code></pre></pre>
+<p>This is the most common approach. The compiler figures out the type automatically.</p>
+<h4 id="option-2-use-a-trait-bound-with-generics"><a class="header" href="#option-2-use-a-trait-bound-with-generics">Option 2: Use a trait bound with generics</a></h4>
+<p>When passing closures as parameters, use generic type parameters with trait bounds:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn apply&lt;F&gt;(f: F, x: i32) -&gt; i32
+where
+    F: Fn(i32) -&gt; i32,  // F is any type that implements Fn(i32) -&gt; i32
+{
+    f(x)
 }
 
-// ❌ Can't change from Some to None (fixed at construction)
+let f = |x: i32| x + 2;
+apply(f, 5);  // 7
 <span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> The optional value is determined at construction, but if present, it needs to be shared and mutable.</p>
-<h2 id="todo-future-sections"><a class="header" href="#todo-future-sections">TODO: Future Sections</a></h2>
+<p>This is <strong>static dispatch</strong> - the compiler generates specialized code for each closure type, with zero runtime cost.</p>
+<h4 id="option-3-use-impl-trait-modern-rust"><a class="header" href="#option-3-use-impl-trait-modern-rust">Option 3: Use <code>impl Trait</code> (modern Rust)</a></h4>
+<p>For function parameters and return types, you can use <code>impl Trait</code>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn make_adder(n: i32) -&gt; impl Fn(i32) -&gt; i32 {
+    move |x| x + n
+}
+
+fn apply(f: impl Fn(i32) -&gt; i32, x: i32) -&gt; i32 {
+    f(x)
+}
+<span class="boring">}</span></code></pre></pre>
+<p>This is syntactic sugar for generic type parameters with trait bounds. Still static dispatch, zero cost.</p>
+<h4 id="option-4-use-trait-objects-boxdyn-fn"><a class="header" href="#option-4-use-trait-objects-boxdyn-fn">Option 4: Use trait objects (<code>Box&lt;dyn Fn&gt;</code>)</a></h4>
+<p>If you need to store closures with different types in the same collection, use <strong>trait objects</strong>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let closures: Vec&lt;Box&lt;dyn Fn(i32) -&gt; i32&gt;&gt; = vec![
+    Box::new(|x| x + 1),
+    Box::new(|x| x * 2),
+    Box::new(|x| x - 3),
+];
+
+for f in &amp;closures {
+    println!("{}", f(10));  // 11, 20, 7
+}
+<span class="boring">}</span></code></pre></pre>
+<p>This is <strong>dynamic dispatch</strong> - has a small runtime cost (heap allocation + vtable lookup) but allows heterogeneous collections.</p>
+<h3 id="type-annotation-examples"><a class="header" href="#type-annotation-examples">Type annotation examples</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// ❌ ERROR: Can't use Fn as a concrete type
+let f: Fn(i32) -&gt; i32 = |x| x + 2;
+
+// ✅ OK: Let compiler infer
+let f = |x: i32| x + 2;
+
+// ✅ OK: Use impl Trait in function parameter
+fn apply(f: impl Fn(i32) -&gt; i32, x: i32) -&gt; i32 {
+    f(x)
+}
+
+// ✅ OK: Use generic with trait bound
+fn apply_generic&lt;F: Fn(i32) -&gt; i32&gt;(f: F, x: i32) -&gt; i32 {
+    f(x)
+}
+
+// ✅ OK: Use trait object (dynamic dispatch)
+let f: Box&lt;dyn Fn(i32) -&gt; i32&gt; = Box::new(|x| x + 2);
+
+// ✅ OK: Reference to trait object
+let f = |x: i32| x + 2;
+let f_ref: &amp;dyn Fn(i32) -&gt; i32 = &amp;f;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="key-takeaways"><a class="header" href="#key-takeaways">Key Takeaways</a></h3>
 <ul>
-<li><input disabled="" type="checkbox"/>
-More combinations with <code>Box</code>, <code>Vec</code>, <code>Arc</code>, <code>Mutex</code></li>
-<li><input disabled="" type="checkbox"/>
-Decision flowchart for choosing the right pattern</li>
-<li><input disabled="" type="checkbox"/>
-Performance implications of different orderings</li>
-<li><input disabled="" type="checkbox"/>
-Exercises for each pattern</li>
-<li><input disabled="" type="checkbox"/>
-Common mistakes and how to fix them</li>
-<li><input disabled="" type="checkbox"/>
-Real-world examples from popular crates</li>
+<li><strong><code>Fn(T) -&gt; U</code> is a trait</strong>, not a type</li>
+<li><strong>Every closure has a unique anonymous type</strong> generated by the compiler</li>
+<li><strong>You cannot write the closure's actual type</strong> - it's unnamed</li>
+<li><strong>Use trait bounds or trait objects</strong> when you need to annotate types</li>
+<li><strong>Prefer static dispatch</strong> (<code>impl Trait</code> or generics) for zero-cost abstractions</li>
+<li><strong>Use dynamic dispatch</strong> (<code>Box&lt;dyn Fn&gt;</code>) only when you need type flexibility at runtime</li>
 </ul>
+<hr />
+<p>See also: <a href="appendix.html">Appendix Index</a> | <a href="appendix-send-sync.html">A: Send and Sync</a> | <a href="appendix-dynamic-dispatch.html">C: Dynamic Dispatch</a></p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../docs/appendix-sized.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../docs/appendix-closures-1-move.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
+                            <a rel="next prefetch" href="../docs/appendix-memory-layout-0-intro.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
 
                         <div style="clear: both"></div>
                     </nav>
@@ -295,10 +344,13 @@ Real-world examples from popular crates</li>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../docs/appendix-sized.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../docs/appendix-closures-1-move.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
+                    <a rel="next prefetch" href="../docs/appendix-memory-layout-0-intro.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
             </nav>
 
         </div>

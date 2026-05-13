@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Nested Types - libr0: Building Rust&#x27;s Standard Library from Scratch</title>
+        <title>Result - libr0: Building Rust&#x27;s Standard Library from Scratch</title>
 
 
         <!-- Custom HTML head -->
@@ -178,116 +178,135 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="appendix-nested-types---understanding-order-and-flexibility"><a class="header" href="#appendix-nested-types---understanding-order-and-flexibility">Appendix: Nested Types - Understanding Order and Flexibility</a></h1>
-<p>When combining smart pointers like <code>Rc</code>, interior mutability types like <code>RefCell</code>, and containers like <code>Option</code>, the order matters! This appendix explores the different combinations and what they mean.</p>
-<blockquote>
-<p><strong>Note:</strong> This is a placeholder for future completion. The content below covers basic patterns, but will be expanded with more cases and exercises.</p>
-</blockquote>
-<h2 id="the-order-matters"><a class="header" href="#the-order-matters">The Order Matters</a></h2>
-<p>Each wrapper in a nested type determines what operations are possible on what's inside. <strong>Read from outside-in</strong> to understand capabilities:</p>
+                        <h1 id="chapter-2-result---error-handling-done-right"><a class="header" href="#chapter-2-result---error-handling-done-right">Chapter 2: Result - Error Handling Done Right</a></h1>
+<h2 id="the-problem-exceptions-are-invisible"><a class="header" href="#the-problem-exceptions-are-invisible">The Problem: Exceptions Are Invisible</a></h2>
+<p>In many languages, any function can throw an exception:</p>
+<pre><code class="language-java">String content = readFile("non-existent-file.txt"); // throws exception
+println("File content: " + content);
+</code></pre>
+<p>In Java, the above code compiles fine, even though the programmer "forgot" to handle exception.</p>
+<p>Rust's approach: readFile returns a wrapper to indicate it can fail:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let result = readFile("non-existent-file.txt"); // returns Result&lt;String, Error&gt;
+// result is not the content, but a wrapper that can be Ok(content) or Err(error)
+// to extract the content, you're forced to handle both cases:
+match result {
+    Ok(content) =&gt; println!("File content: {}", content),
+    Err(e) =&gt; println!("Failed to read file: {:?}", e),
+}
+// this way, the programmer can't "forget" to handle errors, as the case with the java example.
+<span class="boring">}</span></code></pre></pre>
+<h2 id="our-result-type"><a class="header" href="#our-result-type">Our Result Type</a></h2>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>enum Result0&lt;T, E&gt; {
+    Ok(T),
+    Err(E),
+}
+<span class="boring">}</span></code></pre></pre>
+<p>Two variants:</p>
 <ul>
-<li><code>RefCell&lt;...&gt;</code> - Can mutate what's inside</li>
-<li><code>Rc&lt;...&gt;</code> - Can share (multiple owners)</li>
-<li><code>Option&lt;...&gt;</code> - Might not be present (fixed at construction)</li>
+<li><code>Ok(T)</code> - operation succeeded with value <code>T</code></li>
+<li><code>Err(E)</code> - operation failed with error <code>E</code></li>
 </ul>
-<h2 id="common-patterns"><a class="header" href="#common-patterns">Common Patterns</a></h2>
-<h3 id="refcelloptionrct---can-addremovechange-the-link"><a class="header" href="#refcelloptionrct---can-addremovechange-the-link"><code>RefCell&lt;Option&lt;Rc&lt;T&gt;&gt;&gt;</code> - Can add/remove/change the link</a></h3>
+<p>The caller <strong>must</strong> handle both cases. The compiler won't let you ignore errors.</p>
+<h2 id="what-can-be-an-error"><a class="header" href="#what-can-be-an-error">What Can Be an Error?</a></h2>
+<p>The <code>E</code> in <code>Result&lt;T, E&gt;</code> can be <strong>any type</strong>. It doesn't need to implement <code>std::error::Error</code> or any special trait, as long as you wrap it in <code>Err()</code>.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>struct Node {
-    next: RefCell&lt;Option&lt;Rc&lt;Node&gt;&gt;&gt;,
+</span>// String as error
+let error: Result0&lt;i32, String&gt; = Err(String::from("something broke"));
+
+// &amp;str as error
+let error: Result0&lt;i32, &amp;str&gt; = Err("file not found");
+
+// Number as error code
+let error: Result0&lt;i32, i32&gt; = Err(404);
+
+// Custom enum - most common in real code
+#[derive(Debug)]
+enum ParseError {
+    Empty,
+    TooLong,
+    InvalidFormat,
 }
-
-let node = Rc::new(Node { next: RefCell::new(None) });
-
-// ✅ Can add a link (None → Some)
-*node.next.borrow_mut() = Some(Rc::clone(&amp;other_node));
-
-// ✅ Can change which node (Some(a) → Some(b))
-*node.next.borrow_mut() = Some(Rc::clone(&amp;another_node));
-
-// ✅ Can remove the link (Some → None)
-*node.next.borrow_mut() = None;
+let error: Result0&lt;i32, ParseError&gt; = Err(ParseError::Empty);
 <span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> You need full flexibility - add, remove, or change links.</p>
-<h3 id="optionrefcellrct---can-change-the-link-but-cant-addremove"><a class="header" href="#optionrefcellrct---can-change-the-link-but-cant-addremove"><code>Option&lt;RefCell&lt;Rc&lt;T&gt;&gt;&gt;</code> - Can change the link, but can't add/remove</a></h3>
+<p><strong>Key rule</strong>: Always wrap your error in <code>Err()</code>. Don't return the error type directly:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>struct Node {
-    next: Option&lt;RefCell&lt;Rc&lt;Node&gt;&gt;&gt;,
+</span>// ❌ Wrong
+fn parse(s: &amp;str) -&gt; Result0&lt;i32, &amp;str&gt; {
+    if s.is_empty() {
+        "empty string"  // ERROR: expected Result0, found &amp;str
+    } else {
+        Ok(42)
+    }
 }
 
-let node_with_link = Rc::new(Node {
-    next: Some(RefCell::new(Rc::clone(&amp;other_node))),
-});
-
-let node_without_link = Rc::new(Node { next: None });
-
-// ✅ If Some, can change which node
-if let Some(ref cell) = &amp;node_with_link.next {
-    *cell.borrow_mut() = Rc::clone(&amp;another_node);
+// ✅ Correct
+fn parse(s: &amp;str) -&gt; Result0&lt;i32, &amp;str&gt; {
+    if s.is_empty() {
+        Err("empty string")  // Wrapped in Err!
+    } else {
+        Ok(42)
+    }
 }
-
-// ❌ Can't add a link to node_without_link (it's None forever)
-// ❌ Can't remove the link from node_with_link (it's Some forever)
 <span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> The presence/absence of the link is determined at construction and never changes, but you need to change which <code>Rc</code> it points to.</p>
-<h3 id="rcrefcelloptiont---multiple-owners-of-a-changeable-optional-value"><a class="header" href="#rcrefcelloptiont---multiple-owners-of-a-changeable-optional-value"><code>Rc&lt;RefCell&lt;Option&lt;T&gt;&gt;&gt;</code> - Multiple owners of a changeable optional value</a></h3>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>let cache: Rc&lt;RefCell&lt;Option&lt;String&gt;&gt;&gt; = Rc::new(RefCell::new(None));
-let cache1 = Rc::clone(&amp;cache);
-let cache2 = Rc::clone(&amp;cache);
+<h2 id="basic-usage"><a class="header" href="#basic-usage">Basic Usage</a></h2>
+<p>Let's validate a person with a custom error type:</p>
+<pre><pre class="playground"><code class="language-rust">use Result0::{Ok, Err};
 
-// Multiple owners can all change the value
-*cache1.borrow_mut() = Some(String::from("cached"));
-*cache2.borrow_mut() = None;  // Clear the cache
-<span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> Multiple owners need to mutate the same optional value (shared cache, shared state).</p>
-<h3 id="optionrcrefcellt---optional-shared-mutable-value"><a class="header" href="#optionrcrefcellt---optional-shared-mutable-value"><code>Option&lt;Rc&lt;RefCell&lt;T&gt;&gt;&gt;</code> - Optional shared mutable value</a></h3>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>struct Config {
-    logger: Option&lt;Rc&lt;RefCell&lt;Logger&gt;&gt;&gt;,
+#[derive(Debug)]
+struct Person {
+    name: String,
+    age: i32,
 }
 
-let logger = Rc::new(RefCell::new(Logger::new()));
-let config = Config {
-    logger: Some(Rc::clone(&amp;logger)),
-};
-
-// ✅ If Some, multiple owners can mutate the logger
-if let Some(ref logger_rc) = config.logger {
-    logger_rc.borrow_mut().log("message");
+#[derive(Debug)]
+enum InvalidPersonError {
+    EmptyName,
+    InvalidAge(i32),
 }
 
-// ❌ Can't change from Some to None (fixed at construction)
-<span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> The optional value is determined at construction, but if present, it needs to be shared and mutable.</p>
-<h2 id="todo-future-sections"><a class="header" href="#todo-future-sections">TODO: Future Sections</a></h2>
-<ul>
-<li><input disabled="" type="checkbox"/>
-More combinations with <code>Box</code>, <code>Vec</code>, <code>Arc</code>, <code>Mutex</code></li>
-<li><input disabled="" type="checkbox"/>
-Decision flowchart for choosing the right pattern</li>
-<li><input disabled="" type="checkbox"/>
-Performance implications of different orderings</li>
-<li><input disabled="" type="checkbox"/>
-Exercises for each pattern</li>
-<li><input disabled="" type="checkbox"/>
-Common mistakes and how to fix them</li>
-<li><input disabled="" type="checkbox"/>
-Real-world examples from popular crates</li>
-</ul>
+fn validate_person(person: Person) -&gt; Result0&lt;Person, InvalidPersonError&gt; {
+    if person.name.is_empty() {
+        Err(InvalidPersonError::EmptyName)  // Wrap in Err!
+    } else if person.age &lt; 0 {
+        Err(InvalidPersonError::InvalidAge(person.age))  // Capture the bad value
+    } else {
+        Ok(person)  // Wrap valid person in Ok!
+    }
+}
+
+fn main() {
+    let person = Person { name: String::from("Alice"), age: 30 };
+    match validate_person(person) {
+        Ok(valid_person) =&gt; println!("Valid person: {:?}", valid_person),
+        Err(e) =&gt; println!("Invalid person: {:?}", e),
+    }
+    // Output: Valid person: Person { name: "Alice", age: 30 }
+
+    let bad_person = Person { name: String::from(""), age: -5 };
+    match validate_person(bad_person) {
+        Ok(valid_person) =&gt; println!("Valid person: {:?}", valid_person),
+        Err(e) =&gt; println!("Invalid person: {:?}", e),
+    }
+    // Output: Invalid person: EmptyName
+}</code></pre></pre>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../docs/appendix-sized.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../docs/01-option-3-borrowing.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
+                            <a rel="next prefetch" href="../docs/02-result-1-unwrapping.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
 
                         <div style="clear: both"></div>
                     </nav>
@@ -295,10 +314,13 @@ Real-world examples from popular crates</li>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../docs/appendix-sized.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../docs/01-option-3-borrowing.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
+                    <a rel="next prefetch" href="../docs/02-result-1-unwrapping.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
             </nav>
 
         </div>

@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Nested Types - libr0: Building Rust&#x27;s Standard Library from Scratch</title>
+        <title>Transforming &amp; Chaining - libr0: Building Rust&#x27;s Standard Library from Scratch</title>
 
 
         <!-- Custom HTML head -->
@@ -178,116 +178,216 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="appendix-nested-types---understanding-order-and-flexibility"><a class="header" href="#appendix-nested-types---understanding-order-and-flexibility">Appendix: Nested Types - Understanding Order and Flexibility</a></h1>
-<p>When combining smart pointers like <code>Rc</code>, interior mutability types like <code>RefCell</code>, and containers like <code>Option</code>, the order matters! This appendix explores the different combinations and what they mean.</p>
-<blockquote>
-<p><strong>Note:</strong> This is a placeholder for future completion. The content below covers basic patterns, but will be expanded with more cases and exercises.</p>
-</blockquote>
-<h2 id="the-order-matters"><a class="header" href="#the-order-matters">The Order Matters</a></h2>
-<p>Each wrapper in a nested type determines what operations are possible on what's inside. <strong>Read from outside-in</strong> to understand capabilities:</p>
-<ul>
-<li><code>RefCell&lt;...&gt;</code> - Can mutate what's inside</li>
-<li><code>Rc&lt;...&gt;</code> - Can share (multiple owners)</li>
-<li><code>Option&lt;...&gt;</code> - Might not be present (fixed at construction)</li>
-</ul>
-<h2 id="common-patterns"><a class="header" href="#common-patterns">Common Patterns</a></h2>
-<h3 id="refcelloptionrct---can-addremovechange-the-link"><a class="header" href="#refcelloptionrct---can-addremovechange-the-link"><code>RefCell&lt;Option&lt;Rc&lt;T&gt;&gt;&gt;</code> - Can add/remove/change the link</a></h3>
+                        <h1 id="transforming--chaining"><a class="header" href="#transforming--chaining">Transforming &amp; Chaining</a></h1>
+<h3 id="map---transform-success"><a class="header" href="#map---transform-success">map - Transform Success</a></h3>
+<p>Transform the <code>Ok</code> value, leave <code>Err</code> unchanged:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>struct Node {
-    next: RefCell&lt;Option&lt;Rc&lt;Node&gt;&gt;&gt;,
+</span>impl&lt;T, E&gt; Result0&lt;T, E&gt; {
+    fn map&lt;U, F: FnOnce(T) -&gt; U&gt;(self, f: F) -&gt; Result0&lt;U, E&gt; {
+        match self {
+            Ok(x) =&gt; Ok(f(x)),
+            Err(e) =&gt; Err(e),
+        }
+    }
 }
-
-let node = Rc::new(Node { next: RefCell::new(None) });
-
-// ✅ Can add a link (None → Some)
-*node.next.borrow_mut() = Some(Rc::clone(&amp;other_node));
-
-// ✅ Can change which node (Some(a) → Some(b))
-*node.next.borrow_mut() = Some(Rc::clone(&amp;another_node));
-
-// ✅ Can remove the link (Some → None)
-*node.next.borrow_mut() = None;
 <span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> You need full flexibility - add, remove, or change links.</p>
-<h3 id="optionrefcellrct---can-change-the-link-but-cant-addremove"><a class="header" href="#optionrefcellrct---can-change-the-link-but-cant-addremove"><code>Option&lt;RefCell&lt;Rc&lt;T&gt;&gt;&gt;</code> - Can change the link, but can't add/remove</a></h3>
+<p><strong>Examples:</strong></p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>struct Node {
-    next: Option&lt;RefCell&lt;Rc&lt;Node&gt;&gt;&gt;,
-}
+</span>let success: Result0&lt;i32, &amp;str&gt; = Ok(5);
+success.map(|x| x * 2)  // Ok(10)
 
-let node_with_link = Rc::new(Node {
-    next: Some(RefCell::new(Rc::clone(&amp;other_node))),
-});
+let failure: Result0&lt;i32, &amp;str&gt; = Err("bad");
+failure.map(|x| x * 2)  // Err("bad") - unchanged!
 
-let node_without_link = Rc::new(Node { next: None });
+// Misconception: map transforms both Ok and Err
+// ❌ Wrong! map ONLY transforms Ok values
+let result: Result0&lt;i32, &amp;str&gt; = Err("error");
+result.map(|x| x.to_string())  // Still Err("error"), not transformed
 
-// ✅ If Some, can change which node
-if let Some(ref cell) = &amp;node_with_link.next {
-    *cell.borrow_mut() = Rc::clone(&amp;another_node);
-}
-
-// ❌ Can't add a link to node_without_link (it's None forever)
-// ❌ Can't remove the link from node_with_link (it's Some forever)
+// Chain transformations
+Ok(5).map(|x| x * 2).map(|x| x + 1)  // Ok(11)
 <span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> The presence/absence of the link is determined at construction and never changes, but you need to change which <code>Rc</code> it points to.</p>
-<h3 id="rcrefcelloptiont---multiple-owners-of-a-changeable-optional-value"><a class="header" href="#rcrefcelloptiont---multiple-owners-of-a-changeable-optional-value"><code>Rc&lt;RefCell&lt;Option&lt;T&gt;&gt;&gt;</code> - Multiple owners of a changeable optional value</a></h3>
+<h3 id="map_err---transform-error"><a class="header" href="#map_err---transform-error">map_err - Transform Error</a></h3>
+<p>Transform the <code>Err</code> value, leave <code>Ok</code> unchanged:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>let cache: Rc&lt;RefCell&lt;Option&lt;String&gt;&gt;&gt; = Rc::new(RefCell::new(None));
-let cache1 = Rc::clone(&amp;cache);
-let cache2 = Rc::clone(&amp;cache);
-
-// Multiple owners can all change the value
-*cache1.borrow_mut() = Some(String::from("cached"));
-*cache2.borrow_mut() = None;  // Clear the cache
+</span>impl&lt;T, E&gt; Result0&lt;T, E&gt; {
+    fn map_err&lt;F2, O: FnOnce(E) -&gt; F2&gt;(self, op: O) -&gt; Result0&lt;T, F2&gt; {
+        match self {
+            Ok(x) =&gt; Ok(x),
+            Err(e) =&gt; Err(op(e)),
+        }
+    }
+}
 <span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> Multiple owners need to mutate the same optional value (shared cache, shared state).</p>
-<h3 id="optionrcrefcellt---optional-shared-mutable-value"><a class="header" href="#optionrcrefcellt---optional-shared-mutable-value"><code>Option&lt;Rc&lt;RefCell&lt;T&gt;&gt;&gt;</code> - Optional shared mutable value</a></h3>
+<p><strong>Examples:</strong></p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>struct Config {
-    logger: Option&lt;Rc&lt;RefCell&lt;Logger&gt;&gt;&gt;,
-}
+</span>let success: Result0&lt;i32, &amp;str&gt; = Ok(5);
+success.map_err(|e| e.to_uppercase())  // Ok(5) - unchanged!
 
-let logger = Rc::new(RefCell::new(Logger::new()));
-let config = Config {
-    logger: Some(Rc::clone(&amp;logger)),
-};
+let failure: Result0&lt;i32, &amp;str&gt; = Err("bad");
+failure.map_err(|e| e.to_uppercase())  // Err("BAD")
 
-// ✅ If Some, multiple owners can mutate the logger
-if let Some(ref logger_rc) = config.logger {
-    logger_rc.borrow_mut().log("message");
-}
+// map_err ONLY transforms Err values
+Ok(42).map_err(String::from)  // Still Ok(42), not transformed
 
-// ❌ Can't change from Some to None (fixed at construction)
+// Convert error types
+#[derive(Debug)]
+enum AppError { IoError(String), ParseError(String) }
+
+let result: Result0&lt;i32, &amp;str&gt; = Err("file not found");
+result.map_err(|e| AppError::IoError(e.to_string()))  // Err(AppError::IoError(...))
 <span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> The optional value is determined at construction, but if present, it needs to be shared and mutable.</p>
-<h2 id="todo-future-sections"><a class="header" href="#todo-future-sections">TODO: Future Sections</a></h2>
-<ul>
-<li><input disabled="" type="checkbox"/>
-More combinations with <code>Box</code>, <code>Vec</code>, <code>Arc</code>, <code>Mutex</code></li>
-<li><input disabled="" type="checkbox"/>
-Decision flowchart for choosing the right pattern</li>
-<li><input disabled="" type="checkbox"/>
-Performance implications of different orderings</li>
-<li><input disabled="" type="checkbox"/>
-Exercises for each pattern</li>
-<li><input disabled="" type="checkbox"/>
-Common mistakes and how to fix them</li>
-<li><input disabled="" type="checkbox"/>
-Real-world examples from popular crates</li>
-</ul>
+<h3 id="and_then---chain-fallible-operations"><a class="header" href="#and_then---chain-fallible-operations">and_then - Chain Fallible Operations</a></h3>
+<p>The most important combinator. Chain operations that might fail:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;T, E&gt; Result0&lt;T, E&gt; {
+    fn and_then&lt;U, F: FnOnce(T) -&gt; Result0&lt;U, E&gt;&gt;(self, f: F) -&gt; Result0&lt;U, E&gt; {
+        match self {
+            Ok(x) =&gt; f(x),
+            Err(e) =&gt; Err(e),
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Examples:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn safe_divide(a: i32, b: i32) -&gt; Result0&lt;i32, &amp;'static str&gt; {
+    if b == 0 {
+        Err("division by zero")
+    } else {
+        Ok(a / b)
+    }
+}
+
+// Misconception: use map for Result-returning functions
+let x: Result0&lt;i32, &amp;str&gt; = Ok(10);
+// x.map(|n| safe_divide(n, 2))  // ❌ Result0&lt;Result0&lt;i32, &amp;str&gt;, &amp;str&gt; - nested!
+
+// ✅ Use and_then to avoid nesting
+x.and_then(|n| safe_divide(n, 2))  // Result0&lt;i32, &amp;str&gt; - flattened
+
+// Chain multiple fallible operations
+Ok(20)
+    .and_then(|n| safe_divide(n, 2))   // Ok(10)
+    .and_then(|n| safe_divide(n, 5))   // Ok(2)
+
+// Errors propagate
+Ok(10)
+    .and_then(|n| safe_divide(n, 0))  // Err("division by zero")
+    .and_then(|n| safe_divide(n, 2))  // Still Err, second operation skipped
+<span class="boring">}</span></code></pre></pre>
+<h3 id="ok---convert-to-option"><a class="header" href="#ok---convert-to-option">ok - Convert to Option</a></h3>
+<p>Discard the error, convert to <code>Option</code>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;T, E&gt; Result0&lt;T, E&gt; {
+    fn ok(self) -&gt; Option0&lt;T&gt; {
+        match self {
+            Ok(x) =&gt; Option0::Some(x),
+            Err(_) =&gt; Option0::None,
+        }
+    }
+
+    fn err(self) -&gt; Option0&lt;E&gt; {
+        match self {
+            Ok(_) =&gt; Option0::None,
+            Err(e) =&gt; Option0::Some(e),
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Examples:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// ok() - Extract success value, discard error type
+let success: Result0&lt;i32, &amp;str&gt; = Ok(42);
+success.ok()  // Some(42)
+
+let failure: Result0&lt;i32, &amp;str&gt; = Err("something went wrong");
+failure.ok()  // None - error information lost!
+
+// ✅ Use ok() when you don't care about the error
+let port = parse_port("8080")
+    .ok()
+    .unwrap_or(3000);  // Use default if parse fails, don't care why
+
+// err() - Extract error value, discard success value
+let success: Result0&lt;i32, &amp;str&gt; = Ok(42);
+success.err()  // None
+
+let failure: Result0&lt;i32, &amp;str&gt; = Err("bad input");
+failure.err()  // Some("bad input")
+
+// Use case: Collecting errors
+let results = vec![Ok(1), Err("error1"), Ok(2), Err("error2")];
+let errors: Vec&lt;&amp;str&gt; = results
+    .into_iter()
+    .filter_map(|r| r.err())
+    .collect();
+errors  // ["error1", "error2"]
+<span class="boring">}</span></code></pre></pre>
+<h3 id="as_ref---borrow-the-inner-values"><a class="header" href="#as_ref---borrow-the-inner-values">as_ref - Borrow the Inner Values</a></h3>
+<p>Convert <code>&amp;Result0&lt;T, E&gt;</code> to <code>Result0&lt;&amp;T, &amp;E&gt;</code>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;T, E&gt; Result0&lt;T, E&gt; {
+    fn as_ref(&amp;self) -&gt; Result0&lt;&amp;T, &amp;E&gt; {
+        match self {
+            Ok(x) =&gt; Result0::Ok(x),
+            Err(e) =&gt; Result0::Err(e),
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Examples:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Problem: map consumes the Result
+let result: Result0&lt;String, String&gt; = Ok(String::from("hello"));
+let len = result.map(|s| s.len());
+// println!("{:?}", result);  // ❌ result was moved!
+
+// ✅ Solution: Use as_ref() to borrow
+let result: Result0&lt;String, String&gt; = Ok(String::from("hello"));
+let len = result.as_ref().map(|s| s.len());  // s is &amp;String
+len  // Ok(5)
+println!("{:?}", result);  // ✅ Works! result still valid
+
+// Multiple operations on the same Result
+let data: Result0&lt;String, &amp;str&gt; = Ok(String::from("test"));
+
+let len = data.as_ref().map(|s| s.len());
+let uppercase = data.as_ref().map(|s| s.to_uppercase());
+let is_empty = data.as_ref().map(|s| s.is_empty());
+
+len  // Ok(4)
+uppercase  // Ok("TEST")
+is_empty  // Ok(false)
+// data is still usable!
+
+// Works with errors too
+let failure: Result0&lt;i32, String&gt; = Err(String::from("error"));
+let borrowed = failure.as_ref();  // Result0&lt;&amp;i32, &amp;String&gt;
+borrowed  // Err(&amp;String::from("error"))
+<span class="boring">}</span></code></pre></pre>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../docs/appendix-sized.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../docs/02-result-1-unwrapping.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
+                            <a rel="next prefetch" href="../docs/02-result-3-question-mark.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
 
                         <div style="clear: both"></div>
                     </nav>
@@ -295,10 +395,13 @@ Real-world examples from popular crates</li>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../docs/appendix-sized.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../docs/02-result-1-unwrapping.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
+                    <a rel="next prefetch" href="../docs/02-result-3-question-mark.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
             </nav>
 
         </div>

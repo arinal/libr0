@@ -29,8 +29,6 @@
         <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="../theme/custom.css">
-        <link rel="stylesheet" href="../theme/landing.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -272,7 +270,14 @@ let borrowed = cell.borrow();  // Returns &amp;String (no copy!)
 <p><strong>TL;DR</strong>: Use <code>Cell&lt;T&gt;</code> for small <code>Copy</code> types. Use <code>RefCell&lt;T&gt;</code> for everything else.</p>
 <h2 id="how-refcell-tracks-borrows"><a class="header" href="#how-refcell-tracks-borrows">How RefCell Tracks Borrows</a></h2>
 <p>RefCell uses a simple counter (<code>borrow_count</code>) to track the borrow state:</p>
-<div style='width:100%; height:112px;'><style type="text/css">svg { width: 100% !important; }</style><svg xmlns="http://www.w3.org/2000/svg" width="424" height="112" class="svgbob"><style>.svgbob line, .svgbob path, .svgbob circle, .svgbob rect, .svgbob polygon {  stroke: var(--fg);  stroke-width: 2;  stroke-opacity: 1;  fill-opacity: 1;  stroke-linecap: round;  stroke-linejoin: miter;}.svgbob text {  white-space: pre;  fill: var(--fg);  font-family: Iosevka Fixed, monospace;  font-size: 14px;}.svgbob rect.backdrop {  stroke: none;  fill: transparent;}.svgbob .broken {  stroke-dasharray: 8;}.svgbob .filled {  fill: black;}.svgbob .bg_filled {  fill: transparent;  stroke-width: 1;}.svgbob .nofill {  fill: transparent;}.svgbob .end_marked_arrow {  marker-end: url(#arrow);}.svgbob .start_marked_arrow {  marker-start: url(#arrow);}.svgbob .end_marked_diamond {  marker-end: url(#diamond);}.svgbob .start_marked_diamond {  marker-start: url(#diamond);}.svgbob .end_marked_circle {  marker-end: url(#circle);}.svgbob .start_marked_circle {  marker-start: url(#circle);}.svgbob .end_marked_open_circle {  marker-end: url(#open_circle);}.svgbob .start_marked_open_circle {  marker-start: url(#open_circle);}.svgbob .end_marked_big_open_circle {  marker-end: url(#big_open_circle);}.svgbob .start_marked_big_open_circle {  marker-start: url(#big_open_circle);}</style><defs><marker id="arrow" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,0 0,4 4,2 0,0"></polygon></marker><marker id="diamond" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,2 2,0 4,2 2,4 0,2"></polygon></marker><marker id="circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="filled"></circle></marker><marker id="open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="bg_filled"></circle></marker><marker id="big_open_circle" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="3" class="bg_filled"></circle></marker></defs><rect class="backdrop" x="0" y="0" width="424" height="112"></rect><polygon points="248,52 240,56 248,60" class="filled"></polygon><line x1="248" y1="56" x2="312" y2="56" class="solid"></line><text x="322" y="60" >The</text><text x="354" y="60" >counter!</text><text x="18" y="28" >RefCell&lt;T&gt;</text><text x="18" y="60" >borrow_count: Cell&lt;isize&gt;</text><text x="18" y="76" >value: UnsafeCell&lt;T&gt;</text><text x="322" y="76" > 0 = not borrowed</text><text x="322" y="92" >&gt;0 = # of immutable borrows</text><text x="322" y="108" >-1 = mutably borrowed</text><g><line x1="4" y1="8" x2="260" y2="8" class="solid"></line><line x1="4" y1="8" x2="4" y2="88" class="solid"></line><line x1="260" y1="8" x2="260" y2="88" class="solid"></line><line x1="4" y1="40" x2="260" y2="40" class="solid"></line><line x1="4" y1="88" x2="260" y2="88" class="solid"></line></g></svg></div>
+<pre><code class="language-bob">+-------------------------------+
+| "RefCell&lt;T&gt;"                  |
++-------------------------------+
+| "borrow_count: Cell&lt;isize&gt;" &lt;-+------ The counter!
+| "value: UnsafeCell&lt;T&gt;"        |       " 0 = not borrowed"                                                  
++-------------------------------+       "&gt;0 = # of immutable borrows"
+                                        "-1 = mutably borrowed"
+</code></pre>
 <p>How <code>borrow_count</code> changes:</p>
 <ul>
 <li><code>borrow()</code> checks if <code>borrow_count &gt;= 0</code>, then increments it</li>
@@ -685,18 +690,16 @@ for i in 0..5 {
 <h2 id="exercises"><a class="header" href="#exercises">Exercises</a></h2>
 <p>Practice using RefCell with hands-on exercises in <a href="../examples/06_refcell.rs">06_refcell.rs</a>.</p>
 <p><strong>Complete solutions:</strong> Switch to the <code>answers</code> branch with <code>git checkout answers</code> to see completed exercises</p>
-<h2 id="next-chapter"><a class="header" href="#next-chapter">Next Chapter</a></h2>
-<p><a href="./07-rc.html">Rc</a> - Reference counting for shared ownership.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../docs/05-cell.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../docs/05-cell-2-practice.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../docs/07-rc.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../docs/07-rc-0-intro.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -706,11 +709,11 @@ for i in 0..5 {
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../docs/05-cell.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../docs/05-cell-2-practice.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../docs/07-rc.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../docs/07-rc-0-intro.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

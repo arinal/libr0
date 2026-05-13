@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Nested Types - libr0: Building Rust&#x27;s Standard Library from Scratch</title>
+        <title>Unwrapping &amp; Defaults - libr0: Building Rust&#x27;s Standard Library from Scratch</title>
 
 
         <!-- Custom HTML head -->
@@ -178,116 +178,182 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="appendix-nested-types---understanding-order-and-flexibility"><a class="header" href="#appendix-nested-types---understanding-order-and-flexibility">Appendix: Nested Types - Understanding Order and Flexibility</a></h1>
-<p>When combining smart pointers like <code>Rc</code>, interior mutability types like <code>RefCell</code>, and containers like <code>Option</code>, the order matters! This appendix explores the different combinations and what they mean.</p>
+                        <h1 id="unwrapping--defaults"><a class="header" href="#unwrapping--defaults">Unwrapping &amp; Defaults</a></h1>
+<p>Let's build the most useful methods step by step.</p>
+<h2 id="is_some-and-is_none"><a class="header" href="#is_some-and-is_none">is_some and is_none</a></h2>
+<p>The simplest methods - just check which variant we have:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;T&gt; Option0&lt;T&gt; {
+    fn is_some(&amp;self) -&gt; bool {
+        match self {
+            Some(_) =&gt; true,
+            None =&gt; false,
+        }
+    }
+
+    fn is_none(&amp;self) -&gt; bool {
+        !self.is_some()
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Examples:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let x: Option0&lt;u32&gt; = Some(42);
+x.is_some()  // true
+x.is_none()  // false
+
+let y: Option0&lt;u32&gt; = None;
+y.is_none()  // true
+y.is_some()  // false
+
+// Useful for conditional checks
+if x.is_some() {
+    println!("x has a value");
+}
+
+// Or for early returns
+fn process(opt: Option0&lt;i32&gt;) -&gt; Result&lt;(), String&gt; {
+    if opt.is_none() {
+        return Err("No value provided".to_string());
+    }
+    // Continue processing...
+    Ok(())
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="unwrap---the-dangerous-one"><a class="header" href="#unwrap---the-dangerous-one">unwrap - The Dangerous One</a></h2>
+<p>Extract the value, panic if <code>None</code>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;T&gt; Option0&lt;T&gt; {
+    fn unwrap(self) -&gt; T {
+        match self {
+            Some(val) =&gt; val,
+            None =&gt; panic!("called unwrap on a None value"),
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
 <blockquote>
-<p><strong>Note:</strong> This is a placeholder for future completion. The content below covers basic patterns, but will be expanded with more cases and exercises.</p>
+<p><strong>Warning</strong>: Only use <code>unwrap()</code> when you're 100% sure it's <code>Some</code>, or in examples/tests.</p>
 </blockquote>
-<h2 id="the-order-matters"><a class="header" href="#the-order-matters">The Order Matters</a></h2>
-<p>Each wrapper in a nested type determines what operations are possible on what's inside. <strong>Read from outside-in</strong> to understand capabilities:</p>
-<ul>
-<li><code>RefCell&lt;...&gt;</code> - Can mutate what's inside</li>
-<li><code>Rc&lt;...&gt;</code> - Can share (multiple owners)</li>
-<li><code>Option&lt;...&gt;</code> - Might not be present (fixed at construction)</li>
-</ul>
-<h2 id="common-patterns"><a class="header" href="#common-patterns">Common Patterns</a></h2>
-<h3 id="refcelloptionrct---can-addremovechange-the-link"><a class="header" href="#refcelloptionrct---can-addremovechange-the-link"><code>RefCell&lt;Option&lt;Rc&lt;T&gt;&gt;&gt;</code> - Can add/remove/change the link</a></h3>
+<p><strong>Examples:</strong></p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>struct Node {
-    next: RefCell&lt;Option&lt;Rc&lt;Node&gt;&gt;&gt;,
+</span>let x = Some("value");
+x.unwrap()  // "value"
+
+// This will panic! Avoid in production code
+let y: Option0&lt;&amp;str&gt; = None;
+// y.unwrap();  // ❌ Panics: "called unwrap on a None value"
+
+// Safe uses of unwrap:
+// 1. In tests
+#[test]
+fn test_parse() {
+    let result = parse_config("valid_config.json");
+    assert_eq!(result.unwrap().port, 8080);  // OK in tests
 }
 
-let node = Rc::new(Node { next: RefCell::new(None) });
+// 2. When you've already checked
+let opt = Some(42);
+if opt.is_some() {
+    let value = opt.unwrap();  // Safe, but pattern matching is cleaner
+}
 
-// ✅ Can add a link (None → Some)
-*node.next.borrow_mut() = Some(Rc::clone(&amp;other_node));
-
-// ✅ Can change which node (Some(a) → Some(b))
-*node.next.borrow_mut() = Some(Rc::clone(&amp;another_node));
-
-// ✅ Can remove the link (Some → None)
-*node.next.borrow_mut() = None;
+// 3. When failure is a programming error
+let config = load_config().unwrap();  // OK if missing config means broken setup
 <span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> You need full flexibility - add, remove, or change links.</p>
-<h3 id="optionrefcellrct---can-change-the-link-but-cant-addremove"><a class="header" href="#optionrefcellrct---can-change-the-link-but-cant-addremove"><code>Option&lt;RefCell&lt;Rc&lt;T&gt;&gt;&gt;</code> - Can change the link, but can't add/remove</a></h3>
+<h2 id="unwrap_or---safe-default"><a class="header" href="#unwrap_or---safe-default">unwrap_or - Safe Default</a></h2>
+<p>Provide a fallback value:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>struct Node {
-    next: Option&lt;RefCell&lt;Rc&lt;Node&gt;&gt;&gt;,
+</span>impl&lt;T&gt; Option0&lt;T&gt; {
+    fn unwrap_or(self, default: T) -&gt; T {
+        match self {
+            Some(val) =&gt; val,
+            None =&gt; default,
+        }
+    }
 }
-
-let node_with_link = Rc::new(Node {
-    next: Some(RefCell::new(Rc::clone(&amp;other_node))),
-});
-
-let node_without_link = Rc::new(Node { next: None });
-
-// ✅ If Some, can change which node
-if let Some(ref cell) = &amp;node_with_link.next {
-    *cell.borrow_mut() = Rc::clone(&amp;another_node);
-}
-
-// ❌ Can't add a link to node_without_link (it's None forever)
-// ❌ Can't remove the link from node_with_link (it's Some forever)
 <span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> The presence/absence of the link is determined at construction and never changes, but you need to change which <code>Rc</code> it points to.</p>
-<h3 id="rcrefcelloptiont---multiple-owners-of-a-changeable-optional-value"><a class="header" href="#rcrefcelloptiont---multiple-owners-of-a-changeable-optional-value"><code>Rc&lt;RefCell&lt;Option&lt;T&gt;&gt;&gt;</code> - Multiple owners of a changeable optional value</a></h3>
+<p><strong>Examples:</strong></p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>let cache: Rc&lt;RefCell&lt;Option&lt;String&gt;&gt;&gt; = Rc::new(RefCell::new(None));
-let cache1 = Rc::clone(&amp;cache);
-let cache2 = Rc::clone(&amp;cache);
+</span>// Basic usage
+let x = Some(42);
+x.unwrap_or(0)  // 42
 
-// Multiple owners can all change the value
-*cache1.borrow_mut() = Some(String::from("cached"));
-*cache2.borrow_mut() = None;  // Clear the cache
+let y: Option0&lt;i32&gt; = None;
+y.unwrap_or(0)  // 0
+
+// User input with fallback
+fn get_count(user_input: Option0&lt;i32&gt;) -&gt; i32 {
+    user_input.unwrap_or(10)  // Default to 10 if no input
+}
+
+get_count(Some(5))  // 5
+get_count(None)     // 10
 <span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> Multiple owners need to mutate the same optional value (shared cache, shared state).</p>
-<h3 id="optionrcrefcellt---optional-shared-mutable-value"><a class="header" href="#optionrcrefcellt---optional-shared-mutable-value"><code>Option&lt;Rc&lt;RefCell&lt;T&gt;&gt;&gt;</code> - Optional shared mutable value</a></h3>
+<h2 id="unwrap_or_else---lazy-default"><a class="header" href="#unwrap_or_else---lazy-default">unwrap_or_else - Lazy Default</a></h2>
+<p>Sometimes computing the default is expensive. Only compute it if needed:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>struct Config {
-    logger: Option&lt;Rc&lt;RefCell&lt;Logger&gt;&gt;&gt;,
+</span>impl&lt;T&gt; Option0&lt;T&gt; {
+    fn unwrap_or_else&lt;F: FnOnce() -&gt; T&gt;(self, f: F) -&gt; T {
+        match self {
+            Some(val) =&gt; val,
+            None =&gt; f(),
+        }
+    }
 }
-
-let logger = Rc::new(RefCell::new(Logger::new()));
-let config = Config {
-    logger: Some(Rc::clone(&amp;logger)),
-};
-
-// ✅ If Some, multiple owners can mutate the logger
-if let Some(ref logger_rc) = config.logger {
-    logger_rc.borrow_mut().log("message");
-}
-
-// ❌ Can't change from Some to None (fixed at construction)
 <span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> The optional value is determined at construction, but if present, it needs to be shared and mutable.</p>
-<h2 id="todo-future-sections"><a class="header" href="#todo-future-sections">TODO: Future Sections</a></h2>
-<ul>
-<li><input disabled="" type="checkbox"/>
-More combinations with <code>Box</code>, <code>Vec</code>, <code>Arc</code>, <code>Mutex</code></li>
-<li><input disabled="" type="checkbox"/>
-Decision flowchart for choosing the right pattern</li>
-<li><input disabled="" type="checkbox"/>
-Performance implications of different orderings</li>
-<li><input disabled="" type="checkbox"/>
-Exercises for each pattern</li>
-<li><input disabled="" type="checkbox"/>
-Common mistakes and how to fix them</li>
-<li><input disabled="" type="checkbox"/>
-Real-world examples from popular crates</li>
-</ul>
+<p><strong>Examples:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Basic usage
+let x = Some(42);
+x.unwrap_or_else(|| 0)  // 42
+
+let y: Option0&lt;i32&gt; = None;
+y.unwrap_or_else(|| 0)  // 0
+
+// Avoid expensive computation when Some
+fn expensive_computation() -&gt; String {
+    println!("Computing...");  // This won't print if Some
+    String::from("default")
+}
+
+let some_value = Some(String::from("existing"));
+let result = some_value.unwrap_or_else(|| expensive_computation());
+// "Computing..." is NOT printed because we have Some
+result  // "existing"
+
+let none_value: Option0&lt;String&gt; = None;
+let result = none_value.unwrap_or_else(|| expensive_computation());
+// "Computing..." IS printed because we have None
+result  // "default"
+
+// Database lookup as fallback
+fn find_in_cache(key: &amp;str) -&gt; Option0&lt;String&gt; { None }
+fn fetch_from_db(key: &amp;str) -&gt; String { String::from("db_value") }
+
+let value = find_in_cache("user:123")
+    .unwrap_or_else(|| fetch_from_db("user:123"));  // DB query only if cache miss
+<span class="boring">}</span></code></pre></pre>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../docs/appendix-sized.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../docs/01-option-0-intro.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
+                            <a rel="next prefetch" href="../docs/01-option-2-transforming.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
 
                         <div style="clear: both"></div>
                     </nav>
@@ -295,10 +361,13 @@ Real-world examples from popular crates</li>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../docs/appendix-sized.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../docs/01-option-0-intro.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
+                    <a rel="next prefetch" href="../docs/01-option-2-transforming.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
             </nav>
 
         </div>

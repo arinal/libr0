@@ -1,0 +1,542 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Visualizing Types - libr0: Building Rust&#x27;s Standard Library from Scratch</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">libr0: Building Rust&#x27;s Standard Library from Scratch</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/arinal/libr0" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="visualizing-types"><a class="header" href="#visualizing-types">Visualizing Types</a></h1>
+<p>Let's see where different types memory layout:</p>
+<h3 id="simple-types-copy"><a class="header" href="#simple-types-copy">Simple Types (Copy)</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let x: i32 = 42;
+let y: bool = true;
+let z: f64 = 3.14;
+<span class="boring">}</span></code></pre></pre>
+<pre><code class="language-bob">+--------+----------+----------+
+|"42(4B)"|"true(1B)"|"3.14(8B)"|
++--------+----------+----------+
+</code></pre>
+<h3 id="arrays-fixed-size"><a class="header" href="#arrays-fixed-size">Arrays (Fixed Size)</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let arr: [i32; 5] = [1, 2, 3, 4, 5];
+<span class="boring">}</span></code></pre></pre>
+<pre><code class="language-bob">+---+---+---+---+---+
+| 1 | 2 | 3 | 4 | 5 | Each element has 4 bytes
++---+---+---+---+---+
+
+</code></pre>
+<h3 id="vec"><a class="header" href="#vec">Vec</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let v = vec![1, 2, 3];
+<span class="boring">}</span></code></pre></pre>
+<pre><code class="language-bob">     STACK                   HEAP
++-------------+
+|"v: Vec&lt;i32&gt;"|      +---+---+---+---+---+
+|   "ptr:" *--+-----&gt;| 1 | 2 | 3 |   |   |
+|   "len:" 3  |      +---+---+---+---+---+
+|   "cap:" 5  |          20 bytes
++-------------+
+    24 bytes
+</code></pre>
+<p>Notice that <code>ptr</code>, <code>len</code>, and <code>cap</code> are all <code>usize</code>-sized — that's 8 bytes each
+on a 64-bit system, giving us 3 × 8 = <strong>24 bytes</strong> on the stack.</p>
+<p><code>usize</code> is the pointer-sized unsigned integer: 8 bytes on 64-bit, 4 bytes on
+32-bit. It matches the platform's address space.</p>
+<p>For <code>ptr</code>, this is obvious — a pointer must be able to address any memory
+location. But why are <code>len</code> and <code>cap</code> also <code>usize</code>?</p>
+<ul>
+<li>
+<p><strong>They count bytes in memory.</strong> The maximum number of bytes you can allocate
+is bounded by the address space. If <code>len</code> were <code>u32</code>, a <code>Vec</code> couldn't hold
+more than ~4 GB, even on a machine with terabytes of RAM. If it were <code>u64</code>,
+you'd waste 4 bytes on every <code>Vec</code> on 32-bit platforms for a size that could
+never be used. <code>usize</code> scales correctly to whatever platform you're on.</p>
+</li>
+<li>
+<p><strong>Rust uses <code>usize</code> for all indexing.</strong> <code>v[i]</code> expects <code>i: usize</code>. If <code>len</code>
+were a different type, every bounds check and slice operation would need a
+cast.</p>
+</li>
+</ul>
+<div class="table-wrapper"><table><thead><tr><th>Platform</th><th><code>usize</code></th><th>Vec/String stack size</th></tr></thead><tbody>
+<tr><td>64-bit</td><td>8 bytes</td><td>3 × 8 = <strong>24 bytes</strong></td></tr>
+<tr><td>32-bit</td><td>4 bytes</td><td>3 × 4 = <strong>12 bytes</strong></td></tr>
+</tbody></table>
+</div>
+<h3 id="string"><a class="header" href="#string">String</a></h3>
+<p>Remember, a <code>String</code> is basically a <code>Vec</code> of <code>u8</code>.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let s = String::from("café");
+<span class="boring">}</span></code></pre></pre>
+<pre><code class="language-bob">   STACK                          HEAP
++-----------+
+|"s: String"|      +----+----+----+----+----+
+|  "ptr:"*--+-----&gt;| 63 | 61 | 66 | C3 | A9 |
+|  "len:"5  |      +----+----+----+----+----+
+|  "cap:"5  |        c    a    f   "é (2 bytes)"
++-----------+
+    24 bytes           "5 bytes, but only 4 chars!"
+</code></pre>
+<p><code>String</code> stores UTF-8 encoded bytes, not characters. The <code>é</code> character needs
+2 bytes (<code>0xC3 0xA9</code>), so <code>s.len() == 5</code> (bytes) while <code>s.chars().count() == 4</code>
+(characters).</p>
+<h3 id="string-literal-str"><a class="header" href="#string-literal-str">String Literal (<code>&amp;str</code>)</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let s = "café";
+<span class="boring">}</span></code></pre></pre>
+<pre><code class="language-bob">    STACK                     DATA segment
++------------+
+| "s: &amp;str"  |           +----+----+----+----+----+
+|  "ptr:" *--+----------&gt;| 63 | 61 | 66 | C3 | A9 |
+|  "len:" 5  |           +----+----+----+----+----+
++------------+             c    a    f   "é (2 bytes)"
+   16 bytes
+</code></pre>
+<p>A <code>&amp;str</code> is a <strong>fat pointer</strong>: just a pointer and a length, no capacity. It's a
+read-only view into bytes that already exist somewhere — in this case, the DATA
+segment baked into the binary at compile time.</p>
+<div class="table-wrapper"><table><thead><tr><th></th><th><code>String</code></th><th><code>&amp;str</code></th></tr></thead><tbody>
+<tr><td>Stack size</td><td>24 bytes (ptr + len + cap)</td><td>16 bytes (ptr + len)</td></tr>
+<tr><td>Heap allocation</td><td>Yes</td><td>No</td></tr>
+<tr><td>Growable</td><td>Yes (<code>push_str</code>, <code>push</code>)</td><td>No (read-only)</td></tr>
+<tr><td>Owns data</td><td>Yes</td><td>No (borrows)</td></tr>
+</tbody></table>
+</div>
+<h3 id="box"><a class="header" href="#box">Box</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let b = Box::new(42);
+<span class="boring">}</span></code></pre></pre>
+<pre><code class="language-bob">    STACK               HEAP
++---------------+
+| "b: Box&lt;i32&gt;" |       +----+
+|   "ptr:" *----+------&gt;| 42 |
++---------------+       +----+
+    8 bytes              4 bytes
+
+</code></pre>
+<h3 id="nested-types"><a class="header" href="#nested-types">Nested Types</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let v: Vec&lt;String&gt; = vec![
+    String::from("hello"),
+    String::from("world"),
+];
+<span class="boring">}</span></code></pre></pre>
+<pre><code class="language-bob">STACK                                    HEAP
++-------------------+            +-------------+
+| "v: Vec&lt;String&gt;"  |            | "s: String" |      +---+---+---+---+---+
+|   "ptr:" *--------+-----------&gt;|   "ptr:" *--+-----&gt;| h | e | l | l | o |
+|   "len:" 2        |            |   "len:" 5  |      +---+---+---+---+---+
+|   "cap:" 2        |            |   "cap:" 5  |
++-------------------+            +-------------+
+                                 | "s: String" |      +---+---+---+---+---+
+                                 |   "ptr:" *--+-----&gt;| w | o | r | l | d |
+                                 |   "len:" 5  |      +---+---+---+---+---+
+                                 |   "cap:" 5  |
+                                 +-------------+
+</code></pre>
+<ul>
+<li>Stack: 24 bytes (Vec metadata)</li>
+<li>Heap: 48 bytes (2 × String metadata: 2 × 24 bytes) + 10 bytes (string data)</li>
+<li>Total heap: 58 bytes</li>
+</ul>
+<p><strong>Three levels of indirection!</strong></p>
+<ol>
+<li><code>v</code> points to array of <code>String</code>s</li>
+<li>Each <code>String</code> points to its character data</li>
+<li>All on the heap</li>
+</ol>
+<p>Compare this with an array of string literals:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let arr: [&amp;str; 2] = ["hello", "world"];
+<span class="boring">}</span></code></pre></pre>
+<pre><code class="language-bob">STACK                             DATA segment
++------------------+
+| "arr: [&amp;str; 2]" |
++------------------+          +---+---+---+---+---+
+|   "ptr:" *-------+---------&gt;| h | e | l | l | o |
+|   "len:" 5       |          +---+---+---+---+---+
++------------------+
+|   "ptr:" *-------+-----+    +---+---+---+---+---+
+|   "len:" 5       |     +---&gt;| w | o | r | l | d |
++------------------+          +---+---+---+---+---+
+    32 bytes
+</code></pre>
+<ul>
+<li>Stack: 32 bytes (2 × <code>&amp;str</code>, each is a fat pointer: 8-byte ptr + 8-byte len)</li>
+<li>Heap: <strong>0 bytes!</strong> String literals live in the DATA segment, baked into the
+binary at compile time</li>
+<li>No <code>cap</code> field — <code>&amp;str</code> is a read-only view, it can't grow</li>
+</ul>
+<p>This is why <code>&amp;str</code> is so cheap compared to <code>String</code>: no heap allocation, no
+capacity tracking, just a pointer and a length.</p>
+<h2 id="common-misconceptions"><a class="header" href="#common-misconceptions">Common Misconceptions</a></h2>
+<h3 id="misconception-1-box-makes-things-bigger"><a class="header" href="#misconception-1-box-makes-things-bigger">Misconception #1: "Box makes things bigger"</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let x = 42;           // 4 bytes
+let b = Box::new(42); // How many bytes?
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Answer:</strong> <code>b</code> is 8 bytes (just a pointer), but total memory usage is 12 bytes (8 + 4).</p>
+<p><strong>However:</strong> Boxing can actually <strong>save stack space</strong> for large types:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let huge = [0u8; 1_000_000];        // 1 MB on stack! Dangerous!
+let boxed = Box::new([0u8; 1_000_000]); // 8 bytes on stack, 1 MB on heap
+<span class="boring">}</span></code></pre></pre>
+<h3 id="misconception-2-all-heap-allocations-are-slow"><a class="header" href="#misconception-2-all-heap-allocations-are-slow">Misconception #2: "All heap allocations are slow"</a></h3>
+<p>Not all heap operations allocate:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let mut v = Vec::with_capacity(100);  // ✅ One allocation
+
+for i in 0..50 {
+    v.push(i);  // ✅ No allocation - within capacity
+}
+
+v.push(51);  // ✅ Still no allocation
+v.push(52);  // ✅ Still no allocation
+// ... up to 100 elements, still no allocation
+
+v.push(101);  // ❌ NOW we reallocate (capacity exceeded)
+<span class="boring">}</span></code></pre></pre>
+<p>Pre-allocating capacity is a common optimization!</p>
+<h2 id="performance-implications"><a class="header" href="#performance-implications">Performance Implications</a></h2>
+<h3 id="stack-operations-fast"><a class="header" href="#stack-operations-fast">Stack Operations (Fast)</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn stack_test() {
+    let x = 42;        // ~1 CPU cycle (write to pre-allocated stack slot)
+    let y = x;         // ~1 CPU cycle (copy 4 bytes)
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Cost:</strong> ~3 CPU cycles</p>
+<h3 id="heap-operations-slow"><a class="header" href="#heap-operations-slow">Heap Operations (Slow)</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn heap_test() {
+    let x = Box::new(42);  // ~100 CPU cycles (call allocator)
+    let y = x;             // ~1 CPU cycle (copy 8-byte pointer)
+}  // ~100 CPU cycles (call deallocator)
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Cost:</strong> ~200 CPU cycles</p>
+<p><strong>100x slower!</strong> But remember:</p>
+<ul>
+<li>This is microseconds, not seconds</li>
+<li>Sometimes you need the heap (dynamic size, large data, shared ownership)</li>
+<li>The real cost is in <strong>many allocations</strong>, not just one</li>
+</ul>
+<h3 id="optimization-tips"><a class="header" href="#optimization-tips">Optimization Tips</a></h3>
+<ol>
+<li><strong>Pre-allocate collections:</strong></li>
+</ol>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Bad: multiple allocations
+let mut v = Vec::new();
+for i in 0..1000 { v.push(i); }
+
+// Good: one allocation
+let mut v = Vec::with_capacity(1000);
+for i in 0..1000 { v.push(i); }
+<span class="boring">}</span></code></pre></pre>
+<ol start="2">
+<li><strong>Use <code>&amp;str</code> instead of <code>String</code> when possible:</strong></li>
+</ol>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Bad: allocates on heap
+fn greet(name: String) {
+    println!("Hello, {}", name);
+}
+
+// Good: no allocation
+fn greet(name: &amp;str) {
+    println!("Hello, {}", name);
+}
+<span class="boring">}</span></code></pre></pre>
+<ol start="3">
+<li><strong>Use <code>[T; N]</code> instead of <code>Vec&lt;T&gt;</code> for fixed-size data:</strong></li>
+</ol>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Bad: heap allocation
+let v = vec![0; 10];
+
+// Good: stack allocation
+let arr = [0; 10];
+<span class="boring">}</span></code></pre></pre>
+<ol start="4">
+<li><strong>Avoid cloning when borrowing works:</strong></li>
+</ol>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Bad: clones the string (heap allocation)
+fn process(s: String) {
+    println!("{}", s);
+}
+let s = String::from("hello");
+process(s.clone());
+
+// Good: borrows (no allocation)
+fn process(s: &amp;str) {
+    println!("{}", s);
+}
+process(&amp;s);
+<span class="boring">}</span></code></pre></pre>
+<h2 id="key-takeaways"><a class="header" href="#key-takeaways">Key Takeaways</a></h2>
+<ol>
+<li><strong>Stack is automatic</strong> - variables disappear when out of scope</li>
+<li><strong>Heap is manual</strong> - you allocate/deallocate (Rust automates via <code>Drop</code>)</li>
+<li><strong>Stack is fast</strong> - just move a pointer</li>
+<li><strong>Heap is flexible</strong> - dynamic size, outlives scope</li>
+<li><strong>String/Vec/Box are smart pointers</strong> - metadata on stack, data on heap</li>
+<li><strong>Static data lives forever</strong> - loaded at program start</li>
+<li><strong>Use stack by default</strong> - only heap allocate when necessary</li>
+<li><strong>Pre-allocate when possible</strong> - avoid repeated reallocations</li>
+</ol>
+<h2 id="further-reading"><a class="header" href="#further-reading">Further Reading</a></h2>
+<ul>
+<li><a href="https://cheats.rs/#memory-layout">cheats.rs/#memory-layout</a> - Visual memory layouts for Rust types</li>
+<li><strong>The Rustonomicon</strong>: Memory layout and representation</li>
+<li><strong>Rust Performance Book</strong>: Memory allocation strategies</li>
+<li><strong>Operating Systems textbooks</strong>: Virtual memory, process address space</li>
+</ul>
+<hr />
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../docs/appendix-memory-layout-2-pointers.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../docs/appendix-sized.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../docs/appendix-memory-layout-2-pointers.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../docs/appendix-sized.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../mermaid.min.js"></script>
+        <script src="../mermaid-init.js"></script>
+        <script src="../theme/landing.js"></script>
+
+
+
+    </div>
+    </body>
+</html>

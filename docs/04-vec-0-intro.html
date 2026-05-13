@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Nested Types - libr0: Building Rust&#x27;s Standard Library from Scratch</title>
+        <title>Vec - libr0: Building Rust&#x27;s Standard Library from Scratch</title>
 
 
         <!-- Custom HTML head -->
@@ -178,116 +178,268 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="appendix-nested-types---understanding-order-and-flexibility"><a class="header" href="#appendix-nested-types---understanding-order-and-flexibility">Appendix: Nested Types - Understanding Order and Flexibility</a></h1>
-<p>When combining smart pointers like <code>Rc</code>, interior mutability types like <code>RefCell</code>, and containers like <code>Option</code>, the order matters! This appendix explores the different combinations and what they mean.</p>
-<blockquote>
-<p><strong>Note:</strong> This is a placeholder for future completion. The content below covers basic patterns, but will be expanded with more cases and exercises.</p>
-</blockquote>
-<h2 id="the-order-matters"><a class="header" href="#the-order-matters">The Order Matters</a></h2>
-<p>Each wrapper in a nested type determines what operations are possible on what's inside. <strong>Read from outside-in</strong> to understand capabilities:</p>
+                        <h1 id="chapter-4-vec---growable-arrays"><a class="header" href="#chapter-4-vec---growable-arrays">Chapter 4: Vec - Growable Arrays</a></h1>
+<h2 id="the-problem-fixed-size-arrays"><a class="header" href="#the-problem-fixed-size-arrays">The Problem: Fixed-Size Arrays</a></h2>
+<p>Arrays in Rust have a fixed size known at compile time:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let arr: [i32; 3] = [1, 2, 3];
+// Can't grow or shrink
+<span class="boring">}</span></code></pre></pre>
+<p>What if we need a collection that can grow dynamically at runtime?</p>
+<h2 id="vec-a-growable-array"><a class="header" href="#vec-a-growable-array">Vec: A Growable Array</a></h2>
+<p><code>Vec&lt;T&gt;</code> is Rust's dynamically-sized array type. Unlike <code>Box&lt;T&gt;</code> which allocates a single value on the heap, <code>Vec&lt;T&gt;</code> allocates a <em>contiguous block</em> of memory that can grow or shrink.</p>
+<h2 id="the-three-fields-of-vec"><a class="header" href="#the-three-fields-of-vec">The Three Fields of Vec</a></h2>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct Vec&lt;T&gt; {
+    ptr: *mut T,      // Pointer to heap-allocated array
+    len: usize,       // Number of elements currently in use
+    capacity: usize,  // Total allocated space (in elements)
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Key insight:</strong> <code>len &lt;= capacity</code> always.</p>
+<pre><code>Heap memory:
+[1, 2, 3, ?, ?, ?]
+ ^           ^
+ |           |
+ len = 3     capacity = 6
+</code></pre>
+<h2 id="why-not-use-box"><a class="header" href="#why-not-use-box">Why Not Use Box?</a></h2>
+<p><code>Box&lt;T&gt;</code> allocates space for <em>exactly one</em> <code>T</code>. To grow, we'd need to:</p>
+<ol>
+<li>Allocate a new <code>Box</code></li>
+<li>Copy all elements</li>
+<li>Deallocate the old <code>Box</code></li>
+</ol>
+<p>Instead, <code>Vec</code> uses the allocator APIs directly (<code>alloc</code>, <code>realloc</code>, <code>dealloc</code>) to:</p>
 <ul>
-<li><code>RefCell&lt;...&gt;</code> - Can mutate what's inside</li>
-<li><code>Rc&lt;...&gt;</code> - Can share (multiple owners)</li>
-<li><code>Option&lt;...&gt;</code> - Might not be present (fixed at construction)</li>
+<li>Allocate more space than immediately needed (capacity &gt; len)</li>
+<li>Grow in-place when possible</li>
+<li>Only reallocate when we run out of capacity</li>
 </ul>
-<h2 id="common-patterns"><a class="header" href="#common-patterns">Common Patterns</a></h2>
-<h3 id="refcelloptionrct---can-addremovechange-the-link"><a class="header" href="#refcelloptionrct---can-addremovechange-the-link"><code>RefCell&lt;Option&lt;Rc&lt;T&gt;&gt;&gt;</code> - Can add/remove/change the link</a></h3>
+<h2 id="implementing-vec"><a class="header" href="#implementing-vec">Implementing Vec</a></h2>
+<h3 id="basic-structure"><a class="header" href="#basic-structure">Basic Structure</a></h3>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>struct Node {
-    next: RefCell&lt;Option&lt;Rc&lt;Node&gt;&gt;&gt;,
+</span>use std::alloc::{alloc, dealloc, realloc, Layout};
+use std::ptr;
+
+pub struct Vec0&lt;T&gt; {
+    ptr: *mut T,
+    len: usize,
+    capacity: usize,
 }
 
-let node = Rc::new(Node { next: RefCell::new(None) });
+impl&lt;T&gt; Vec0&lt;T&gt; {
+    pub fn new() -&gt; Vec0&lt;T&gt; {
+        Vec0 {
+            ptr: std::ptr::NonNull::dangling().as_ptr(),
+            len: 0,
+            capacity: 0,
+        }
+    }
 
-// ✅ Can add a link (None → Some)
-*node.next.borrow_mut() = Some(Rc::clone(&amp;other_node));
+    pub fn len(&amp;self) -&gt; usize {
+        self.len
+    }
 
-// ✅ Can change which node (Some(a) → Some(b))
-*node.next.borrow_mut() = Some(Rc::clone(&amp;another_node));
+    pub fn capacity(&amp;self) -&gt; usize {
+        self.capacity
+    }
 
-// ✅ Can remove the link (Some → None)
-*node.next.borrow_mut() = None;
+    pub fn is_empty(&amp;self) -&gt; bool {
+        self.len == 0
+    }
+}
 <span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> You need full flexibility - add, remove, or change links.</p>
-<h3 id="optionrefcellrct---can-change-the-link-but-cant-addremove"><a class="header" href="#optionrefcellrct---can-change-the-link-but-cant-addremove"><code>Option&lt;RefCell&lt;Rc&lt;T&gt;&gt;&gt;</code> - Can change the link, but can't add/remove</a></h3>
+<h3 id="push---adding-elements"><a class="header" href="#push---adding-elements">Push - Adding Elements</a></h3>
+<p>When <code>len == capacity</code>, we need to grow:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>struct Node {
-    next: Option&lt;RefCell&lt;Rc&lt;Node&gt;&gt;&gt;,
+</span>impl&lt;T&gt; Vec0&lt;T&gt; {
+    pub fn push(&amp;mut self, value: T) {
+        if self.len == self.capacity {
+            self.grow();
+        }
+
+        unsafe {
+            // Write to the next available slot
+            ptr::write(self.ptr.add(self.len), value);
+        }
+        self.len += 1;
+    }
+
+    fn grow(&amp;mut self) {
+        let new_capacity = if self.capacity == 0 {
+            1
+        } else {
+            self.capacity * 2  // Double the capacity
+        };
+
+        let new_layout = Layout::array::&lt;T&gt;(new_capacity).unwrap();
+
+        let new_ptr = if self.capacity == 0 {
+            // First allocation
+            unsafe { alloc(new_layout) as *mut T }
+        } else {
+            // Reallocate
+            let old_layout = Layout::array::&lt;T&gt;(self.capacity).unwrap();
+            unsafe {
+                realloc(
+                    self.ptr as *mut u8,
+                    old_layout,
+                    new_layout.size(),
+                ) as *mut T
+            }
+        };
+
+        if new_ptr.is_null() {
+            std::alloc::handle_alloc_error(new_layout);
+        }
+
+        self.ptr = new_ptr;
+        self.capacity = new_capacity;
+    }
 }
-
-let node_with_link = Rc::new(Node {
-    next: Some(RefCell::new(Rc::clone(&amp;other_node))),
-});
-
-let node_without_link = Rc::new(Node { next: None });
-
-// ✅ If Some, can change which node
-if let Some(ref cell) = &amp;node_with_link.next {
-    *cell.borrow_mut() = Rc::clone(&amp;another_node);
-}
-
-// ❌ Can't add a link to node_without_link (it's None forever)
-// ❌ Can't remove the link from node_with_link (it's Some forever)
 <span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> The presence/absence of the link is determined at construction and never changes, but you need to change which <code>Rc</code> it points to.</p>
-<h3 id="rcrefcelloptiont---multiple-owners-of-a-changeable-optional-value"><a class="header" href="#rcrefcelloptiont---multiple-owners-of-a-changeable-optional-value"><code>Rc&lt;RefCell&lt;Option&lt;T&gt;&gt;&gt;</code> - Multiple owners of a changeable optional value</a></h3>
+<p><strong>Growth strategy:</strong> Start at 1, then double each time.</p>
+<pre><code>Capacity progression: 0 → 1 → 2 → 4 → 8 → 16 → 32 → ...
+</code></pre>
+<p>Why double? Amortized O(1) push operations.</p>
+<p><strong>Note:</strong> The <code>vec!</code> macro is syntactic sugar for repeatedly calling <code>push</code>:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>let cache: Rc&lt;RefCell&lt;Option&lt;String&gt;&gt;&gt; = Rc::new(RefCell::new(None));
-let cache1 = Rc::clone(&amp;cache);
-let cache2 = Rc::clone(&amp;cache);
-
-// Multiple owners can all change the value
-*cache1.borrow_mut() = Some(String::from("cached"));
-*cache2.borrow_mut() = None;  // Clear the cache
+</span>let v = vec![1, 2, 3];
+// Expands to roughly:
+// let mut v = Vec::new();
+// v.push(1);
+// v.push(2);
+// v.push(3);
 <span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> Multiple owners need to mutate the same optional value (shared cache, shared state).</p>
-<h3 id="optionrcrefcellt---optional-shared-mutable-value"><a class="header" href="#optionrcrefcellt---optional-shared-mutable-value"><code>Option&lt;Rc&lt;RefCell&lt;T&gt;&gt;&gt;</code> - Optional shared mutable value</a></h3>
+<p>Here's a simplified implementation of the macro:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>struct Config {
-    logger: Option&lt;Rc&lt;RefCell&lt;Logger&gt;&gt;&gt;,
+</span>#[macro_export]
+macro_rules! vec {
+    () =&gt; {
+        Vec::new()
+    };
+    ($elem:expr; $n:expr) =&gt; {
+        // vec![0; 5] creates [0, 0, 0, 0, 0]
+        {
+            let mut v = Vec::with_capacity($n);
+            v.resize($n, $elem);
+            v
+        }
+    };
+    ($($x:expr),+ $(,)?) =&gt; {
+        // vec![1, 2, 3]
+        {
+            let mut v = Vec::new();
+            $(v.push($x);)*
+            v
+        }
+    };
 }
-
-let logger = Rc::new(RefCell::new(Logger::new()));
-let config = Config {
-    logger: Some(Rc::clone(&amp;logger)),
-};
-
-// ✅ If Some, multiple owners can mutate the logger
-if let Some(ref logger_rc) = config.logger {
-    logger_rc.borrow_mut().log("message");
-}
-
-// ❌ Can't change from Some to None (fixed at construction)
 <span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> The optional value is determined at construction, but if present, it needs to be shared and mutable.</p>
-<h2 id="todo-future-sections"><a class="header" href="#todo-future-sections">TODO: Future Sections</a></h2>
-<ul>
-<li><input disabled="" type="checkbox"/>
-More combinations with <code>Box</code>, <code>Vec</code>, <code>Arc</code>, <code>Mutex</code></li>
-<li><input disabled="" type="checkbox"/>
-Decision flowchart for choosing the right pattern</li>
-<li><input disabled="" type="checkbox"/>
-Performance implications of different orderings</li>
-<li><input disabled="" type="checkbox"/>
-Exercises for each pattern</li>
-<li><input disabled="" type="checkbox"/>
-Common mistakes and how to fix them</li>
-<li><input disabled="" type="checkbox"/>
-Real-world examples from popular crates</li>
-</ul>
+<p>The macro has three patterns:</p>
+<ol>
+<li><code>vec![]</code> - creates an empty vector</li>
+<li><code>vec![elem; n]</code> - creates a vector with <code>n</code> copies of <code>elem</code></li>
+<li><code>vec![x, y, z]</code> - creates a vector with the given elements</li>
+</ol>
+<h3 id="pop---removing-elements"><a class="header" href="#pop---removing-elements">Pop - Removing Elements</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;T&gt; Vec0&lt;T&gt; {
+    pub fn pop(&amp;mut self) -&gt; Option&lt;T&gt; {
+        if self.len == 0 {
+            return None;
+        }
+
+        self.len -= 1;
+        unsafe {
+            Some(ptr::read(self.ptr.add(self.len)))
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Note:</strong> We don't shrink capacity on pop. The memory stays allocated.</p>
+<h3 id="index-access"><a class="header" href="#index-access">Index Access</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::ops::{Index, IndexMut};
+
+impl&lt;T&gt; Index&lt;usize&gt; for Vec0&lt;T&gt; {
+    type Output = T;
+
+    fn index(&amp;self, index: usize) -&gt; &amp;T {
+        if index &gt;= self.len {
+            panic!("index out of bounds: {} &gt;= {}", index, self.len);
+        }
+        unsafe { &amp;*self.ptr.add(index) }
+    }
+}
+
+impl&lt;T&gt; IndexMut&lt;usize&gt; for Vec0&lt;T&gt; {
+    fn index_mut(&amp;mut self, index: usize) -&gt; &amp;mut T {
+        if index &gt;= self.len {
+            panic!("index out of bounds: {} &gt;= {}", index, self.len);
+        }
+        unsafe { &amp;mut *self.ptr.add(index) }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p>Now we can use <code>vec[i]</code>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let mut vec = Vec0::new();
+vec.push(10);
+vec.push(20);
+vec[0]  // 10
+vec[1] = 99;
+vec[1]  // 99
+<span class="boring">}</span></code></pre></pre>
+<h3 id="drop-implementation"><a class="header" href="#drop-implementation">Drop Implementation</a></h3>
+<p>Critical! We must:</p>
+<ol>
+<li>Drop all elements (call their destructors)</li>
+<li>Deallocate the memory</li>
+</ol>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;T&gt; Drop for Vec0&lt;T&gt; {
+    fn drop(&amp;mut self) {
+        if self.capacity &gt; 0 {
+            // Drop all elements
+            unsafe {
+                ptr::drop_in_place(
+                    std::slice::from_raw_parts_mut(self.ptr, self.len)
+                );
+            }
+
+            // Deallocate memory
+            let layout = Layout::array::&lt;T&gt;(self.capacity).unwrap();
+            unsafe {
+                dealloc(self.ptr as *mut u8, layout);
+            }
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../docs/appendix-sized.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../docs/03-box-1-building.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
+                            <a rel="next prefetch" href="../docs/04-vec-1-slices.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
 
                         <div style="clear: both"></div>
                     </nav>
@@ -295,10 +447,13 @@ Real-world examples from popular crates</li>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../docs/appendix-sized.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../docs/03-box-1-building.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
+                    <a rel="next prefetch" href="../docs/04-vec-1-slices.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
             </nav>
 
         </div>

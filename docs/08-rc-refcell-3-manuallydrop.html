@@ -1,0 +1,505 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>ManuallyDrop &amp; Anti-patterns - libr0: Building Rust&#x27;s Standard Library from Scratch</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">libr0: Building Rust&#x27;s Standard Library from Scratch</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/arinal/libr0" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="manuallydrop--anti-patterns"><a class="header" href="#manuallydrop--anti-patterns">ManuallyDrop &amp; Anti-patterns</a></h1>
+<h2 id="implementation-why-rc-needs-manuallydrop"><a class="header" href="#implementation-why-rc-needs-manuallydrop">Implementation: Why Rc Needs ManuallyDrop</a></h2>
+<h3 id="quick-reminder-rc-structure"><a class="header" href="#quick-reminder-rc-structure">Quick Reminder: Rc Structure</a></h3>
+<p>From Chapter 7, recall that <code>Rc&lt;T&gt;</code> is defined as:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::cell::Cell;
+
+struct RcInner&lt;T&gt; {
+    strong_count: Cell&lt;usize&gt;,  // Reference count
+    value: T,                   // The actual data
+}
+
+pub struct Rc&lt;T&gt; {
+    ptr: *mut RcInner&lt;T&gt;,  // Pointer to heap allocation
+}
+<span class="boring">}</span></code></pre></pre>
+<p>When implementing <code>Drop</code> for <code>Rc&lt;T&gt;</code>, we face a <strong>double-drop</strong> problem. This affects <code>Rc&lt;T&gt;</code> for <strong>any</strong> type <code>T</code>, not just <code>RefCell</code>.</p>
+<h3 id="the-problem-double-drop"><a class="header" href="#the-problem-double-drop">The Problem: Double Drop</a></h3>
+<p><strong>Concrete example:</strong> Let's say we have 2 strong references and 1 weak reference:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::rc::{Rc, Weak};
+
+let strong1 = Rc::new(String::from("data"));
+let strong2 = Rc::clone(&amp;strong1);
+let weak: Weak&lt;String&gt; = Rc::downgrade(&amp;strong1);
+
+// State: strong_count = 2, weak_count = 1
+<span class="boring">}</span></code></pre></pre>
+<p><strong>What needs to happen when we drop both strong refs:</strong></p>
+<ol>
+<li>Drop <code>strong1</code> → <code>strong_count</code> = 2 → 1 (value still alive)</li>
+<li>Drop <code>strong2</code> → <code>strong_count</code> = 1 → 0 (value must be dropped now!)</li>
+<li>But <code>weak</code> still exists! <code>RcInner</code> must stay allocated so <code>weak.upgrade()</code> can check <code>strong_count</code></li>
+<li>Later, drop <code>weak</code> → <code>weak_count</code> = 1 → 0 (now deallocate <code>RcInner</code>)</li>
+</ol>
+<p><strong>The challenge:</strong> In step 2, we must <strong>drop the String</strong> but <strong>keep the RcInner allocation alive</strong>. These are two separate operations.</p>
+<h3 id="naive-approach-broken"><a class="header" href="#naive-approach-broken">Naive Approach (Broken)</a></h3>
+<p>Now let's see the implementation problem:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;T&gt; Drop for Rc&lt;T&gt; {
+    fn drop(&amp;mut self) {
+        unsafe {
+            // self.ptr is *mut RcInner&lt;T&gt;
+            let inner = &amp;*self.ptr;
+            let count = inner.strong_count.get();
+            inner.strong_count.set(count - 1);
+
+            if count - 1 == 0 {
+                // Last strong owner! (strong_count = 0, but weak_count = 1)
+
+                // Step 1: Drop the value T
+                ptr::drop_in_place(&amp;mut (*self.ptr).value);
+                // ✅ String is now dropped, its buffer freed
+
+                // Step 2: Check if we can deallocate RcInner
+                let weak = inner.weak_count.get();
+                if weak == 0 {
+                    // No Weak references, safe to deallocate
+                    drop(Box::from_raw(self.ptr));
+                    // ⚠️ PROBLEM: Box::drop will try to drop all fields of RcInner&lt;T&gt;
+                    // This includes `value: T` - but we already dropped it in Step 1!
+                    // 💥 DOUBLE DROP!
+                } else {
+                    // weak_count = 1, Weak reference still exists!
+                    // We must keep the RcInner allocation alive so Weak::upgrade() can check strong_count
+                    // The String is dropped, but RcInner stays allocated
+                    // Later when Weak is dropped, it will deallocate RcInner
+                }
+            }
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Why we need TWO separate steps:</strong></p>
+<p>When <code>strong_count</code> reaches 0:</p>
+<ol>
+<li><strong>Drop the value</strong> - No more strong owners, value must be freed</li>
+<li><strong>Keep the RcInner allocation</strong> - If <code>weak_count &gt; 0</code>, Weak references still need to check <code>strong_count</code></li>
+</ol>
+<p>When <code>weak_count</code> ALSO reaches 0: 3. <strong>Deallocate the RcInner</strong> - No more references at all</p>
+<p><strong>The double-drop problem:</strong></p>
+<p>If we skip Step 1 and just do Step 3 (deallocate RcInner), we can't keep the allocation alive for Weak references. We need to drop the value when strong_count → 0, but deallocate the struct only when weak_count → 0.</p>
+<p>Without <code>ManuallyDrop</code>, step 3 would automatically drop <code>value</code> again - but we already dropped it in step 1!</p>
+<h3 id="the-solution-manuallydrop"><a class="header" href="#the-solution-manuallydrop">The Solution: ManuallyDrop</a></h3>
+<p><code>ManuallyDrop&lt;T&gt;</code> is a wrapper that tells Rust: "Don't automatically drop this value - I'll handle it manually."</p>
+<p><strong>How does it do this?</strong> Simple: by not implementing <code>Drop</code>. When Rust drops a struct, it automatically drops all its fields - but only if the field's type implements <code>Drop</code>. Since <code>ManuallyDrop&lt;T&gt;</code> doesn't implement <code>Drop</code>, Rust won't automatically drop the inner <code>T</code>.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::mem::ManuallyDrop;
+use std::cell::Cell;
+
+struct RcInner&lt;T&gt; {
+    strong_count: Cell&lt;usize&gt;,
+    weak_count: Cell&lt;usize&gt;,
+    value: ManuallyDrop&lt;T&gt;,  // ← Wrapped in ManuallyDrop
+}
+<span class="boring">}</span></code></pre></pre>
+<p>Now with <code>ManuallyDrop</code>, the Drop implementation is safe:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;T&gt; Drop for Rc&lt;T&gt; {
+    fn drop(&amp;mut self) {
+        unsafe {
+            let inner = &amp;*self.ptr;
+            let count = inner.strong_count.get();
+            inner.strong_count.set(count - 1);
+
+            if count - 1 == 0 {
+                // Manually drop the value (need mutable access)
+                let inner_mut = &amp;mut *self.ptr;
+                ManuallyDrop::drop(&amp;mut inner_mut.value);  // ✅ Drops T inside ManuallyDrop
+
+                let weak = inner.weak_count.get();
+                if weak == 0 {
+                    // Deallocate the RcInner
+                    // Since value is ManuallyDrop, Rust won't try to drop it again
+                    drop(Box::from_raw(self.ptr));  // ✅ Safe! No double-drop
+                }
+            }
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Why it works:</strong></p>
+<ol>
+<li><code>ManuallyDrop&lt;T&gt;</code> prevents automatic drop when <code>RcInner</code> is deallocated</li>
+<li>We explicitly call <code>ptr::drop_in_place()</code> on the value when <code>strong_count</code> reaches 0</li>
+<li>No double drop - the value is dropped exactly once</li>
+</ol>
+<h3 id="what-is-manuallydrop"><a class="header" href="#what-is-manuallydrop">What is ManuallyDrop?</a></h3>
+<p><code>ManuallyDrop&lt;T&gt;</code> is a zero-cost wrapper defined in <code>std::mem</code>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[repr(transparent)]
+pub struct ManuallyDrop&lt;T&gt; {
+    value: T,
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Key properties:</strong></p>
+<ul>
+<li><strong>Zero cost</strong>: Same size and layout as <code>T</code> (due to <code>#[repr(transparent)]</code>)</li>
+<li><strong>Does not implement Drop</strong>: Rust never automatically drops the inner <code>T</code></li>
+<li><strong>Requires unsafe to drop</strong>: You must explicitly call <code>ManuallyDrop::drop(&amp;mut x)</code></li>
+</ul>
+<p><strong>Core operations:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Create
+let x = ManuallyDrop::new(String::from("hello"));
+
+// Access (no drop)
+println!("{}", *x);  // Deref to access inner value
+
+// Drop explicitly (unsafe - you must ensure no future access)
+unsafe {
+    ManuallyDrop::drop(&amp;mut x);  // Drops the String
+}
+// After this, accessing x is undefined behavior!
+
+// Move out without dropping (unsafe)
+let s = unsafe { ManuallyDrop::take(&amp;mut x) };  // Takes ownership of String
+// Now s owns the String, x is left in uninitialized state
+<span class="boring">}</span></code></pre></pre>
+<h3 id="can-we-manually-implement-it"><a class="header" href="#can-we-manually-implement-it">Can We Manually Implement It?</a></h3>
+<p>Yes! Here's how <code>ManuallyDrop</code> is essentially implemented:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::mem::forget;
+use std::ptr;
+
+#[repr(transparent)]
+pub struct ManualDrop&lt;T&gt; {
+    value: T,
+}
+
+impl&lt;T&gt; ManualDrop&lt;T&gt; {
+    pub const fn new(value: T) -&gt; Self {
+        ManualDrop { value }
+    }
+
+    // Safe: Just creates a reference
+    pub fn deref(&amp;self) -&gt; &amp;T {
+        &amp;self.value
+    }
+
+    // Unsafe: Caller must ensure no further access
+    pub unsafe fn drop(slot: &amp;mut Self) {
+        // Read the value out and drop it
+        ptr::drop_in_place(&amp;mut slot.value);
+    }
+
+    // Unsafe: Caller must ensure no further access
+    pub unsafe fn take(slot: &amp;mut Self) -&gt; T {
+        // Move the value out, leaving uninitialized memory
+        ptr::read(&amp;slot.value)
+    }
+}
+
+// No Drop implementation! This is the key.
+// Without Drop, Rust won't automatically drop T.
+
+impl&lt;T&gt; Deref for ManualDrop&lt;T&gt; {
+    type Target = T;
+
+    fn deref(&amp;self) -&gt; &amp;T {
+        &amp;self.value
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Key insight:</strong> By <em>not</em> implementing <code>Drop</code>, the wrapper doesn't drop its contents. You must manually call <code>drop()</code> or <code>take()</code> to handle the inner value.</p>
+<h3 id="manuallydrop-in-practice"><a class="header" href="#manuallydrop-in-practice">ManuallyDrop in Practice</a></h3>
+<p>You'll see <code>ManuallyDrop</code> used whenever:</p>
+<ol>
+<li><strong>Reference counting</strong> - <code>Rc</code>, <code>Arc</code> need to control when <code>T</code> is dropped</li>
+<li><strong>Custom allocators</strong> - Managing memory lifetime manually</li>
+<li><strong>FFI boundaries</strong> - Passing ownership to C code</li>
+<li><strong>Union types</strong> - Only one variant should be dropped</li>
+<li><strong>Implementing Drop flags</strong> - Control drop order precisely</li>
+</ol>
+<p><strong>Warning:</strong> Using <code>ManuallyDrop</code> is subtle - you must ensure:</p>
+<ul>
+<li>Drop is called exactly once</li>
+<li>No access after drop</li>
+<li>Memory is eventually freed</li>
+</ul>
+<p>Get it wrong, and you'll have memory leaks or use-after-free bugs!</p>
+<h2 id="anti-patterns"><a class="header" href="#anti-patterns">Anti-patterns</a></h2>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// ❌ BAD: Single owner, no sharing needed
+let data = Rc::new(RefCell::new(vec![1, 2, 3]));
+data.borrow_mut().push(4);
+// Should be: let mut data = vec![1, 2, 3];
+
+// ❌ BAD: Never mutated, just shared
+let config = Rc::new(RefCell::new(Config::load()));
+// Should be: let config = Rc::new(Config::load());
+
+// ❌ BAD: Using in multi-threaded context
+let counter = Rc::new(RefCell::new(0));
+thread::spawn(move || { ... });  // Won't compile! (Not Send)
+// Should be: Arc&lt;Mutex&lt;i32&gt;&gt; or Arc&lt;AtomicI32&gt;
+<span class="boring">}</span></code></pre></pre>
+<h2 id="key-takeaways"><a class="header" href="#key-takeaways">Key Takeaways</a></h2>
+<ol>
+<li><strong>Rc&lt;RefCell<T>&gt; combines shared ownership + interior mutability</strong> - Multiple owners can all mutate the same data</li>
+<li><strong>Two levels of tracking</strong> - Rc tracks reference counts (ownership), RefCell tracks borrows (usage)</li>
+<li><strong>Two ways to fail</strong> - Memory leaks from Rc cycles (safe but wasteful), panics from RefCell borrow violations (runtime error)</li>
+<li><strong>Use Weak to break cycles</strong> - Weak references don't keep values alive, preventing memory leaks in cyclic structures</li>
+<li><strong>Parent-child pattern</strong> - Use Rc for ownership direction (parent → child), Weak for back-references (child → parent)</li>
+<li><strong>Drop borrows quickly</strong> - Keep RefCell borrows short-lived to avoid runtime panics</li>
+<li><strong>Don't overuse</strong> - If you have a clear owner or don't need sharing, use simpler patterns (&amp;mut T, Box<T>, Rc<T>)</li>
+<li><strong>Always check Weak::upgrade()</strong> - Weak references might point to dropped values, always handle None case</li>
+<li><strong>Runtime cost</strong> - Both Rc (reference counting) and RefCell (borrow checking) have runtime overhead, use only when needed</li>
+</ol>
+<h2 id="exercises"><a class="header" href="#exercises">Exercises</a></h2>
+<p>See <a href="../examples/08_rc_refcell.rs">examples/08_rc_refcell.rs</a> for hands-on exercises demonstrating:</p>
+<ul>
+<li>Creating and using <code>Rc&lt;RefCell&lt;T&gt;&gt;</code></li>
+<li>Multiple owners mutating shared data</li>
+<li>Creating and breaking reference cycles with <code>Weak</code></li>
+<li>Building graphs and trees with cycles</li>
+<li>Observer pattern implementation</li>
+<li>Common pitfalls and how to avoid them</li>
+</ul>
+<p><strong>Complete solutions:</strong> Switch to the <code>answers</code> branch with <code>git checkout answers</code> to see completed exercises.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../docs/08-rc-refcell-2-weak.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../docs/appendix-closures-0-intro.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../docs/08-rc-refcell-2-weak.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../docs/appendix-closures-0-intro.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../mermaid.min.js"></script>
+        <script src="../mermaid-init.js"></script>
+        <script src="../theme/landing.js"></script>
+
+
+
+    </div>
+    </body>
+</html>

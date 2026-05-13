@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Nested Types - libr0: Building Rust&#x27;s Standard Library from Scratch</title>
+        <title>Slices &amp; Memory Layout - libr0: Building Rust&#x27;s Standard Library from Scratch</title>
 
 
         <!-- Custom HTML head -->
@@ -178,116 +178,200 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="appendix-nested-types---understanding-order-and-flexibility"><a class="header" href="#appendix-nested-types---understanding-order-and-flexibility">Appendix: Nested Types - Understanding Order and Flexibility</a></h1>
-<p>When combining smart pointers like <code>Rc</code>, interior mutability types like <code>RefCell</code>, and containers like <code>Option</code>, the order matters! This appendix explores the different combinations and what they mean.</p>
-<blockquote>
-<p><strong>Note:</strong> This is a placeholder for future completion. The content below covers basic patterns, but will be expanded with more cases and exercises.</p>
-</blockquote>
-<h2 id="the-order-matters"><a class="header" href="#the-order-matters">The Order Matters</a></h2>
-<p>Each wrapper in a nested type determines what operations are possible on what's inside. <strong>Read from outside-in</strong> to understand capabilities:</p>
+                        <h1 id="slices-strings--operations"><a class="header" href="#slices-strings--operations">Slices, Strings &amp; Operations</a></h1>
+<h2 id="slices-views-into-vec"><a class="header" href="#slices-views-into-vec">Slices: Views into Vec</a></h2>
+<p><strong>Important:</strong> Unlike <code>Vec</code>, <code>Option</code>, <code>Result</code>, or <code>Box</code>, slices (<code>[T]</code> and <code>&amp;[T]</code>) are a <strong>language primitive</strong> built into the Rust compiler. You cannot implement your own slice type with identical behavior.</p>
+<p>Why slices are special:</p>
 <ul>
-<li><code>RefCell&lt;...&gt;</code> - Can mutate what's inside</li>
-<li><code>Rc&lt;...&gt;</code> - Can share (multiple owners)</li>
-<li><code>Option&lt;...&gt;</code> - Might not be present (fixed at construction)</li>
-</ul>
-<h2 id="common-patterns"><a class="header" href="#common-patterns">Common Patterns</a></h2>
-<h3 id="refcelloptionrct---can-addremovechange-the-link"><a class="header" href="#refcelloptionrct---can-addremovechange-the-link"><code>RefCell&lt;Option&lt;Rc&lt;T&gt;&gt;&gt;</code> - Can add/remove/change the link</a></h3>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>struct Node {
-    next: RefCell&lt;Option&lt;Rc&lt;Node&gt;&gt;&gt;,
-}
-
-let node = Rc::new(Node { next: RefCell::new(None) });
-
-// ✅ Can add a link (None → Some)
-*node.next.borrow_mut() = Some(Rc::clone(&amp;other_node));
-
-// ✅ Can change which node (Some(a) → Some(b))
-*node.next.borrow_mut() = Some(Rc::clone(&amp;another_node));
-
-// ✅ Can remove the link (Some → None)
-*node.next.borrow_mut() = None;
-<span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> You need full flexibility - add, remove, or change links.</p>
-<h3 id="optionrefcellrct---can-change-the-link-but-cant-addremove"><a class="header" href="#optionrefcellrct---can-change-the-link-but-cant-addremove"><code>Option&lt;RefCell&lt;Rc&lt;T&gt;&gt;&gt;</code> - Can change the link, but can't add/remove</a></h3>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>struct Node {
-    next: Option&lt;RefCell&lt;Rc&lt;Node&gt;&gt;&gt;,
-}
-
-let node_with_link = Rc::new(Node {
-    next: Some(RefCell::new(Rc::clone(&amp;other_node))),
-});
-
-let node_without_link = Rc::new(Node { next: None });
-
-// ✅ If Some, can change which node
-if let Some(ref cell) = &amp;node_with_link.next {
-    *cell.borrow_mut() = Rc::clone(&amp;another_node);
-}
-
-// ❌ Can't add a link to node_without_link (it's None forever)
-// ❌ Can't remove the link from node_with_link (it's Some forever)
-<span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> The presence/absence of the link is determined at construction and never changes, but you need to change which <code>Rc</code> it points to.</p>
-<h3 id="rcrefcelloptiont---multiple-owners-of-a-changeable-optional-value"><a class="header" href="#rcrefcelloptiont---multiple-owners-of-a-changeable-optional-value"><code>Rc&lt;RefCell&lt;Option&lt;T&gt;&gt;&gt;</code> - Multiple owners of a changeable optional value</a></h3>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>let cache: Rc&lt;RefCell&lt;Option&lt;String&gt;&gt;&gt; = Rc::new(RefCell::new(None));
-let cache1 = Rc::clone(&amp;cache);
-let cache2 = Rc::clone(&amp;cache);
-
-// Multiple owners can all change the value
-*cache1.borrow_mut() = Some(String::from("cached"));
-*cache2.borrow_mut() = None;  // Clear the cache
-<span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> Multiple owners need to mutate the same optional value (shared cache, shared state).</p>
-<h3 id="optionrcrefcellt---optional-shared-mutable-value"><a class="header" href="#optionrcrefcellt---optional-shared-mutable-value"><code>Option&lt;Rc&lt;RefCell&lt;T&gt;&gt;&gt;</code> - Optional shared mutable value</a></h3>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>struct Config {
-    logger: Option&lt;Rc&lt;RefCell&lt;Logger&gt;&gt;&gt;,
-}
-
-let logger = Rc::new(RefCell::new(Logger::new()));
-let config = Config {
-    logger: Some(Rc::clone(&amp;logger)),
-};
-
-// ✅ If Some, multiple owners can mutate the logger
-if let Some(ref logger_rc) = config.logger {
-    logger_rc.borrow_mut().log("message");
-}
-
-// ❌ Can't change from Some to None (fixed at construction)
-<span class="boring">}</span></code></pre></pre>
-<p><strong>Use when:</strong> The optional value is determined at construction, but if present, it needs to be shared and mutable.</p>
-<h2 id="todo-future-sections"><a class="header" href="#todo-future-sections">TODO: Future Sections</a></h2>
+<li><code>[T]</code> is a <strong>dynamically sized type (DST)</strong> - no known size at compile time</li>
+<li>The compiler has special knowledge of slices for:
 <ul>
-<li><input disabled="" type="checkbox"/>
-More combinations with <code>Box</code>, <code>Vec</code>, <code>Arc</code>, <code>Mutex</code></li>
-<li><input disabled="" type="checkbox"/>
-Decision flowchart for choosing the right pattern</li>
-<li><input disabled="" type="checkbox"/>
-Performance implications of different orderings</li>
-<li><input disabled="" type="checkbox"/>
-Exercises for each pattern</li>
-<li><input disabled="" type="checkbox"/>
-Common mistakes and how to fix them</li>
-<li><input disabled="" type="checkbox"/>
-Real-world examples from popular crates</li>
+<li>Array to slice coercion: <code>&amp;[1, 2, 3]</code> automatically becomes <code>&amp;[i32]</code></li>
+<li>Slice syntax: <code>&amp;vec[1..3]</code> uses built-in range operators</li>
+<li>Pattern matching: <code>match slice { [first, rest @ ..] =&gt; ... }</code></li>
+<li>Indexing bounds checks are optimized by the compiler</li>
 </ul>
+</li>
+</ul>
+<p><strong>Can we implement something slice-like?</strong> Yes! We can create a struct with <code>(ptr, len)</code> that <em>behaves</em> like a slice, but it won't have the same compiler integration. We'll show this in the exercises.</p>
+<p>A slice <code>&amp;[T]</code> is a <em>view</em> into contiguous memory. It's a fat pointer:</p>
+<pre><code class="language-bob">Slice structure:
++---------------+-------------+
+| ptr: *const T | len: usize  |
+|      *        |             |
++------|--------+-------------+
+       |  
+       | "(points to array elements in memory)"
+       |
+       |       +---+---+---+
+       +------&gt;| T | T | T | 
+               +---+---+---+
+</code></pre>
+<p>Convert <code>Vec&lt;T&gt;</code> to <code>&amp;[T]</code>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;T&gt; Vec0&lt;T&gt; {
+    pub fn as_slice(&amp;self) -&gt; &amp;[T] {
+        unsafe {
+            std::slice::from_raw_parts(self.ptr, self.len)
+        }
+    }
+
+    pub fn as_mut_slice(&amp;mut self) -&gt; &amp;mut [T] {
+        unsafe {
+            std::slice::from_raw_parts_mut(self.ptr, self.len)
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p>Now we can use slice methods:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let mut vec = Vec0::new();
+vec.push(1);
+vec.push(2);
+vec.push(3);
+
+let slice = vec.as_slice();
+slice.len()      // 3
+slice[0]         // 1
+slice.iter()     // Iterator over &amp;T
+<span class="boring">}</span></code></pre></pre>
+<h3 id="deref-coercion"><a class="header" href="#deref-coercion">Deref Coercion</a></h3>
+<p>Make <code>Vec0&lt;T&gt;</code> deref to <code>[T]</code>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::ops::{Deref, DerefMut};
+
+impl&lt;T&gt; Deref for Vec0&lt;T&gt; {
+    type Target = [T];
+
+    fn deref(&amp;self) -&gt; &amp;[T] {
+        self.as_slice()
+    }
+}
+
+impl&lt;T&gt; DerefMut for Vec0&lt;T&gt; {
+    fn deref_mut(&amp;mut self) -&gt; &amp;mut [T] {
+        self.as_mut_slice()
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p>Now we can call slice methods directly:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let mut vec = Vec0::new();
+vec.push(3);
+vec.push(1);
+vec.push(2);
+
+vec.sort();       // Calls [T]::sort()
+vec.len()         // Works! (both Vec and slice have len())
+vec.iter()        // Calls [T]::iter()
+<span class="boring">}</span></code></pre></pre>
+<h2 id="string-is-just-vec"><a class="header" href="#string-is-just-vec">String is Just Vec<u8></a></h2>
+<p><code>String</code> is literally:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct String {
+    vec: Vec&lt;u8&gt;,
+}
+<span class="boring">}</span></code></pre></pre>
+<p>All String methods delegate to Vec:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl String {
+    pub fn new() -&gt; String {
+        String { vec: Vec::new() }
+    }
+
+    pub fn push_str(&amp;mut self, s: &amp;str) {
+        self.vec.extend_from_slice(s.as_bytes());
+    }
+
+    pub fn as_str(&amp;self) -&gt; &amp;str {
+        unsafe {
+            std::str::from_utf8_unchecked(&amp;self.vec)
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="str-is-a-slice"><a class="header" href="#str-is-a-slice">str is a Slice</a></h3>
+<p><code>&amp;str</code> is to <code>String</code> what <code>&amp;[T]</code> is to <code>Vec&lt;T&gt;</code>:</p>
+<pre><code>String          &amp;str
+Vec&lt;u8&gt;         &amp;[u8]  (but guaranteed valid UTF-8)
+</code></pre>
+<p>Both are fat pointers:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>&amp;str = (ptr: *const u8, len: usize)
+<span class="boring">}</span></code></pre></pre>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let s = String::from("hello");
+let slice: &amp;str = &amp;s[0..3];  // "hel"
+<span class="boring">}</span></code></pre></pre>
+<h2 id="memory-layout-comparison"><a class="header" href="#memory-layout-comparison">Memory Layout Comparison</a></h2>
+<h3 id="array-stack"><a class="header" href="#array-stack">Array: Stack</a></h3>
+<p><code>[1, 2, 3]</code></p>
+<pre><code class="language-bob">    Stack
++----+----+----+
+| 1  | 2  | 3  |
++----+----+----+
+</code></pre>
+<h3 id="box-heap-single-value"><a class="header" href="#box-heap-single-value">Box: Heap (single value)</a></h3>
+<p><strong><code>Box::new([1, 2, 3])</code></strong></p>
+<pre><code class="language-bob">Stack               Heap
++-------+         +---+---+---+
+| ptr *-+--------&gt;| 1 | 2 | 3 |
++-------+         +---+---+---+
+</code></pre>
+<h3 id="vec-heap-growable"><a class="header" href="#vec-heap-growable">Vec: Heap (growable)</a></h3>
+<p><strong>After <code>vec.push(1); vec.push(2); vec.push(3); ... ; vec.push(7)</code></strong></p>
+<pre><code class="language-bob">       STACK         |                HEAP
+                     |
++-----------------+  |
+| vec: Vec&lt;i32&gt;   |  |        &lt;-------- len ----------&gt;
++-----+-----+-----+  |      +---+---+---+---+---+---+---+---+---+---+
+| "ptr:" *--------+--|-----&gt;| 1 | 2 | 3 | 4 | 5 | 6 | 7 | ? | ? | ? |
+| "len:" 7        |  |      +---+---+---+---+---+---+---+---+---+---+
+| "cap:" 10       |  |        &lt;------------ capacity -------------&gt;
++-----+-----+-----+  |
+</code></pre>
+<p><code>Vec</code> on stack: 24 bytes (on 64-bit: 8 + 8 + 8)
+Actual data: on heap</p>
+<h3 id="slice-view-no-ownership"><a class="header" href="#slice-view-no-ownership">Slice: View (no ownership)</a></h3>
+<p><strong><code>let slice = &amp;vec[1..5]; // [2, 3, 4, 5, 6]</code></strong></p>
+<pre><code class="language-bob">       STACK         |                    HEAP 
+                     |       
++-----------------+  | "index:"0   1   2   3   4   5   6   7   8   9
+| vec: Vec&lt;i32&gt;   |  | "slice:"    1     "..."     5
++-----+-----+-----+  |       +---+---+---+---+---+---+---+---+---+---+
+| "ptr:" *--------+--|------&gt;| 1 | 2 | 3 | 4 | 5 | 6 | 7 | ? | ? | ? |
+| "len:" 7        |  |       +---+-^-+---+---+---+---+---+---+---+---+
+| "cap:" 10       |  |             |----- len -----&gt;
++-----+-----+-----+  |             |
+                     |             |        
+                     |             |       
++---------------+    |             |
+| slice: &amp;[i32] |    |             |
++---------------+    |             |
+| "ptr:" *------+----+-------------'
+| "len:" 5      |    | 
++---------------+    | 
+</code></pre>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../docs/appendix-sized.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../docs/04-vec-0-intro.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
+                            <a rel="next prefetch" href="../docs/04-vec-2-operations.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
 
                         <div style="clear: both"></div>
                     </nav>
@@ -295,10 +379,13 @@ Real-world examples from popular crates</li>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../docs/appendix-sized.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../docs/04-vec-0-intro.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
+                    <a rel="next prefetch" href="../docs/04-vec-2-operations.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
             </nav>
 
         </div>

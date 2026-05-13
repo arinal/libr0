@@ -11,9 +11,8 @@ build-dir = "book"
 default-theme = "light"
 preferred-dark-theme = "navy"
 git-repository-url = "https://github.com/arinal/libr0"
-git-repository-icon = "fa-github"
 additional-js = ["mermaid.min.js", "mermaid-init.js", "theme/landing.js"]
-additional-css = ["theme/custom.css", "theme/landing.css"]
+# additional-css = ["theme/custom.css", "theme/landing.css"]
 
 [output.html.search]
 enable = true
@@ -26,6 +25,7 @@ expand = true
 heading-split-level = 3
 
 [preprocessor.svgbob]
+command = "/home/arinal/Sources/rust/@oss/mdbook-svgbob/target/release/mdbook-svgbob"
 
 [preprocessor.mermaid]
 command = "mdbook-mermaid"

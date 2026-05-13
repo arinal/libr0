@@ -1,0 +1,485 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Stack, Heap &amp; Static Data - libr0: Building Rust&#x27;s Standard Library from Scratch</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">libr0: Building Rust&#x27;s Standard Library from Scratch</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/arinal/libr0" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="stack-heap--static-data"><a class="header" href="#stack-heap--static-data">Stack, Heap &amp; Static Data</a></h1>
+<h3 id="the-stack"><a class="header" href="#the-stack">The Stack</a></h3>
+<p><strong>What lives here:</strong></p>
+<p>Before we categorize by type, let's ask: <strong>Which of these types live on the stack?</strong></p>
+<ul>
+<li>Primitives: <code>i32</code>, <code>f64</code>, <code>bool</code>, <code>char</code>?</li>
+<li>Enums?</li>
+<li>Structs?</li>
+<li>Arrays: <code>[T; N]</code>?</li>
+<li>Pointers: <code>&amp;T</code>, <code>&amp;mut T</code>, <code>*const T</code>, <code>*mut T</code>?</li>
+<li>Smart pointers: <code>String</code>, <code>Vec</code>, <code>Box</code> (which are actually just structs)?</li>
+</ul>
+<p>You might think: "Primitives live on stack, arrays live on heap..."</p>
+<p><strong>But actually, the type doesn't matter.</strong> Here's the simple rule:</p>
+<p><strong>The Rule: All local variables (declared with <code>let</code>) live on the stack.</strong></p>
+<p>Let's test this. Which of these live on the stack?</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let x: i32 = 0;
+
+struct Number {
+    n: i32
+}
+
+let arr: [i32; 3] = [1, 2, 3];
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Answer: The values declared with <code>let</code> live on stack.</strong></p>
+<ul>
+<li><code>x</code> lives on stack (it's a local variable)</li>
+<li><code>struct Number { n: i32 }</code> is just a type definition - doesn't live anywhere!</li>
+<li><code>arr</code> lives on stack (it's a local variable)</li>
+</ul>
+<p>When we create an <em>instance</em> of <code>Number</code> with <code>let</code>, that's when it gets memory:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let num = Number { n: 42 };  // num lives on stack, so field n (as part of num) lives on stack
+<span class="boring">}</span></code></pre></pre>
+<p><strong>No matter the type, if it's a local variable, it lives on the stack:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let result = Ok(42);           // enum on stack (including its data)
+let n: i32 = 5;                // primitive on stack
+let ref_n: &amp;i32 = &amp;n;          // reference (pointer) on stack, points to n (also on stack)
+let p_n: *const i32 = &amp;n;      // raw pointer on stack, points to n (also on stack)
+<span class="boring">}</span></code></pre></pre>
+<blockquote>
+<p><strong>Note:</strong> Pointers are bridges between stack and heap. They can point to stack (like <code>ref_n</code> above) or to heap (like Vec's internal <code>ptr</code>). We'll explore heap allocation in detail later.</p>
+</blockquote>
+<p><strong>What about <code>String</code>, <code>Vec</code>, <code>Box</code>?</strong></p>
+<p>These are also just structs! Let's see what <code>Vec</code> actually is:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct Vec&lt;T&gt; {
+    ptr: *mut T,  // pointer to heap data
+    len: usize,   // length
+    cap: usize,   // capacity
+}
+
+let number = Number { n: 42 };  // number on stack, field n on stack
+let v = Vec::new();             // v (the struct) on stack
+                                // ptr is null/dangling, len=0, cap=0
+v.push(1);                      // FIRST push calls alloc()!
+                                // Now ptr points to heap, len=1, cap=4 (typically)
+v.push(2);                      // adds to heap, len=2, cap=4
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Key insight:</strong> The <code>Vec</code> struct itself always lives on stack. Its fields (<code>ptr</code>, <code>len</code>, <code>cap</code>) always live on stack. But <code>ptr</code> only points to heap <strong>after the first allocation</strong> (which happens during the first <code>push()</code> that needs capacity).</p>
+<ul>
+<li>After <code>Vec::new()</code>: ptr is null (or dangling), no heap allocation yet</li>
+<li>After first <code>push(1)</code>: ptr points to heap (alloc() was called), heap data exists</li>
+</ul>
+<p><strong>Stack memory layout:</strong></p>
+<pre><code class="language-bob">
+      STACK                                    HEAP
+
++-------------------------+
+| "number:" Number        |
+|  "n: 42 (4 bytes)"      |
++-------------------------+
+| "v: Vec&lt;i32&gt;"           |              +--+--+--+--+
+|  "ptr: (8 bytes)"  *----+-------------&gt;|1 |2 |  |  |
+|  "len: 2 (8 bytes)"     |              +--+--+--+--+
+|  "cap: 4 (8 bytes)"     |        "(8 bytes + capacity for 2 more)"
++-------------------------+
+"Total: 24 bytes on stack"
+
+</code></pre>
+<p>We'll explore heap and allocation in more detail in the next section.</p>
+<p><strong>Summary:</strong></p>
+<p><strong>Your local variables (you create these):</strong></p>
+<ul>
+<li><strong>The Rule</strong>: Everything declared with <code>let</code> in a function lives on stack - type doesn't matter</li>
+<li>Primitives: <code>i32</code>, <code>f64</code>, <code>bool</code>, <code>char</code></li>
+<li>Structs: entire struct including all fields</li>
+<li>Enums: including their variant data</li>
+<li>Arrays: <code>[T; N]</code> - all elements inline</li>
+<li>Pointers: <code>&amp;T</code>, <code>&amp;mut T</code>, <code>*const T</code>, <code>*mut T</code> - the pointer itself (8 bytes)</li>
+<li>Smart pointer structs: <code>String</code>, <code>Vec</code>, <code>Box</code> - the struct metadata on stack, the data they point to on heap</li>
+</ul>
+<p><strong>Compiler-managed (you don't interact with these):</strong></p>
+<ul>
+<li>Function parameters (passed via registers, may be spilled to stack)</li>
+<li>Return addresses (managed via <code>CALL</code>/<code>RET</code> instructions)</li>
+<li>Saved registers (managed via <code>PUSH</code>/<code>POP</code> instructions)</li>
+</ul>
+<p><strong>Characteristics:</strong></p>
+<ul>
+<li><strong>Automatic management</strong>: Variables automatically disappear when they go out of scope. The CPU has built-in stack instructions (<code>PUSH</code>, <code>POP</code>, <code>CALL</code>, <code>RET</code>) and a dedicated stack pointer register (<code>RSP</code> on x86-64) that make stack operations trivial.</li>
+<li><strong>Fast allocation</strong>: Just move the stack pointer (one CPU instruction: <code>sub rsp, 16</code> to allocate 16 bytes)</li>
+<li><strong>Fixed size</strong>: Typically 2-8 MB (OS-dependent)</li>
+<li><strong>LIFO (Last In, First Out)</strong>: Like a stack of plates</li>
+<li><strong>Grows downward</strong>: From high addresses to low addresses</li>
+</ul>
+<p><strong>Example:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn example() {
+    let x = 42;        // Allocate 4 bytes on stack
+    let y = vec![1];   // Allocate 24 bytes on stack (Vec metadata)
+}  // Stack pointer moves back, x and y are gone
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Stack overflow</strong> happens when you use too much stack space:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn infinite_recursion() {
+    let huge = [0u8; 1_000_000];  // 1 MB per call!
+    infinite_recursion();         // Each call adds another frame
+}
+// Eventually: stack overflow!
+<span class="boring">}</span></code></pre></pre>
+<h3 id="the-heap"><a class="header" href="#the-heap">The Heap</a></h3>
+<p><strong>What lives here:</strong></p>
+<p>Since we now know about allocation, what lives here is anything that was allocated on the heap. Heap allocation needs two components:</p>
+<ul>
+<li>A raw pointer (to track where the allocation is)</li>
+<li>Allocation management (calling <code>alloc()</code> and <code>dealloc()</code>)</li>
+</ul>
+<p>Rather than asking "which types live on the heap?", we should ask: <strong>which Rust standard library types manage heap allocations internally?</strong></p>
+<p>These types have a raw pointer field and call <code>alloc()</code>/<code>dealloc()</code>:</p>
+<ul>
+<li><code>Box&lt;T&gt;</code> - the <code>T</code> value lives on heap</li>
+<li><code>Vec&lt;T&gt;</code> - the array of <code>T</code> elements lives on heap</li>
+<li><code>String</code> - the character data lives on heap</li>
+<li><code>HashMap&lt;K, V&gt;</code> - the buckets and entries live on heap</li>
+<li><code>Rc&lt;T&gt;</code> / <code>Arc&lt;T&gt;</code> - the <code>T</code> value lives on heap</li>
+</ul>
+<p><strong>Important:</strong> Types like <code>Option&lt;T&gt;</code>, <code>Result&lt;T, E&gt;</code>, <code>Cell&lt;T&gt;</code>, and <code>RefCell&lt;T&gt;</code> don't allocate on the heap by themselves. They're just wrappers around <code>T</code>:</p>
+<ul>
+<li><code>Option&lt;i32&gt;</code> - entirely on stack (just an enum)</li>
+<li><code>Option&lt;Box&lt;i32&gt;&gt;</code> - Box's pointer on stack, the <code>i32</code> on heap (because of <code>Box</code>, not <code>Option</code>)</li>
+<li><code>RefCell&lt;Vec&lt;i32&gt;&gt;</code> - RefCell and Vec metadata on stack, Vec's array data on heap (because of <code>Vec</code>, not <code>RefCell</code>)</li>
+</ul>
+<p><strong>How to know if a type allocates on the heap:</strong></p>
+<p>Use "Go to Definition" in your IDE (or check the Rust standard library docs) to inspect the type's internal structure. If you see pointer fields like <code>*mut T</code>, that type manages heap allocations:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Go to Definition on Option&lt;T&gt; shows:
+pub enum Option&lt;T&gt; {
+    None,
+    Some(T), // ← Just contains T directly, no pointer!
+}
+
+// Go to Definition on Box&lt;T&gt; shows:
+pub struct Box&lt;T&gt; {
+    ptr: NonNull&lt;T&gt;,  // ← Let's Go to Definition on NonNull&lt;T&gt; to see what it is!
+}
+pub struct NonNull&lt;T&gt; {
+    pointer: *const T, // ← Pointer, so Box&lt;T&gt; manages heap allocation
+}
+
+// Go to Definition on RefCell&lt;T&gt; shows:
+pub struct RefCell&lt;T&gt; {
+    borrow: Cell&lt;BorrowFlag&gt;,
+    value: UnsafeCell&lt;T&gt;,  // ← Let's Go to Definition on UnsafeCell&lt;T&gt; to see what it is!
+}
+pub struct UnsafeCell&lt;T&gt; {
+    value: T,  // ← Just contains T directly, no pointer!
+}
+<span class="boring">}</span></code></pre></pre>
+<p><strong>The rule:</strong> If the type has a pointer field (<code>*mut T</code>, <code>*const T</code>, <code>NonNull&lt;T&gt;</code>), it manages heap allocation. Otherwise, it's just a wrapper that lives on the stack.</p>
+<p><strong>Characteristics:</strong></p>
+<ul>
+<li><strong>Manual management</strong>: You allocate/deallocate (Rust does this for you via <code>Drop</code>)</li>
+<li><strong>Slower allocation</strong>: Requires finding a free block (complex algorithms)</li>
+<li><strong>Large size</strong>: Typically gigabytes (depends on available RAM)</li>
+</ul>
+<p><strong>Example:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn example() {
+    // Stack: 24 bytes (Vec metadata)
+    // Heap: 400 bytes (100 * 4-byte integers)
+    let v = vec![0; 100];
+
+    // Stack: 24 bytes (String metadata)
+    // Heap: Variable (depends on string length)
+    let s = String::from("hello");
+
+    // Stack: 8 bytes (Box pointer)
+    // Heap: 4 bytes (i32)
+    let b = Box::new(42);
+}  // Drop is called, heap memory is freed
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Heap allocation is expensive:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Allocates once, then grows as needed (reallocating)
+let mut v = Vec::new();
+for i in 0..1000 {
+    v.push(i);  // Might allocate/reallocate
+}
+
+// Pre-allocate: only allocates once
+let mut v = Vec::with_capacity(1000);
+for i in 0..1000 {
+    v.push(i);  // No allocation needed
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="static-data-data-segment"><a class="header" href="#static-data-data-segment">Static Data (DATA Segment)</a></h3>
+<p><strong>What lives here:</strong></p>
+<ul>
+<li><code>static</code> variables</li>
+<li><code>const</code> values (inlined, but literals live here)</li>
+<li>String literals (<code>"hello"</code>)</li>
+<li>Binary data embedded at compile time</li>
+</ul>
+<p><strong>Characteristics:</strong></p>
+<ul>
+<li><strong>Loaded at program start</strong>: Burned into the executable</li>
+<li><strong>Lives forever</strong>: Never deallocated (program lifetime)</li>
+<li><strong>Fixed size</strong>: Known at compile time</li>
+<li><strong>Read-only or read-write</strong>: Depends on whether it's <code>static</code> or <code>static mut</code></li>
+</ul>
+<p><strong>Example:</strong></p>
+<pre><pre class="playground"><code class="language-rust">static GREETING: &amp;str = "Hello, world!";  // DATA segment
+const MAX: i32 = 100;                     // Inlined (no memory allocated)
+
+fn main() {
+    println!("{}", GREETING);  // Uses data from DATA segment
+    let x = MAX;               // Constant inlined: let x = 100;
+}</code></pre></pre>
+<p><strong>String literals are special:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let s1 = "hello";  // Points to DATA segment
+let s2 = "hello";  // Points to SAME location in DATA segment!
+assert_eq!(s1.as_ptr(), s2.as_ptr());  // Same address!
+
+let s3 = String::from("hello");  // Allocates on heap (different address)
+<span class="boring">}</span></code></pre></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../docs/appendix-memory-layout-0-intro.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../docs/appendix-memory-layout-2-pointers.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../docs/appendix-memory-layout-0-intro.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../docs/appendix-memory-layout-2-pointers.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../mermaid.min.js"></script>
+        <script src="../mermaid-init.js"></script>
+        <script src="../theme/landing.js"></script>
+
+
+
+    </div>
+    </body>
+</html>
