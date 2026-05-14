@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a3d4fbfe.js";
+            window.path_to_searchindex_js = "../searchindex-a7572905.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-189f500f.js"></script>
+        <script src="../toc-b5aa905e.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -390,184 +390,6 @@ s  // "hello" - we now own the String directly
 <div style="width:100%; height:272px;"><style type="text/css">svg { width: 100% !important; }</style><svg xmlns="http://www.w3.org/2000/svg" width="440" height="272" class="svgbob"><style>.svgbob line, .svgbob path, .svgbob circle, .svgbob rect, .svgbob polygon {  stroke: var(--fg);  stroke-width: 2;  stroke-opacity: 1;  fill-opacity: 1;  stroke-linecap: round;  stroke-linejoin: miter;}.svgbob text {  white-space: pre;  fill: var(--fg);  font-family: Iosevka Fixed, monospace;  font-size: 14px;}.svgbob rect.backdrop {  stroke: none;  fill: transparent;}.svgbob .broken {  stroke-dasharray: 8;}.svgbob .filled {  fill: black;}.svgbob .bg_filled {  fill: transparent;  stroke-width: 1;}.svgbob .nofill {  fill: transparent;}.svgbob .end_marked_arrow {  marker-end: url(#arrow);}.svgbob .start_marked_arrow {  marker-start: url(#arrow);}.svgbob .end_marked_diamond {  marker-end: url(#diamond);}.svgbob .start_marked_diamond {  marker-start: url(#diamond);}.svgbob .end_marked_circle {  marker-end: url(#circle);}.svgbob .start_marked_circle {  marker-start: url(#circle);}.svgbob .end_marked_open_circle {  marker-end: url(#open_circle);}.svgbob .start_marked_open_circle {  marker-start: url(#open_circle);}.svgbob .end_marked_big_open_circle {  marker-end: url(#big_open_circle);}.svgbob .start_marked_big_open_circle {  marker-start: url(#big_open_circle);}</style><defs><marker id="arrow" viewbox="-2 -2 8 8" refx="4" refy="2" markerwidth="7" markerheight="7" orient="auto-start-reverse"><polygon points="0,0 0,4 4,2 0,0"></polygon></marker><marker id="diamond" viewbox="-2 -2 8 8" refx="4" refy="2" markerwidth="7" markerheight="7" orient="auto-start-reverse"><polygon points="0,2 2,0 4,2 2,4 0,2"></polygon></marker><marker id="circle" viewbox="0 0 8 8" refx="4" refy="4" markerwidth="7" markerheight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="filled"></circle></marker><marker id="open_circle" viewbox="0 0 8 8" refx="4" refy="4" markerwidth="7" markerheight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="bg_filled"></circle></marker><marker id="big_open_circle" viewbox="0 0 8 8" refx="4" refy="4" markerwidth="7" markerheight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="3" class="bg_filled"></circle></marker></defs><rect class="backdrop" x="0" y="0" width="440" height="272"></rect><rect x="28" y="40" width="128" height="48" class="solid nofill" rx="4"></rect><text x="42" y="60">boxed:</text><text x="98" y="60">Box0</text><text x="42" y="76">(consumed)</text><rect x="268" y="40" width="152" height="48" class="broken nofill" rx="4"></rect><text x="282" y="60">String</text><text x="338" y="60">struct</text><text x="282" y="76">(freed!)</text><text x="66" y="12">STACK</text><line x1="212" y1="0" x2="212" y2="256" class="solid"></line><text x="42" y="140">s:</text><text x="66" y="140">String</text><line x1="92" y1="168" x2="92" y2="168" class="solid end_marked_circle"></line><line x1="96" y1="168" x2="256" y2="168" class="solid"></line><polygon points="256,164 264,168 256,172" class="filled"></polygon><text x="282" y="172">h</text><text x="314" y="172">e</text><text x="346" y="172">l</text><text x="378" y="172">l</text><text x="410" y="172">o</text><text x="90" y="188">5</text><text x="90" y="204">5</text><text x="26" y="236">24</text><text x="50" y="236">bytes</text><text x="282" y="12">HEAP</text><text x="42" y="172">ptr:</text><text x="450" y="172">(5 bytes)</text><text x="42" y="188">len:</text><text x="42" y="204">cap:</text><g><line x1="28" y1="120" x2="156" y2="120" class="solid"></line><line x1="28" y1="120" x2="28" y2="216" class="solid"></line><line x1="156" y1="120" x2="156" y2="216" class="solid"></line><line x1="28" y1="152" x2="156" y2="152" class="solid"></line><line x1="28" y1="216" x2="156" y2="216" class="solid"></line></g><g><line x1="268" y1="152" x2="428" y2="152" class="solid"></line><line x1="268" y1="152" x2="268" y2="184" class="solid"></line><line x1="300" y1="152" x2="300" y2="184" class="solid"></line><line x1="332" y1="152" x2="332" y2="184" class="solid"></line><line x1="364" y1="152" x2="364" y2="184" class="solid"></line><line x1="396" y1="152" x2="396" y2="184" class="solid"></line><line x1="428" y1="152" x2="428" y2="184" class="solid"></line><line x1="268" y1="184" x2="428" y2="184" class="solid"></line></g></svg></div>
 
 <p>The String still owns its heap-allocated data - we just moved the String struct itself from heap to stack!</p>
-<h3 id="leak---intentionally-leak-memory"><a class="header" href="#leak---intentionally-leak-memory">leak - Intentionally Leak Memory</a></h3>
-<p>Sometimes you want to keep data alive forever without deallocation:</p>
-<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>impl&lt;T&gt; Box0&lt;T&gt; {
-    fn leak(self) -&gt; &amp;'static mut T {
-        let ptr = self.ptr;
-        std::mem::forget(self);  // Don't run Drop
-        unsafe { &amp;mut *ptr }
-    }
-}
-<span class="boring">}</span></code></pre>
-<p><strong>Example:</strong></p>
-<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>let boxed = Box0::new(42);
-let leaked: &amp;'static mut i32 = boxed.leak();
-*leaked = 100;  // Can mutate forever
-// Memory is never freed!
-<span class="boring">}</span></code></pre>
-<p><strong>Is this safe?</strong></p>
-<p>Yes! <code>leak()</code> is <strong>safe</strong> (not marked <code>unsafe</code>) because:</p>
-<ul>
-<li>It doesn’t cause undefined behavior</li>
-<li>The returned reference has <code>'static</code> lifetime, valid for the entire program</li>
-<li>The heap memory stays allocated and accessible through the reference</li>
-</ul>
-<p><strong>What if we don’t save the returned reference?</strong></p>
-<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>fn leak_and_lose() {
-    let boxed = Box0::new(42);
-    let leaked: &amp;'static mut i32 = boxed.leak();  // Get the reference
-    // leaked is a local variable that will be destroyed when function ends
-    // But the heap memory it points to? Still there!
-}
-
-leak_and_lose();  // Function ends, local variable 'leaked' is gone
-// The i32 is still on the heap at some address, taking up 4 bytes
-// But we have no way to access it anymore - the reference is lost!
-<span class="boring">}</span></code></pre>
-<p>This is still <strong>safe</strong> (no UB), but it’s a <strong>useless memory leak</strong>:</p>
-<ul>
-<li>The heap memory is leaked (never freed)</li>
-<li>The local variable <code>leaked</code> (just a pointer on the stack) is destroyed</li>
-<li>But we can’t access the heap data because we lost the reference</li>
-<li>The data sits in memory for the rest of the program, wasting space</li>
-</ul>
-<p>When <code>leaked</code> goes out of scope, only the <strong>reference</strong> (a stack pointer) is removed. The <strong>heap data</strong> remains forever - that’s the whole point of <code>leak()</code>.</p>
-<p>Use cases: global state, thread-local storage, or when interfacing with C code that expects static lifetime.</p>
-<h3 id="into_raw-and-from_raw---raw-pointer-conversion"><a class="header" href="#into_raw-and-from_raw---raw-pointer-conversion">into_raw and from_raw - Raw Pointer Conversion</a></h3>
-<p>Convert to/from raw pointers for FFI or manual memory management:</p>
-<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>impl&lt;T&gt; Box0&lt;T&gt; {
-    fn into_raw(self) -&gt; *mut T {
-        let ptr = self.ptr;
-        std::mem::forget(self);  // Don't run Drop
-        ptr
-    }
-
-    unsafe fn from_raw(ptr: *mut T) -&gt; Box0&lt;T&gt; {
-        Box0 { ptr }
-    }
-}
-<span class="boring">}</span></code></pre>
-<p><strong>Example:</strong></p>
-<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>extern "C" { fn c_process_data(ptr: *mut String); }
-
-let boxed = Box0::new(String::from("hello"));
-let ptr = Box0::into_raw(boxed);
-unsafe { c_process_data(ptr); }  // Pass to C
-
-// from_raw is UNSAFE - you must guarantee the pointer came from into_raw
-let restored = unsafe { Box0::from_raw(ptr) };  // Get it back
-<span class="boring">}</span></code></pre>
-<p><strong>Warning:</strong> <code>from_raw</code> is <code>unsafe</code> because:</p>
-<ul>
-<li>The pointer must have come from <code>into_raw</code></li>
-<li>You must not use it after calling <code>from_raw</code> (double-free!)</li>
-<li>The pointer must not be null</li>
-</ul>
-<p>Compare to dereferencing and moving:</p>
-<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>let boxed = Box0::new(String::from("hello"));
-let s = *boxed;  // Move out of box
-// ERROR: Can't move out of `*boxed` because Box implements Deref but not DerefMove
-<span class="boring">}</span></code></pre>
-<p>This doesn’t work with the real <code>Box</code> either - you need <code>Box::into_inner()</code> (or just let the box drop if you want both gone).</p>
-<h2 id="deref-coercion"><a class="header" href="#deref-coercion">Deref Coercion</a></h2>
-<p>One of Rust’s nicest features. When you have <code>&amp;Box0&lt;T&gt;</code>, it can automatically become <code>&amp;T</code>:</p>
-<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>fn print_len(s: &amp;str) {
-    println!("Length: {}", s.len());
-}
-
-let boxed = Box0::new(String::from("hello"));
-print_len(&amp;boxed);  // &amp;Box0&lt;String&gt; -&gt; &amp;String -&gt; &amp;str
-<span class="boring">}</span></code></pre>
-<p><strong>How does this work?</strong></p>
-<p>Deref coercion is a <strong>special compiler feature</strong> that only works with the <code>Deref</code> trait. The compiler automatically inserts deref calls to make types match:</p>
-<ol>
-<li>You pass <code>&amp;boxed</code>, which is <code>&amp;Box0&lt;String&gt;</code></li>
-<li>Function expects <code>&amp;str</code></li>
-<li>Compiler tries: “Can I turn <code>&amp;Box0&lt;String&gt;</code> into <code>&amp;str</code>?”</li>
-<li>First deref: <code>&amp;Box0&lt;String&gt;</code> → calls <code>deref()</code> → <code>&amp;String</code></li>
-<li>Second deref: <code>&amp;String</code> → calls <code>deref()</code> → <code>&amp;str</code> ✅ Match!</li>
-</ol>
-<p>The compiler chains <code>Deref</code> implementations automatically. This <strong>only works</strong> with:</p>
-<ul>
-<li>The <code>Deref</code> trait (for immutable references)</li>
-<li>The <code>DerefMut</code> trait (for mutable references)</li>
-</ul>
-<p>You can’t create your own trait with this behavior - it’s built into the compiler specifically for <code>Deref</code>/<code>DerefMut</code>.</p>
-<h2 id="vec-and-string-box-with-extra-metadata"><a class="header" href="#vec-and-string-box-with-extra-metadata">Vec and String: Box with Extra Metadata</a></h2>
-<p><code>Box</code> isn’t the only type that uses heap allocation. <code>Vec</code> and <code>String</code> do too - they’re essentially “fat” pointers with extra fields:</p>
-<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>// Simplified Vec definition
-struct Vec&lt;T&gt; {
-    ptr: *mut T,   // Pointer to heap data (like Box)
-    len: usize,    // Number of elements currently stored
-    cap: usize,    // Total allocated capacity
-}
-
-// Simplified String definition
-struct String {
-    vec: Vec&lt;u8&gt;,  // String is just a Vec&lt;u8&gt; with UTF-8 guarantee
-}
-
-// Which means String is really:
-struct String {
-    ptr: *mut u8,  // Pointer to heap-allocated bytes
-    len: usize,    // Length in bytes
-    cap: usize,    // Capacity in bytes
-}
-<span class="boring">}</span></code></pre>
-<p>Compare to Box:</p>
-<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>struct Box&lt;T&gt; {
-    ptr: *mut T,   // Just the pointer, nothing else
-}
-<span class="boring">}</span></code></pre>
-<div class="table-wrapper">
-<table>
-<thead>
-<tr><th>Type</th><th>Stack size</th><th>Heap data</th></tr>
-</thead>
-<tbody>
-<tr><td><code>Box&lt;T&gt;</code></td><td>8 bytes (ptr)</td><td><code>T</code></td></tr>
-<tr><td><code>Vec&lt;T&gt;</code></td><td>24 bytes (ptr + len + cap)</td><td><code>[T; cap]</code></td></tr>
-<tr><td><code>String</code></td><td>24 bytes (ptr + len + cap)</td><td><code>[u8; cap]</code></td></tr>
-</tbody>
-</table>
-</div>
-<p>All three:</p>
-<ul>
-<li>Allocate on the heap</li>
-<li>Implement <code>Deref</code> for ergonomic access</li>
-<li>Implement <code>Drop</code> to free memory automatically</li>
-</ul>
-<h2 id="exercises"><a class="header" href="#exercises">Exercises</a></h2>
-<p>See the full code in <a href="./src/box.rs"><code>src/box.rs</code></a> for the complete implementation of <code>Option0</code> with all methods.
-Also, see the exercises in <a href="./examples/01_box.rs">01_box.rs</a></p>
-<p><strong>Complete solutions:</strong> Switch to the <code>answers</code> branch with <code>git checkout answers</code> to see completed exercises</p>
-<h2 id="key-takeaways"><a class="header" href="#key-takeaways">Key Takeaways</a></h2>
-<ol>
-<li><strong>Box is just a pointer</strong> - Single pointer to heap-allocated data</li>
-<li><strong>Deref enables ergonomics</strong> - Use <code>*b</code> to access inner value</li>
-<li><strong>Drop ensures cleanup</strong> - Memory freed when Box goes out of scope</li>
-<li><strong>Deref coercion is magic</strong> - <code>&amp;Box&lt;T&gt;</code> automatically becomes <code>&amp;T</code></li>
-<li><strong>Use for recursive types</strong> - Break infinite size with indirection</li>
-</ol>
 
                     </main>
 
@@ -577,7 +399,7 @@ Also, see the exercises in <a href="./examples/01_box.rs">01_box.rs</a></p>
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../docs/04-vec-0-intro.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../docs/03-box-2-advanced.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -591,7 +413,7 @@ Also, see the exercises in <a href="./examples/01_box.rs">01_box.rs</a></p>
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../docs/04-vec-0-intro.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../docs/03-box-2-advanced.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

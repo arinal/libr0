@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a3d4fbfe.js";
+            window.path_to_searchindex_js = "../searchindex-a7572905.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-189f500f.js"></script>
+        <script src="../toc-b5aa905e.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -241,7 +241,7 @@ let r3 = cell.borrow_mut();  // 💥 PANIC! Can't borrow mutably while borrowed
 <li><strong><code>borrow()</code> / <code>borrow_mut()</code></strong>: Only need <code>&amp;self</code> → <strong>runtime checked</strong> → This is interior mutability!</li>
 </ul>
 <p>If you have <code>&amp;mut RefCell&lt;T&gt;</code>, you don’t need interior mutability at all - you already have exclusive access! You could’ve just used <code>T</code> directly. The whole point of <code>RefCell</code> is <code>borrow()</code> and <code>borrow_mut()</code> - they let you mutate through <code>&amp;self</code>.</p>
-<p>See the <a href="./05-cell.html">Cell chapter’s get_mut section</a> for more details on why <code>get_mut</code> defeats the purpose of interior mutability.</p>
+<p>See the <a href="./05-cell-1-building.html#get_mut---common-confusion-about-getting-references-from-cell">Cell chapter’s get_mut section</a> for more details on why <code>get_mut</code> defeats the purpose of interior mutability.</p>
 <h2 id="why-cell-is-copy-only-and-refcell-is-not"><a class="header" href="#why-cell-is-copy-only-and-refcell-is-not">Why Cell is Copy-only and RefCell is Not</a></h2>
 <p>This is crucial to understand:</p>
 <p><strong>Cell</strong> works by copying values in and out (<code>set</code>, <code>get</code>, <code>replace</code>):</p>

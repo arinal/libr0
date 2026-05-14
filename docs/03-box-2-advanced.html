@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Result - libr0: Building Rust&#x27;s Standard Library from Scratch</title>
+        <title>Advanced Methods &amp; Deref Coercion - libr0: Building Rust&#x27;s Standard Library from Scratch</title>
 
 
         <!-- Custom HTML head -->
@@ -177,133 +177,195 @@
 
                 <div id="mdbook-content" class="content">
                     <main>
-                        <h1 id="chapter-2-result---error-handling-done-right"><a class="header" href="#chapter-2-result---error-handling-done-right">Chapter 2: Result - Error Handling Done Right</a></h1>
-<h2 id="the-problem-exceptions-are-invisible"><a class="header" href="#the-problem-exceptions-are-invisible">The Problem: Exceptions Are Invisible</a></h2>
-<p>In many languages, any function can throw an exception:</p>
-<pre><code class="language-java">String content = readFile("non-existent-file.txt"); // throws exception
-println("File content: " + content);
-</code></pre>
-<p>In Java, the above code compiles fine, even though the programmer “forgot” to handle exception.</p>
-<p>Rust’s approach: readFile returns a wrapper to indicate it can fail:</p>
+                        <h1 id="advanced-methods--deref-coercion"><a class="header" href="#advanced-methods--deref-coercion">Advanced Methods &amp; Deref Coercion</a></h1>
+<h3 id="leak---intentionally-leak-memory"><a class="header" href="#leak---intentionally-leak-memory">leak - Intentionally Leak Memory</a></h3>
+<p>Sometimes you want to keep data alive forever without deallocation:</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>let result = readFile("non-existent-file.txt"); // returns Result&lt;String, Error&gt;
-// result is not the content, but a wrapper that can be Ok(content) or Err(error)
-// to extract the content, you're forced to handle both cases:
-match result {
-    Ok(content) =&gt; println!("File content: {}", content),
-    Err(e) =&gt; println!("Failed to read file: {:?}", e),
+</span>impl&lt;T&gt; Box0&lt;T&gt; {
+    fn leak(self) -&gt; &amp;'static mut T {
+        let ptr = self.ptr;
+        std::mem::forget(self);  // Don't run Drop
+        unsafe { &amp;mut *ptr }
+    }
 }
-// this way, the programmer can't "forget" to handle errors, as the case with the java example.
 <span class="boring">}</span></code></pre>
-<h2 id="our-result-type"><a class="header" href="#our-result-type">Our Result Type</a></h2>
+<p><strong>Example:</strong></p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>enum Result0&lt;T, E&gt; {
-    Ok(T),
-    Err(E),
-}
+</span>let boxed = Box0::new(42);
+let leaked: &amp;'static mut i32 = boxed.leak();
+*leaked = 100;  // Can mutate forever
+// Memory is never freed!
 <span class="boring">}</span></code></pre>
-<p>Two variants:</p>
+<p><strong>Is this safe?</strong></p>
+<p>Yes! <code>leak()</code> is <strong>safe</strong> (not marked <code>unsafe</code>) because:</p>
 <ul>
-<li><code>Ok(T)</code> - operation succeeded with value <code>T</code></li>
-<li><code>Err(E)</code> - operation failed with error <code>E</code></li>
+<li>It doesn’t cause undefined behavior</li>
+<li>The returned reference has <code>'static</code> lifetime, valid for the entire program</li>
+<li>The heap memory stays allocated and accessible through the reference</li>
 </ul>
-<p>The caller <strong>must</strong> handle both cases. The compiler won’t let you ignore errors.</p>
-<h2 id="what-can-be-an-error"><a class="header" href="#what-can-be-an-error">What Can Be an Error?</a></h2>
-<p>The <code>E</code> in <code>Result&lt;T, E&gt;</code> can be <strong>any type</strong>. It doesn’t need to implement <code>std::error::Error</code> or any special trait, as long as you wrap it in <code>Err()</code>.</p>
+<p><strong>What if we don’t save the returned reference?</strong></p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>// String as error
-let error: Result0&lt;i32, String&gt; = Err(String::from("something broke"));
-
-// &amp;str as error
-let error: Result0&lt;i32, &amp;str&gt; = Err("file not found");
-
-// Number as error code
-let error: Result0&lt;i32, i32&gt; = Err(404);
-
-// Custom enum - most common in real code
-#[derive(Debug)]
-enum ParseError {
-    Empty,
-    TooLong,
-    InvalidFormat,
+</span>fn leak_and_lose() {
+    let boxed = Box0::new(42);
+    let leaked: &amp;'static mut i32 = boxed.leak();  // Get the reference
+    // leaked is a local variable that will be destroyed when function ends
+    // But the heap memory it points to? Still there!
 }
-let error: Result0&lt;i32, ParseError&gt; = Err(ParseError::Empty);
+
+leak_and_lose();  // Function ends, local variable 'leaked' is gone
+// The i32 is still on the heap at some address, taking up 4 bytes
+// But we have no way to access it anymore - the reference is lost!
 <span class="boring">}</span></code></pre>
-<p><strong>Key rule</strong>: Always wrap your error in <code>Err()</code>. Don’t return the error type directly:</p>
+<p>This is still <strong>safe</strong> (no UB), but it’s a <strong>useless memory leak</strong>:</p>
+<ul>
+<li>The heap memory is leaked (never freed)</li>
+<li>The local variable <code>leaked</code> (just a pointer on the stack) is destroyed</li>
+<li>But we can’t access the heap data because we lost the reference</li>
+<li>The data sits in memory for the rest of the program, wasting space</li>
+</ul>
+<p>When <code>leaked</code> goes out of scope, only the <strong>reference</strong> (a stack pointer) is removed. The <strong>heap data</strong> remains forever - that’s the whole point of <code>leak()</code>.</p>
+<p>Use cases: global state, thread-local storage, or when interfacing with C code that expects static lifetime.</p>
+<h3 id="into_raw-and-from_raw---raw-pointer-conversion"><a class="header" href="#into_raw-and-from_raw---raw-pointer-conversion">into_raw and from_raw - Raw Pointer Conversion</a></h3>
+<p>Convert to/from raw pointers for FFI or manual memory management:</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>// ❌ Wrong
-fn parse(s: &amp;str) -&gt; Result0&lt;i32, &amp;str&gt; {
-    if s.is_empty() {
-        "empty string"  // ERROR: expected Result0, found &amp;str
-    } else {
-        Ok(42)
+</span>impl&lt;T&gt; Box0&lt;T&gt; {
+    fn into_raw(self) -&gt; *mut T {
+        let ptr = self.ptr;
+        std::mem::forget(self);  // Don't run Drop
+        ptr
     }
-}
 
-// ✅ Correct
-fn parse(s: &amp;str) -&gt; Result0&lt;i32, &amp;str&gt; {
-    if s.is_empty() {
-        Err("empty string")  // Wrapped in Err!
-    } else {
-        Ok(42)
+    unsafe fn from_raw(ptr: *mut T) -&gt; Box0&lt;T&gt; {
+        Box0 { ptr }
     }
 }
 <span class="boring">}</span></code></pre>
-<h2 id="basic-usage"><a class="header" href="#basic-usage">Basic Usage</a></h2>
-<p>Let’s validate a person with a custom error type:</p>
-<pre class="playground"><code class="language-rust">use Result0::{Ok, Err};
+<p><strong>Example:</strong></p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>extern "C" { fn c_process_data(ptr: *mut String); }
 
-#[derive(Debug)]
-struct Person {
-    name: String,
-    age: i32,
+let boxed = Box0::new(String::from("hello"));
+let ptr = Box0::into_raw(boxed);
+unsafe { c_process_data(ptr); }  // Pass to C
+
+// from_raw is UNSAFE - you must guarantee the pointer came from into_raw
+let restored = unsafe { Box0::from_raw(ptr) };  // Get it back
+<span class="boring">}</span></code></pre>
+<p><strong>Warning:</strong> <code>from_raw</code> is <code>unsafe</code> because:</p>
+<ul>
+<li>The pointer must have come from <code>into_raw</code></li>
+<li>You must not use it after calling <code>from_raw</code> (double-free!)</li>
+<li>The pointer must not be null</li>
+</ul>
+<p>Compare to dereferencing and moving:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let boxed = Box0::new(String::from("hello"));
+let s = *boxed;  // Move out of box
+// ERROR: Can't move out of `*boxed` because Box implements Deref but not DerefMove
+<span class="boring">}</span></code></pre>
+<p>This doesn’t work with the real <code>Box</code> either - you need <code>Box::into_inner()</code> (or just let the box drop if you want both gone).</p>
+<h2 id="deref-coercion"><a class="header" href="#deref-coercion">Deref Coercion</a></h2>
+<p>One of Rust’s nicest features. When you have <code>&amp;Box0&lt;T&gt;</code>, it can automatically become <code>&amp;T</code>:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn print_len(s: &amp;str) {
+    println!("Length: {}", s.len());
 }
 
-#[derive(Debug)]
-enum InvalidPersonError {
-    EmptyName,
-    InvalidAge(i32),
+let boxed = Box0::new(String::from("hello"));
+print_len(&amp;boxed);  // &amp;Box0&lt;String&gt; -&gt; &amp;String -&gt; &amp;str
+<span class="boring">}</span></code></pre>
+<p><strong>How does this work?</strong></p>
+<p>Deref coercion is a <strong>special compiler feature</strong> that only works with the <code>Deref</code> trait. The compiler automatically inserts deref calls to make types match:</p>
+<ol>
+<li>You pass <code>&amp;boxed</code>, which is <code>&amp;Box0&lt;String&gt;</code></li>
+<li>Function expects <code>&amp;str</code></li>
+<li>Compiler tries: “Can I turn <code>&amp;Box0&lt;String&gt;</code> into <code>&amp;str</code>?”</li>
+<li>First deref: <code>&amp;Box0&lt;String&gt;</code> → calls <code>deref()</code> → <code>&amp;String</code></li>
+<li>Second deref: <code>&amp;String</code> → calls <code>deref()</code> → <code>&amp;str</code> ✅ Match!</li>
+</ol>
+<p>The compiler chains <code>Deref</code> implementations automatically. This <strong>only works</strong> with:</p>
+<ul>
+<li>The <code>Deref</code> trait (for immutable references)</li>
+<li>The <code>DerefMut</code> trait (for mutable references)</li>
+</ul>
+<p>You can’t create your own trait with this behavior - it’s built into the compiler specifically for <code>Deref</code>/<code>DerefMut</code>.</p>
+<h2 id="vec-and-string-box-with-extra-metadata"><a class="header" href="#vec-and-string-box-with-extra-metadata">Vec and String: Box with Extra Metadata</a></h2>
+<p><code>Box</code> isn’t the only type that uses heap allocation. <code>Vec</code> and <code>String</code> do too - they’re essentially “fat” pointers with extra fields:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Simplified Vec definition
+struct Vec&lt;T&gt; {
+    ptr: *mut T,   // Pointer to heap data (like Box)
+    len: usize,    // Number of elements currently stored
+    cap: usize,    // Total allocated capacity
 }
 
-fn validate_person(person: Person) -&gt; Result0&lt;Person, InvalidPersonError&gt; {
-    if person.name.is_empty() {
-        Err(InvalidPersonError::EmptyName)  // Wrap in Err!
-    } else if person.age &lt; 0 {
-        Err(InvalidPersonError::InvalidAge(person.age))  // Capture the bad value
-    } else {
-        Ok(person)  // Wrap valid person in Ok!
-    }
+// Simplified String definition
+struct String {
+    vec: Vec&lt;u8&gt;,  // String is just a Vec&lt;u8&gt; with UTF-8 guarantee
 }
 
-fn main() {
-    let person = Person { name: String::from("Alice"), age: 30 };
-    match validate_person(person) {
-        Ok(valid_person) =&gt; println!("Valid person: {:?}", valid_person),
-        Err(e) =&gt; println!("Invalid person: {:?}", e),
-    }
-    // Output: Valid person: Person { name: "Alice", age: 30 }
-
-    let bad_person = Person { name: String::from(""), age: -5 };
-    match validate_person(bad_person) {
-        Ok(valid_person) =&gt; println!("Valid person: {:?}", valid_person),
-        Err(e) =&gt; println!("Invalid person: {:?}", e),
-    }
-    // Output: Invalid person: EmptyName
-}</code></pre>
+// Which means String is really:
+struct String {
+    ptr: *mut u8,  // Pointer to heap-allocated bytes
+    len: usize,    // Length in bytes
+    cap: usize,    // Capacity in bytes
+}
+<span class="boring">}</span></code></pre>
+<p>Compare to Box:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct Box&lt;T&gt; {
+    ptr: *mut T,   // Just the pointer, nothing else
+}
+<span class="boring">}</span></code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Type</th><th>Stack size</th><th>Heap data</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Box&lt;T&gt;</code></td><td>8 bytes (ptr)</td><td><code>T</code></td></tr>
+<tr><td><code>Vec&lt;T&gt;</code></td><td>24 bytes (ptr + len + cap)</td><td><code>[T; cap]</code></td></tr>
+<tr><td><code>String</code></td><td>24 bytes (ptr + len + cap)</td><td><code>[u8; cap]</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>All three:</p>
+<ul>
+<li>Allocate on the heap</li>
+<li>Implement <code>Deref</code> for ergonomic access</li>
+<li>Implement <code>Drop</code> to free memory automatically</li>
+</ul>
+<h2 id="exercises"><a class="header" href="#exercises">Exercises</a></h2>
+<p>See the full code in <a href="./src/box.rs"><code>src/box.rs</code></a> for the complete implementation of <code>Option0</code> with all methods.
+Also, see the exercises in <a href="./examples/01_box.rs">01_box.rs</a></p>
+<p><strong>Complete solutions:</strong> Switch to the <code>answers</code> branch with <code>git checkout answers</code> to see completed exercises</p>
+<h2 id="key-takeaways"><a class="header" href="#key-takeaways">Key Takeaways</a></h2>
+<ol>
+<li><strong>Box is just a pointer</strong> - Single pointer to heap-allocated data</li>
+<li><strong>Deref enables ergonomics</strong> - Use <code>*b</code> to access inner value</li>
+<li><strong>Drop ensures cleanup</strong> - Memory freed when Box goes out of scope</li>
+<li><strong>Deref coercion is magic</strong> - <code>&amp;Box&lt;T&gt;</code> automatically becomes <code>&amp;T</code></li>
+<li><strong>Use for recursive types</strong> - Break infinite size with indirection</li>
+</ol>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../docs/01-option-3-borrowing.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../docs/03-box-1-building.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../docs/02-result-1-unwrapping.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../docs/04-vec-0-intro.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -313,11 +375,11 @@ fn main() {
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../docs/01-option-3-borrowing.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../docs/03-box-1-building.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../docs/02-result-1-unwrapping.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../docs/04-vec-0-intro.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>
