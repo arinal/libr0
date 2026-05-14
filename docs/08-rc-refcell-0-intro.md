@@ -229,8 +229,8 @@ Remember our cycle problem? Both nodes point to each other:
 ```bob
  "node_a" ---> "inner node_a" ----> "inner node_b"  <-- "node_b"
                "(count: 2)"         "(count: 2)"
-                    ^                     │
-                    └─────────────────────┘
+                    ^                     |
+                    +─────────────────────+
 ```
 
 When we drop both variables, the counts go from 2 to 1, but never reach 0. **The nodes keep each other alive forever.**

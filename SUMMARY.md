@@ -17,6 +17,7 @@
 
 - [Box](docs/03-box-0-intro.md)
   - [Building Our Own](docs/03-box-1-building.md)
+  - [Advanced Methods & Deref Coercion](docs/03-box-2-advanced.md)
 - [Vec](docs/04-vec-0-intro.md)
   - [Slices & Memory Layout](docs/04-vec-1-slices.md)
   - [Operations & Performance](docs/04-vec-2-operations.md)

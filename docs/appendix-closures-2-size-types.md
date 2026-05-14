@@ -173,4 +173,4 @@ let f_ref: &dyn Fn(i32) -> i32 = &f;
 
 ---
 
-See also: [Appendix Index](appendix.md) | [A: Send and Sync](appendix-send-sync.md) | [C: Dynamic Dispatch](appendix-dynamic-dispatch.md)
+See also: [Closures](appendix-closures-0-intro.md) | [Sized](appendix-sized.md) | [Nested Types](appendix-nested-types.md)

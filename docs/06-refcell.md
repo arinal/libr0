@@ -76,7 +76,7 @@ let mut cell = RefCell::new(5);  // Note: mut cell
 
 If you have `&mut RefCell<T>`, you don't need interior mutability at all - you already have exclusive access! You could've just used `T` directly. The whole point of `RefCell` is `borrow()` and `borrow_mut()` - they let you mutate through `&self`.
 
-See the [Cell chapter's get_mut section](./05-cell.md:454) for more details on why `get_mut` defeats the purpose of interior mutability.
+See the [Cell chapter's get_mut section](./05-cell-1-building.md#get_mut---common-confusion-about-getting-references-from-cell) for more details on why `get_mut` defeats the purpose of interior mutability.
 
 ## Why Cell is Copy-only and RefCell is Not
 

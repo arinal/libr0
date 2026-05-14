@@ -596,4 +596,4 @@ This is how types like `std::path::Path` work - they're essentially wrappers aro
 
 ---
 
-See also: [Appendix Index](appendix.md) | [Closures](appendix-closures.md) | [Dynamic Dispatch](appendix-dynamic-dispatch.md)
+See also: [Closures](appendix-closures-0-intro.md) | [Nested Types](appendix-nested-types.md)
