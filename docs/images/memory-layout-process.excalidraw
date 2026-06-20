@@ -1,0 +1,41 @@
+{
+ "type": "excalidraw",
+ "version": 2,
+ "source": "hermes-agent",
+ "elements": [
+  { "type": "text", "id": "title", "x": 207, "y": 24, "text": "Process Memory Layout", "fontSize": 26, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "Process Memory Layout", "autoResize": true },
+  { "type": "text", "id": "hi", "x": 60, "y": 74, "text": "High Memory Addresses  (0x0000_7FFF_FFFF_FFFF)", "fontSize": 14, "fontFamily": 1, "strokeColor": "#495057", "originalText": "High Memory Addresses  (0x0000_7FFF_FFFF_FFFF)", "autoResize": true },
+
+  { "type": "rectangle", "id": "stack", "x": 120, "y": 100, "width": 460, "height": 78, "backgroundColor": "#a5d8ff", "fillStyle": "solid", "strokeColor": "#1e1e1e", "strokeWidth": 2, "roughness": 1, "opacity": 100 },
+  { "type": "text", "id": "stack_t", "x": 327, "y": 119, "text": "STACK", "fontSize": 18, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "STACK", "autoResize": true },
+  { "type": "text", "id": "stack_s", "x": 220, "y": 143, "text": "(Function frames, local variables)", "fontSize": 15, "fontFamily": 1, "strokeColor": "#343a40", "originalText": "(Function frames, local variables)", "autoResize": true },
+  { "type": "text", "id": "stack_n", "x": 600, "y": 128, "text": "<- grows downward", "fontSize": 15, "fontFamily": 1, "strokeColor": "#1971c2", "originalText": "<- grows downward", "autoResize": true },
+
+  { "type": "rectangle", "id": "unused", "x": 120, "y": 178, "width": 460, "height": 64, "backgroundColor": "#f1f3f5", "fillStyle": "solid", "strokeColor": "#1e1e1e", "strokeWidth": 2, "roughness": 1, "opacity": 100 },
+  { "type": "text", "id": "unused_t", "x": 297, "y": 202, "text": "(unused space)", "fontSize": 15, "fontFamily": 1, "strokeColor": "#495057", "originalText": "(unused space)", "autoResize": true },
+  { "type": "arrow", "id": "dn", "x": 190, "y": 186, "width": 0, "height": 20, "points": [[0,0],[0,20]], "endArrowhead": "arrow", "strokeColor": "#1971c2", "strokeWidth": 2, "roughness": 1, "opacity": 100 },
+  { "type": "arrow", "id": "up", "x": 510, "y": 236, "width": 0, "height": 20, "points": [[0,0],[0,-20]], "endArrowhead": "arrow", "strokeColor": "#2f9e44", "strokeWidth": 2, "roughness": 1, "opacity": 100 },
+
+  { "type": "rectangle", "id": "heap", "x": 120, "y": 242, "width": 460, "height": 78, "backgroundColor": "#b2f2bb", "fillStyle": "solid", "strokeColor": "#1e1e1e", "strokeWidth": 2, "roughness": 1, "opacity": 100 },
+  { "type": "text", "id": "heap_t", "x": 330, "y": 261, "text": "HEAP", "fontSize": 18, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "HEAP", "autoResize": true },
+  { "type": "text", "id": "heap_s", "x": 195, "y": 285, "text": "(Dynamically allocated: Box, Vec, String)", "fontSize": 15, "fontFamily": 1, "strokeColor": "#343a40", "originalText": "(Dynamically allocated: Box, Vec, String)", "autoResize": true },
+  { "type": "text", "id": "heap_n", "x": 600, "y": 270, "text": "<- grows upward", "fontSize": 15, "fontFamily": 1, "strokeColor": "#2f9e44", "originalText": "<- grows upward", "autoResize": true },
+
+  { "type": "rectangle", "id": "data", "x": 120, "y": 320, "width": 460, "height": 94, "backgroundColor": "#d0bfff", "fillStyle": "solid", "strokeColor": "#1e1e1e", "strokeWidth": 2, "roughness": 1, "opacity": 100 },
+  { "type": "text", "id": "data1", "x": 230, "y": 330, "text": "DATA SEGMENT  (Read + Write)", "fontSize": 17, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "DATA SEGMENT  (Read + Write)", "autoResize": true },
+  { "type": "text", "id": "data2", "x": 238, "y": 358, "text": ".bss section: uninitialized data", "fontSize": 14, "fontFamily": 1, "strokeColor": "#343a40", "originalText": ".bss section: uninitialized data", "autoResize": true },
+  { "type": "text", "id": "data3", "x": 213, "y": 380, "text": ".data section: initialized mutable data", "fontSize": 14, "fontFamily": 1, "strokeColor": "#343a40", "originalText": ".data section: initialized mutable data", "autoResize": true },
+
+  { "type": "rectangle", "id": "rodata", "x": 120, "y": 414, "width": 460, "height": 72, "backgroundColor": "#c3fae8", "fillStyle": "solid", "strokeColor": "#1e1e1e", "strokeWidth": 2, "roughness": 1, "opacity": 100 },
+  { "type": "text", "id": "ro1", "x": 235, "y": 432, "text": "RODATA SEGMENT  (Read-Only)", "fontSize": 17, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "RODATA SEGMENT  (Read-Only)", "autoResize": true },
+  { "type": "text", "id": "ro2", "x": 240, "y": 458, "text": "(static, const, string literals)", "fontSize": 14, "fontFamily": 1, "strokeColor": "#343a40", "originalText": "(static, const, string literals)", "autoResize": true },
+
+  { "type": "rectangle", "id": "text", "x": 120, "y": 486, "width": 460, "height": 72, "backgroundColor": "#ffd8a8", "fillStyle": "solid", "strokeColor": "#1e1e1e", "strokeWidth": 2, "roughness": 1, "opacity": 100 },
+  { "type": "text", "id": "tx1", "x": 225, "y": 504, "text": "TEXT SEGMENT  (Read + Execute)", "fontSize": 17, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "TEXT SEGMENT  (Read + Execute)", "autoResize": true },
+  { "type": "text", "id": "tx2", "x": 257, "y": 530, "text": "(your compiled functions)", "fontSize": 14, "fontFamily": 1, "strokeColor": "#343a40", "originalText": "(your compiled functions)", "autoResize": true },
+
+  { "type": "text", "id": "lo", "x": 60, "y": 566, "text": "Low Memory Addresses  (0x0000_0000_0000_0000)", "fontSize": 14, "fontFamily": 1, "strokeColor": "#495057", "originalText": "Low Memory Addresses  (0x0000_0000_0000_0000)", "autoResize": true },
+  { "type": "text", "id": "insight", "x": 120, "y": 600, "text": "Key Insight: the stack and heap grow toward each other!", "fontSize": 16, "fontFamily": 1, "strokeColor": "#e8590c", "originalText": "Key Insight: the stack and heap grow toward each other!", "autoResize": true }
+ ],
+ "appState": { "viewBackgroundColor": "#ffffff" }
+}

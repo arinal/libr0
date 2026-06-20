@@ -56,33 +56,7 @@ Now let's see where each piece of data lives in memory.
 
 When your Rust program runs, the operating system gives it a contiguous chunk of virtual memory organized into distinct regions:
 
-```bob
-High Memory Addresses "(0x0000_7FFF_FFFF_FFFF - User Space upper bound)"
-+---------------------------------------------+
-|              STACK                          |  <- Grows downward
-|  "(Function frames, local variables)"       |
-+---------------------------------------------+
-|                   ↓                         |
-|                                             |
-|              "(unused space)"               |
-|                                             |
-|                   ↑                         |
-+---------------------------------------------+
-|              HEAP                           |  <- Grows upward
-|  "(Dynamically allocated: Box, Vec, String)"|
-+---------------------------------------------+
-|     DATA SEGMENT "(Read + Write)"           |
-|  ".bss section: uninitialized data"         |
-|  ".data section: initialized mutable data"  |
-+---------------------------------------------+
-|     RODATA SEGMENT "(Read-Only)"            |
-|  "(static, const, string literals)"         |
-+---------------------------------------------+
-|     TEXT SEGMENT "(Read + Execute)"         |
-|  "(Your compiled functions)"                |
-+---------------------------------------------+
-Low Memory Addresses "(0x0000_0000_0000_0000)"
-```
+![Process Memory Layout](images/memory-layout-process.svg)
 
 **Key Insight:** The stack and heap grow toward each other!
 
@@ -94,62 +68,7 @@ Now let's see exactly where each piece of data from our example lives.
 
 Before `main()` even runs, the OS loads static data into the DATA segment:
 
-```bob
-High Memory Addresses "(0x0000_7FFF_FFFF_FFFF)"
-+-------------------------------------------+
-|                   STACK                   |   .------------------------------.
-|              "(empty at start)"           |   | Note that segments           |
-+-------------------------------------------+   : consist of multiple sections |
-|             "(unused space)"              |   '------------------------------'
-+-------------------------------------------+
-|                   HEAP                    |
-|              "(empty at start)"           |
-+-------------------------------------------+
-|    DATA SEGMENT "(Read + Write)"          |
-|                                           |  .----------------------------------------.
-|  ".bss section (Uninitialized Data):"     |  |"static GLOBAL_S: &str = 'Global';"     |
-|                                           |  |"static mut GLOBAL_N: u32 = 10;"        |
-|  "BUFFER [u8; 10_000] (10KB, all zeros)"  |  |"static mut BUFFER = [0; 10_000];"      |
-|  +---+---+---+-------+---+---+            |  |                                        |
-|  | 0 | 0 | 0 |...... | 0 | 0 |            |  |"fn main() {"                           |
-|  +---+---+---+-------+---+---+            |  |"    let x = 42;"                       |
-|                                           |  |"    let y = 100;"                      |
-|  ".data section (Initialized Mutable):"   |  |"    let s = String::from('Local');"    |
-|                                           |  |"    let v = vec![1, 2, 3, 4, 5];"      |
-|  "GLOBAL_N: u32 = 10"                     |  |"    let arr = [10, 20, 30, 40, 50];"   |
-|                                           |  :"    let doubled = process_data(x, &s);"|
-+-------------------------------------------+  |     ...                                |
-|    RODATA SEGMENT "(Read-Only)"           |  |"}"                                     |
-|                                           |  |                                        |
-| .rodata section "(static variables)"      |  |"fn process_data("                      |
-|                                           |  |"   param_num: i32,"                    |
-|  +-----------+                            |  |"   param_text: &string"                |
-|  | "len:" 5  | GLOBAL "&str"              |  |" ) -> i32 {"                           |
-|  | "ptr:" *--+--+                         |  |"    let result = param_num * 2;"       |
-|  +-----------+  |                         |  |     ...                                |
-|                 |                         |  |     result                             |
-| .rodata section |"(string literals)"      |  |"}"                                     |
-|               +-v-+---+---+---+---+---+   |  '----------------------------------------'
-|               | G | l | o | b | a | l |   |
-|               +---+---+---+---+---+---+   |
-|               | L | o | c | a | l |       |
-|               +---+---+---+---+---+       |
-|                                           |
-+-------------------------------------------+
-|              TEXT "(Code)"                |
-|                                           |
-|             "(User's code)"               |
-|  "fn main()" { ... }                      |
-|  "fn process_data ()" { ... }             |
-|                                           |
-|    "(Rust standard library functions)"    |
-|  "fn println!()" code                     |
-|  "fn std::alloc::alloc()"                 |
-|  "fn Vec::push()"                         |
-|                                           |
-+--------------------------------------------+
-Low Memory Addresses "(0x0000_0000_0000_0000)"
-```
+![Step 1: Static Data is Loaded](images/memory-layout-step1.svg)
 
 ### Step 2: main() Executes - Local Variables on Stack
 

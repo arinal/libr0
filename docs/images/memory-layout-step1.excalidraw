@@ -1,0 +1,101 @@
+{
+ "type": "excalidraw",
+ "version": 2,
+ "source": "hermes-agent",
+ "elements": [
+  { "type": "text", "id": "title", "x": 120, "y": 28, "text": "Step 1: Program Starts - Static Data is Loaded", "fontSize": 24, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "Step 1: Program Starts - Static Data is Loaded", "autoResize": true },
+  { "type": "text", "id": "hi", "x": 60, "y": 74, "text": "High Memory Addresses  (0x0000_7FFF_FFFF_FFFF)", "fontSize": 14, "fontFamily": 1, "strokeColor": "#495057", "originalText": "High Memory Addresses  (0x0000_7FFF_FFFF_FFFF)", "autoResize": true },
+
+  { "type": "rectangle", "id": "stack", "x": 60, "y": 100, "width": 420, "height": 66, "backgroundColor": "#a5d8ff", "fillStyle": "solid", "strokeColor": "#1e1e1e", "strokeWidth": 2, "roughness": 1, "opacity": 100 },
+  { "type": "text", "id": "stack_t", "x": 245, "y": 114, "text": "STACK", "fontSize": 16, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "STACK", "autoResize": true },
+  { "type": "text", "id": "stack_s", "x": 215, "y": 138, "text": "(empty at start)", "fontSize": 14, "fontFamily": 1, "strokeColor": "#343a40", "originalText": "(empty at start)", "autoResize": true },
+
+  { "type": "rectangle", "id": "unused", "x": 60, "y": 170, "width": 420, "height": 40, "backgroundColor": "#f1f3f5", "fillStyle": "solid", "strokeColor": "#1e1e1e", "strokeWidth": 2, "roughness": 1, "opacity": 100 },
+  { "type": "text", "id": "unused_t", "x": 222, "y": 182, "text": "(unused space)", "fontSize": 14, "fontFamily": 1, "strokeColor": "#495057", "originalText": "(unused space)", "autoResize": true },
+
+  { "type": "rectangle", "id": "heap", "x": 60, "y": 214, "width": 420, "height": 64, "backgroundColor": "#b2f2bb", "fillStyle": "solid", "strokeColor": "#1e1e1e", "strokeWidth": 2, "roughness": 1, "opacity": 100 },
+  { "type": "text", "id": "heap_t", "x": 248, "y": 228, "text": "HEAP", "fontSize": 16, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "HEAP", "autoResize": true },
+  { "type": "text", "id": "heap_s", "x": 215, "y": 252, "text": "(empty at start)", "fontSize": 14, "fontFamily": 1, "strokeColor": "#343a40", "originalText": "(empty at start)", "autoResize": true },
+
+  { "type": "rectangle", "id": "data", "x": 60, "y": 282, "width": 420, "height": 150, "backgroundColor": "#d0bfff", "fillStyle": "solid", "strokeColor": "#1e1e1e", "strokeWidth": 2, "roughness": 1, "opacity": 100 },
+  { "type": "text", "id": "data1", "x": 72, "y": 296, "text": "DATA SEGMENT  (Read + Write)", "fontSize": 15, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "DATA SEGMENT  (Read + Write)", "autoResize": true },
+  { "type": "text", "id": "data2", "x": 72, "y": 320, "text": ".bss section (Uninitialized Data):", "fontSize": 13, "fontFamily": 1, "strokeColor": "#343a40", "originalText": ".bss section (Uninitialized Data):", "autoResize": true },
+  { "type": "text", "id": "data3", "x": 72, "y": 338, "text": "BUFFER [u8; 10_000]  (10KB, all zeros)", "fontSize": 13, "fontFamily": 1, "strokeColor": "#343a40", "originalText": "BUFFER [u8; 10_000]  (10KB, all zeros)", "autoResize": true },
+
+  { "type": "rectangle", "id": "b0", "x": 80, "y": 358, "width": 30, "height": 26, "backgroundColor": "#eebefa", "fillStyle": "solid", "strokeColor": "#1e1e1e", "strokeWidth": 1, "roughness": 1, "opacity": 100 },
+  { "type": "text", "id": "tb0", "x": 91, "y": 364, "text": "0", "fontSize": 13, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "0", "autoResize": true },
+  { "type": "rectangle", "id": "b1", "x": 110, "y": 358, "width": 30, "height": 26, "backgroundColor": "#eebefa", "fillStyle": "solid", "strokeColor": "#1e1e1e", "strokeWidth": 1, "roughness": 1, "opacity": 100 },
+  { "type": "text", "id": "tb1", "x": 121, "y": 364, "text": "0", "fontSize": 13, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "0", "autoResize": true },
+  { "type": "rectangle", "id": "b2", "x": 140, "y": 358, "width": 30, "height": 26, "backgroundColor": "#eebefa", "fillStyle": "solid", "strokeColor": "#1e1e1e", "strokeWidth": 1, "roughness": 1, "opacity": 100 },
+  { "type": "text", "id": "tb2", "x": 151, "y": 364, "text": "0", "fontSize": 13, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "0", "autoResize": true },
+  { "type": "rectangle", "id": "b3", "x": 170, "y": 358, "width": 46, "height": 26, "backgroundColor": "#eebefa", "fillStyle": "solid", "strokeColor": "#1e1e1e", "strokeWidth": 1, "roughness": 1, "opacity": 100 },
+  { "type": "text", "id": "tb3", "x": 184, "y": 364, "text": "...", "fontSize": 13, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "...", "autoResize": true },
+  { "type": "rectangle", "id": "b4", "x": 216, "y": 358, "width": 30, "height": 26, "backgroundColor": "#eebefa", "fillStyle": "solid", "strokeColor": "#1e1e1e", "strokeWidth": 1, "roughness": 1, "opacity": 100 },
+  { "type": "text", "id": "tb4", "x": 227, "y": 364, "text": "0", "fontSize": 13, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "0", "autoResize": true },
+
+  { "type": "text", "id": "data4", "x": 72, "y": 392, "text": ".data section (Initialized Mutable):", "fontSize": 13, "fontFamily": 1, "strokeColor": "#343a40", "originalText": ".data section (Initialized Mutable):", "autoResize": true },
+  { "type": "text", "id": "data5", "x": 72, "y": 410, "text": "GLOBAL_N: u32 = 10", "fontSize": 13, "fontFamily": 1, "strokeColor": "#343a40", "originalText": "GLOBAL_N: u32 = 10", "autoResize": true },
+
+  { "type": "rectangle", "id": "rodata", "x": 60, "y": 436, "width": 420, "height": 200, "backgroundColor": "#c3fae8", "fillStyle": "solid", "strokeColor": "#1e1e1e", "strokeWidth": 2, "roughness": 1, "opacity": 100 },
+  { "type": "text", "id": "ro1", "x": 72, "y": 450, "text": "RODATA SEGMENT  (Read-Only)", "fontSize": 15, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "RODATA SEGMENT  (Read-Only)", "autoResize": true },
+  { "type": "text", "id": "ro2", "x": 72, "y": 476, "text": ".rodata section (static variables):", "fontSize": 13, "fontFamily": 1, "strokeColor": "#343a40", "originalText": ".rodata section (static variables):", "autoResize": true },
+
+  { "type": "rectangle", "id": "strref", "x": 80, "y": 496, "width": 170, "height": 66, "backgroundColor": "#96f2d7", "fillStyle": "solid", "strokeColor": "#1e1e1e", "strokeWidth": 1, "roughness": 1, "opacity": 100 },
+  { "type": "text", "id": "sr1", "x": 90, "y": 504, "text": "GLOBAL  &str", "fontSize": 13, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "GLOBAL  &str", "autoResize": true },
+  { "type": "text", "id": "sr2", "x": 90, "y": 524, "text": "len: 5", "fontSize": 13, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "len: 5", "autoResize": true },
+  { "type": "text", "id": "sr3", "x": 90, "y": 542, "text": "ptr: *", "fontSize": 13, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "ptr: *", "autoResize": true },
+
+  { "type": "text", "id": "litlabel", "x": 280, "y": 504, "text": ".rodata section", "fontSize": 13, "fontFamily": 1, "strokeColor": "#343a40", "originalText": ".rodata section", "autoResize": true },
+  { "type": "text", "id": "litlabel2", "x": 280, "y": 522, "text": "(string literals):", "fontSize": 13, "fontFamily": 1, "strokeColor": "#343a40", "originalText": "(string literals):", "autoResize": true },
+
+  { "type": "rectangle", "id": "g0", "x": 280, "y": 544, "width": 28, "height": 28, "backgroundColor": "#63e6be", "fillStyle": "solid", "strokeColor": "#1e1e1e", "strokeWidth": 1, "roughness": 1, "opacity": 100 },
+  { "type": "text", "id": "tg0", "x": 289, "y": 551, "text": "G", "fontSize": 13, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "G", "autoResize": true },
+  { "type": "rectangle", "id": "g1", "x": 308, "y": 544, "width": 28, "height": 28, "backgroundColor": "#63e6be", "fillStyle": "solid", "strokeColor": "#1e1e1e", "strokeWidth": 1, "roughness": 1, "opacity": 100 },
+  { "type": "text", "id": "tg1", "x": 319, "y": 551, "text": "l", "fontSize": 13, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "l", "autoResize": true },
+  { "type": "rectangle", "id": "g2", "x": 336, "y": 544, "width": 28, "height": 28, "backgroundColor": "#63e6be", "fillStyle": "solid", "strokeColor": "#1e1e1e", "strokeWidth": 1, "roughness": 1, "opacity": 100 },
+  { "type": "text", "id": "tg2", "x": 347, "y": 551, "text": "o", "fontSize": 13, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "o", "autoResize": true },
+  { "type": "rectangle", "id": "g3", "x": 364, "y": 544, "width": 28, "height": 28, "backgroundColor": "#63e6be", "fillStyle": "solid", "strokeColor": "#1e1e1e", "strokeWidth": 1, "roughness": 1, "opacity": 100 },
+  { "type": "text", "id": "tg3", "x": 375, "y": 551, "text": "b", "fontSize": 13, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "b", "autoResize": true },
+  { "type": "rectangle", "id": "g4", "x": 392, "y": 544, "width": 28, "height": 28, "backgroundColor": "#63e6be", "fillStyle": "solid", "strokeColor": "#1e1e1e", "strokeWidth": 1, "roughness": 1, "opacity": 100 },
+  { "type": "text", "id": "tg4", "x": 403, "y": 551, "text": "a", "fontSize": 13, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "a", "autoResize": true },
+  { "type": "rectangle", "id": "g5", "x": 420, "y": 544, "width": 28, "height": 28, "backgroundColor": "#63e6be", "fillStyle": "solid", "strokeColor": "#1e1e1e", "strokeWidth": 1, "roughness": 1, "opacity": 100 },
+  { "type": "text", "id": "tg5", "x": 431, "y": 551, "text": "l", "fontSize": 13, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "l", "autoResize": true },
+
+  { "type": "arrow", "id": "ptr_arrow", "x": 120, "y": 552, "width": 158, "height": 6, "points": [[0,0],[158,6]], "endArrowhead": "arrow", "strokeColor": "#0c8599", "strokeWidth": 2, "roughness": 1, "opacity": 100 },
+
+  { "type": "rectangle", "id": "text_seg", "x": 60, "y": 644, "width": 420, "height": 70, "backgroundColor": "#ffd8a8", "fillStyle": "solid", "strokeColor": "#1e1e1e", "strokeWidth": 2, "roughness": 1, "opacity": 100 },
+  { "type": "text", "id": "ts1", "x": 72, "y": 656, "text": "TEXT  (Code)", "fontSize": 15, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "TEXT  (Code)", "autoResize": true },
+  { "type": "text", "id": "ts2", "x": 72, "y": 678, "text": "fn main() {...}    fn process_data() {...}", "fontSize": 13, "fontFamily": 1, "strokeColor": "#343a40", "originalText": "fn main() {...}    fn process_data() {...}", "autoResize": true },
+  { "type": "text", "id": "ts3", "x": 72, "y": 696, "text": "std library: println!, alloc, Vec::push", "fontSize": 13, "fontFamily": 1, "strokeColor": "#343a40", "originalText": "std library: println!, alloc, Vec::push", "autoResize": true },
+
+  { "type": "text", "id": "lo", "x": 60, "y": 724, "text": "Low Memory Addresses  (0x0000_0000_0000_0000)", "fontSize": 14, "fontFamily": 1, "strokeColor": "#495057", "originalText": "Low Memory Addresses  (0x0000_0000_0000_0000)", "autoResize": true },
+
+  { "type": "rectangle", "id": "note", "x": 520, "y": 100, "width": 300, "height": 64, "backgroundColor": "#fff3bf", "fillStyle": "solid", "strokeColor": "#1e1e1e", "strokeWidth": 1, "roughness": 1, "opacity": 100, "roundness": { "type": 3 } },
+  { "type": "text", "id": "note1", "x": 534, "y": 114, "text": "Note that segments consist", "fontSize": 14, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "Note that segments consist", "autoResize": true },
+  { "type": "text", "id": "note2", "x": 534, "y": 136, "text": "of multiple sections", "fontSize": 14, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "of multiple sections", "autoResize": true },
+
+  { "type": "rectangle", "id": "code", "x": 520, "y": 188, "width": 300, "height": 420, "backgroundColor": "#f8f9fa", "fillStyle": "solid", "strokeColor": "#1e1e1e", "strokeWidth": 1, "roughness": 1, "opacity": 100, "roundness": { "type": 3 } },
+  { "type": "text", "id": "c1",  "x": 534, "y": 200, "text": "static GLOBAL_S: &str = \"Global\";", "fontSize": 13, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "static GLOBAL_S: &str = \"Global\";", "autoResize": true },
+  { "type": "text", "id": "c2",  "x": 534, "y": 218, "text": "static mut GLOBAL_N: u32 = 10;", "fontSize": 13, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "static mut GLOBAL_N: u32 = 10;", "autoResize": true },
+  { "type": "text", "id": "c3",  "x": 534, "y": 236, "text": "static mut BUFFER = [0; 10_000];", "fontSize": 13, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "static mut BUFFER = [0; 10_000];", "autoResize": true },
+  { "type": "text", "id": "c4",  "x": 534, "y": 262, "text": "fn main() {", "fontSize": 13, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "fn main() {", "autoResize": true },
+  { "type": "text", "id": "c5",  "x": 534, "y": 280, "text": "    let x = 42;", "fontSize": 13, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "    let x = 42;", "autoResize": true },
+  { "type": "text", "id": "c6",  "x": 534, "y": 298, "text": "    let y = 100;", "fontSize": 13, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "    let y = 100;", "autoResize": true },
+  { "type": "text", "id": "c7",  "x": 534, "y": 316, "text": "    let s = String::from(\"Local\");", "fontSize": 13, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "    let s = String::from(\"Local\");", "autoResize": true },
+  { "type": "text", "id": "c8",  "x": 534, "y": 334, "text": "    let v = vec![1, 2, 3, 4, 5];", "fontSize": 13, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "    let v = vec![1, 2, 3, 4, 5];", "autoResize": true },
+  { "type": "text", "id": "c9",  "x": 534, "y": 352, "text": "    let arr = [10, 20, 30, 40, 50];", "fontSize": 13, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "    let arr = [10, 20, 30, 40, 50];", "autoResize": true },
+  { "type": "text", "id": "c10", "x": 534, "y": 370, "text": "    let doubled =", "fontSize": 13, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "    let doubled =", "autoResize": true },
+  { "type": "text", "id": "c11", "x": 534, "y": 388, "text": "        process_data(x, &s);", "fontSize": 13, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "        process_data(x, &s);", "autoResize": true },
+  { "type": "text", "id": "c12", "x": 534, "y": 406, "text": "    ...", "fontSize": 13, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "    ...", "autoResize": true },
+  { "type": "text", "id": "c13", "x": 534, "y": 424, "text": "}", "fontSize": 13, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "}", "autoResize": true },
+  { "type": "text", "id": "c14", "x": 534, "y": 450, "text": "fn process_data(", "fontSize": 13, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "fn process_data(", "autoResize": true },
+  { "type": "text", "id": "c15", "x": 534, "y": 468, "text": "    param_num: i32,", "fontSize": 13, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "    param_num: i32,", "autoResize": true },
+  { "type": "text", "id": "c16", "x": 534, "y": 486, "text": "    param_text: &String", "fontSize": 13, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "    param_text: &String", "autoResize": true },
+  { "type": "text", "id": "c17", "x": 534, "y": 504, "text": ") -> i32 {", "fontSize": 13, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": ") -> i32 {", "autoResize": true },
+  { "type": "text", "id": "c18", "x": 534, "y": 522, "text": "    let result = param_num * 2;", "fontSize": 13, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "    let result = param_num * 2;", "autoResize": true },
+  { "type": "text", "id": "c19", "x": 534, "y": 540, "text": "    ...", "fontSize": 13, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "    ...", "autoResize": true },
+  { "type": "text", "id": "c20", "x": 534, "y": 558, "text": "    result", "fontSize": 13, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "    result", "autoResize": true },
+  { "type": "text", "id": "c21", "x": 534, "y": 576, "text": "}", "fontSize": 13, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "}", "autoResize": true }
+ ],
+ "appState": { "viewBackgroundColor": "#ffffff" }
+}
