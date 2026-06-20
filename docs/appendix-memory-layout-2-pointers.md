@@ -96,7 +96,7 @@ With raw pointers (`*const T`, `*mut T`), **you** must ensure:
 
 **Can raw pointers point to arbitrary addresses like in C?**
 
-Yes! Unlike references, raw pointers can be created from arbitrary addresses:
+Yes! Unlike references, raw pointers can be created from arbitrary addresses.
 
 ```rust
 // Point to GPU's VRAM framebuffer at a specific address

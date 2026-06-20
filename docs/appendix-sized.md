@@ -4,11 +4,9 @@ This document covers Rust's `Sized` trait and dynamically-sized types (DSTs) - o
 
 ## The Invisible Trait You Use Everywhere
 
-Pop quiz: How many times do you think about whether a type has a known size at compile time?
+Have you ever seen a trait called `Sized`? Probably not - you've never written `impl Sized` or added a `Sized` bound to anything.
 
-If you're like most Rust programmers: **never**. And that's by design.
-
-But here's the thing - `Sized` is probably the most commonly used trait in Rust. It's on almost every generic type parameter you write:
+Yet `Sized` is the most commonly used trait in Rust. It's on almost every generic type parameter you write, silently added by the compiler:
 
 ```rust
 // What you write:
@@ -23,74 +21,37 @@ That `Sized` bound is **automatically added** to every generic type parameter un
 
 ## What is "Size"?
 
-When we say a type has a "size," we mean: **how many bytes of memory does a value of this type occupy?**
+When we say a type has a "size," we mean we can figure out its memory layout just by looking at the type.
+
+Take these three:
 
 ```rust
-// These types have known sizes:
-let x: i32 = 42;               //  4 bytes
-let s: String = String::new(); // 24 bytes (ptr + len + cap)
-let arr: [u8; 10] = [0; 10];   // 10 bytes
-
-println!("{}", std::mem::size_of::<i32>());      // 4
-println!("{}", std::mem::size_of::<String>());   // 24
-println!("{}", std::mem::size_of::<[u8; 10]>()); // 10
+let x: i32 = ???;
+let s: String = ???;
+let arr: [u8; 10] = ???;
 ```
 
-**Important:** For types like `String` and `Vec`, the "size" is the size of the **stack-allocated metadata** (pointer, length, capacity), not the heap data they point to.
+After reading [the previous chapter](appendix-memory-layout-3-types.md), we can draw their layouts just from the types alone — we don't even need to know the values:
 
-## Why Does the Compiler Need to Know Sizes?
+```bob
+x: i32                 s: String
++---+                 +-----+
+| ? | 4 bytes     ptr |  ?  | 8 bytes
++---+                 +-----+
+                  len |  ?  | 8 bytes
+                      +-----+
+                  cap |  ?  | 8 bytes
+                      +-----+
 
-The compiler needs to know sizes for several reasons:
-
-### 1. Stack Allocation
-
-When you declare a local variable, the compiler needs to reserve space on the stack:
-
-```rust
-fn example() {
-    let x: i32;     // Compiler reserves 4 bytes on stack
-    let y: String;  // Compiler reserves 24 bytes on stack
-    let z: [u8; 100]; // Compiler reserves 100 bytes on stack
-}
+          arr: [u8; 10]
++---+---+---+---+---+---+---+---+---+---+
+| ? | ? | ? | ? | ? | ? | ? | ? | ? | ? |  10 bytes
++---+---+---+---+---+---+---+---+---+---+
 ```
 
-The compiler generates assembly code like:
-```asm
-sub rsp, 128  ; Reserve 128 bytes on stack (4 + 24 + 100)
-```
+We know `i32` is always 4 bytes. We know `String` is always 24 bytes — three `usize` fields for pointer, length, and capacity. We know `[u8; 10]` is always 10 bytes — the length is baked into the type. These types are `Sized`.
 
-If the compiler doesn't know the size, it can't reserve the right amount of space!
-
-### 2. Passing by Value
-
-When you pass a value to a function, the compiler needs to copy it:
-
-```rust
-fn take_value(value: String) {  // Copies 24 bytes
-    // ...
-}
-
-let s = String::from("hello");
-take_value(s);  // memcpy 24 bytes from s into the function's stack frame
-```
-
-Without knowing the size, the compiler wouldn't know how many bytes to copy.
-
-### 3. Struct Layout
-
-When you define a struct, the compiler calculates its size based on its fields:
-
-```rust
-struct Point {
-    x: f64,  // 8 bytes
-    y: f64,  // 8 bytes
-}
-// Total: 16 bytes (plus potential padding)
-
-println!("{}", std::mem::size_of::<Point>());  // 16
-```
-
-If one of the fields had an unknown size, the compiler couldn't calculate the total size.
+And if _we_ can figure it out, so can the compiler.
 
 ## The Sized Trait
 
@@ -128,6 +89,7 @@ fn process<T: Sized>(value: T) { }
 ```
 
 This happens because:
+
 1. The function takes `value: T` by value (copies it onto the stack)
 2. To copy it, the compiler needs to know its size
 3. So `T` must be `Sized`
@@ -151,6 +113,26 @@ The struct needs to know how big `T` is to calculate its own size!
 ## Dynamically Sized Types (DSTs)
 
 Now we get to the interesting part: types that DON'T have a known size at compile time.
+
+Consider this:
+
+```rust
+let slice: [i32] = ???;
+```
+
+Looks like an array, right? Try to draw its layout:
+
+```bob
+slice: [i32]
++---+---+---+--------------------------+
+| ? | ? | ? | wait, how many elements? |
++---+---+---+--------------------------+
+   How many bytes total?
+```
+
+Unlike `[i32; 3]`, the type `[i32]` doesn't include the length — without it, we can't pin down the layout or the total size from the type alone.
+
+If this confuses us, it confuses the compiler too. The code above is a compilation error.
 
 These are called **Dynamically Sized Types** (DSTs), and there are exactly three kinds in Rust:
 
@@ -234,6 +216,7 @@ A reference to a DST is called a **fat pointer** because it contains extra metad
 ### Fat Pointer Layout
 
 **For slices (`&[T]`) and string slices (`&str`):**
+
 ```bob
 +---------------------+---------------------+
 |   Data Pointer      |      Length         |
@@ -245,6 +228,7 @@ A reference to a DST is called a **fat pointer** because it contains extra metad
 ```
 
 Example:
+
 ```rust
 let data = [1, 2, 3, 4, 5];
 let slice: &[i32] = &data[1..4];  // [2, 3, 4]
@@ -255,6 +239,7 @@ let slice: &[i32] = &data[1..4];  // [2, 3, 4]
 ```
 
 **For trait objects (`&dyn Trait`):**
+
 ```bob
 ┌─────────────────────┬─────────────────────┐
 │   Data Pointer      │   VTable Pointer    │
@@ -266,6 +251,7 @@ let slice: &[i32] = &data[1..4];  // [2, 3, 4]
 ```
 
 Example:
+
 ```rust
 let dog = Dog;
 let animal: &dyn Animal = &dog;
@@ -334,6 +320,7 @@ println!("{}", std::mem::size_of::<&[i32]>());  // ✅ OK: 16 bytes (fat pointer
 ```
 
 **Why?**
+
 - `[i32]` is the slice itself (unsized - could be any length)
 - `&[i32]` is a **reference** to a slice (sized - always 16 bytes on 64-bit: pointer + length)
 
@@ -356,6 +343,7 @@ println!("{}", std::mem::size_of::<&str>());    // ✅ 16 bytes
 ```
 
 **Why?**
+
 - `String` is a struct with three fields (ptr, len, cap) - always 24 bytes
 - `str` is the actual text data - variable length
 - `&str` is a fat pointer to text data - always 16 bytes
@@ -380,6 +368,7 @@ println!("{}", std::mem::size_of::<Box<dyn Trait>>()); // 16 bytes (fat pointer)
 ```
 
 **Why?**
+
 - `Box<T>` is just a pointer (8 bytes) when `T` is sized
 - `Box<[T]>` is a fat pointer (16 bytes: ptr + length)
 - `Box<dyn Trait>` is a fat pointer (16 bytes: ptr + vtable)
@@ -516,11 +505,13 @@ let array = [Empty; 1000000];  // Still 0 bytes!
 ```
 
 ZSTs are **completely optimized away** by the compiler:
+
 - No stack space allocation
 - No memory copies
 - No heap allocations
 
 They're used for:
+
 - Marker types (like `PhantomData`)
 - Unit type `()`
 - Empty enums for state machines
@@ -566,17 +557,17 @@ This is how types like `std::path::Path` work - they're essentially wrappers aro
 
 ## Quick Reference
 
-| Type | Sized? | Behind Pointer | Size |
-|------|--------|----------------|------|
-| `i32` | ✅ Yes | `&i32` | 4 bytes |
-| `String` | ✅ Yes | `&String` | 24 bytes |
-| `[i32; 3]` | ✅ Yes | `&[i32; 3]` | 12 bytes |
-| `[i32]` | ❌ No | `&[i32]` | N/A (unsized) |
-| `str` | ❌ No | `&str` | N/A (unsized) |
-| `dyn Trait` | ❌ No | `&dyn Trait` | N/A (unsized) |
-| `&T` | ✅ Yes | `&&T` | 8 bytes (thin) or 16 bytes (fat) |
-| `Box<T>` | ✅ Yes | `&Box<T>` | 8 bytes (thin) or 16 bytes (fat) |
-| `()` | ✅ Yes (ZST) | `&()` | 0 bytes |
+| Type        | Sized?       | Behind Pointer | Size                             |
+| ----------- | ------------ | -------------- | -------------------------------- |
+| `i32`       | ✅ Yes       | `&i32`         | 4 bytes                          |
+| `String`    | ✅ Yes       | `&String`      | 24 bytes                         |
+| `[i32; 3]`  | ✅ Yes       | `&[i32; 3]`    | 12 bytes                         |
+| `[i32]`     | ❌ No        | `&[i32]`       | N/A (unsized)                    |
+| `str`       | ❌ No        | `&str`         | N/A (unsized)                    |
+| `dyn Trait` | ❌ No        | `&dyn Trait`   | N/A (unsized)                    |
+| `&T`        | ✅ Yes       | `&&T`          | 8 bytes (thin) or 16 bytes (fat) |
+| `Box<T>`    | ✅ Yes       | `&Box<T>`      | 8 bytes (thin) or 16 bytes (fat) |
+| `()`        | ✅ Yes (ZST) | `&()`          | 0 bytes                          |
 
 ## Key Takeaways
 
