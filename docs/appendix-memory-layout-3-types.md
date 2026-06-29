@@ -16,6 +16,45 @@ let z: f64 = 3.14;
 +--------+----------+----------+
 ```
 
+### `usize`
+
+```rust
+let n: usize = 42;
+```
+
+```bob
+n: usize
++-----------------------+  
+|<- 4 bytes on 32 bit ->|  
++-----------------------+  
+
++---------------------------------------------------+
+|<------------- 8 bytes on 64 bit ----------------->|
++---------------------------------------------------+
+```
+
+`usize` is the pointer-sized unsigned integer: 8 bytes on 64-bit, 4 bytes on
+32-bit. It matches the platform's address space — `usize` can hold any memory
+address or byte count the machine can address.
+
+You'll see `usize` everywhere we talk about memory:
+
+- **Pointers** are `usize`-sized — they need to address any byte in memory.
+- **Lengths and capacities** of collections (`Vec`, `String`, slices) are
+  `usize`. They count bytes in memory, so they're bounded by the address
+  space. If `len` were `u32`, a `Vec` couldn't hold more than ~4 GB even on a
+  machine with terabytes of RAM. If it were `u64`, you'd waste 4 bytes on
+  every `Vec` on 32-bit platforms.
+- **Indexing** uses `usize`. `v[i]` expects `i: usize`, so lengths line up
+  without casts.
+
+| Platform | `usize` |
+| -------- | ------- |
+| 64-bit   | 8 bytes |
+| 32-bit   | 4 bytes |
+
+The rest of this chapter assumes 64-bit, where `usize` = 8 bytes.
+
 ### Arrays (Fixed Size)
 
 ```rust
@@ -46,29 +85,8 @@ let v = vec![1, 2, 3];
     24 bytes
 ```
 
-Notice that `ptr`, `len`, and `cap` are all `usize`-sized — that's 8 bytes each
-on a 64-bit system, giving us 3 × 8 = **24 bytes** on the stack.
-
-`usize` is the pointer-sized unsigned integer: 8 bytes on 64-bit, 4 bytes on
-32-bit. It matches the platform's address space.
-
-For `ptr`, this is obvious — a pointer must be able to address any memory
-location. But why are `len` and `cap` also `usize`?
-
-- **They count bytes in memory.** The maximum number of bytes you can allocate
-  is bounded by the address space. If `len` were `u32`, a `Vec` couldn't hold
-  more than ~4 GB, even on a machine with terabytes of RAM. If it were `u64`,
-  you'd waste 4 bytes on every `Vec` on 32-bit platforms for a size that could
-  never be used. `usize` scales correctly to whatever platform you're on.
-
-- **Rust uses `usize` for all indexing.** `v[i]` expects `i: usize`. If `len`
-  were a different type, every bounds check and slice operation would need a
-  cast.
-
-| Platform | `usize` | Vec/String stack size |
-| -------- | ------- | --------------------- |
-| 64-bit   | 8 bytes | 3 × 8 = **24 bytes**  |
-| 32-bit   | 4 bytes | 3 × 4 = **12 bytes**  |
+`ptr`, `len`, and `cap` are each a `usize` — 3 × 8 = **24 bytes** on the stack
+on a 64-bit system (12 bytes on 32-bit).
 
 ### String
 

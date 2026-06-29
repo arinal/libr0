@@ -56,33 +56,7 @@ Now let's see where each piece of data lives in memory.
 
 When your Rust program runs, the operating system gives it a contiguous chunk of virtual memory organized into distinct regions:
 
-```bob
-High Memory Addresses "(0x0000_7FFF_FFFF_FFFF - User Space upper bound)"
-+---------------------------------------------+
-|              STACK                          |  <- Grows downward
-|  "(Function frames, local variables)"       |
-+---------------------------------------------+
-|                   ↓                         |
-|                                             |
-|              "(unused space)"               |
-|                                             |
-|                   ↑                         |
-+---------------------------------------------+
-|              HEAP                           |  <- Grows upward
-|  "(Dynamically allocated: Box, Vec, String)"|
-+---------------------------------------------+
-|     DATA SEGMENT "(Read + Write)"           |
-|  ".bss section: uninitialized data"         |
-|  ".data section: initialized mutable data"  |
-+---------------------------------------------+
-|     RODATA SEGMENT "(Read-Only)"            |
-|  "(static, const, string literals)"         |
-+---------------------------------------------+
-|     TEXT SEGMENT "(Read + Execute)"         |
-|  "(Your compiled functions)"                |
-+---------------------------------------------+
-Low Memory Addresses "(0x0000_0000_0000_0000)"
-```
+![Process Memory Layout](images/memory-layout-process.svg)
 
 **Key Insight:** The stack and heap grow toward each other!
 
@@ -94,109 +68,13 @@ Now let's see exactly where each piece of data from our example lives.
 
 Before `main()` even runs, the OS loads static data into the DATA segment:
 
-```bob
-High Memory Addresses "(0x0000_7FFF_FFFF_FFFF)"
-+-------------------------------------------+
-|                   STACK                   |   .------------------------------.
-|              "(empty at start)"           |   | Note that segments           |
-+-------------------------------------------+   : consist of multiple sections |
-|             "(unused space)"              |   '------------------------------'
-+-------------------------------------------+
-|                   HEAP                    |
-|              "(empty at start)"           |
-+-------------------------------------------+
-|    DATA SEGMENT "(Read + Write)"          |
-|                                           |  .----------------------------------------.
-|  ".bss section (Uninitialized Data):"     |  |"static GLOBAL_S: &str = 'Global';"     |
-|                                           |  |"static mut GLOBAL_N: u32 = 10;"        |
-|  "BUFFER [u8; 10_000] (10KB, all zeros)"  |  |"static mut BUFFER = [0; 10_000];"      |
-|  +---+---+---+-------+---+---+            |  |                                        |
-|  | 0 | 0 | 0 |...... | 0 | 0 |            |  |"fn main() {"                           |
-|  +---+---+---+-------+---+---+            |  |"    let x = 42;"                       |
-|                                           |  |"    let y = 100;"                      |
-|  ".data section (Initialized Mutable):"   |  |"    let s = String::from('Local');"    |
-|                                           |  |"    let v = vec![1, 2, 3, 4, 5];"      |
-|  "GLOBAL_N: u32 = 10"                     |  |"    let arr = [10, 20, 30, 40, 50];"   |
-|                                           |  :"    let doubled = process_data(x, &s);"|
-+-------------------------------------------+  |     ...                                |
-|    RODATA SEGMENT "(Read-Only)"           |  |"}"                                     |
-|                                           |  |                                        |
-| .rodata section "(static variables)"      |  |"fn process_data("                      |
-|                                           |  |"   param_num: i32,"                    |
-|  +-----------+                            |  |"   param_text: &string"                |
-|  | "len:" 5  | GLOBAL "&str"              |  |" ) -> i32 {"                           |
-|  | "ptr:" *--+--+                         |  |"    let result = param_num * 2;"       |
-|  +-----------+  |                         |  |     ...                                |
-|                 |                         |  |     result                             |
-| .rodata section |"(string literals)"      |  |"}"                                     |
-|               +-v-+---+---+---+---+---+   |  '----------------------------------------'
-|               | G | l | o | b | a | l |   |
-|               +---+---+---+---+---+---+   |
-|               | L | o | c | a | l |       |
-|               +---+---+---+---+---+       |
-|                                           |
-+-------------------------------------------+
-|              TEXT "(Code)"                |
-|                                           |
-|             "(User's code)"               |
-|  "fn main()" { ... }                      |
-|  "fn process_data ()" { ... }             |
-|                                           |
-|    "(Rust standard library functions)"    |
-|  "fn println!()" code                     |
-|  "fn std::alloc::alloc()"                 |
-|  "fn Vec::push()"                         |
-|                                           |
-+--------------------------------------------+
-Low Memory Addresses "(0x0000_0000_0000_0000)"
-```
+![Step 1: Static Data is Loaded](images/memory-layout-step1.svg)
 
 ### Step 2: main() Executes - Local Variables on Stack
 
 When `main()` is called, the function's **prologue** (compiler-generated instructions at the beginning of the function) creates a stack frame by adjusting the stack pointer (typically `sub rsp, N` where N is the size needed for local variables). After all local variables are initialized (right before calling `process_data(x, &s)`), the stack looks like this:
 
-```bob
-  STACK
-+------------------------+
-|  main's frame          |<-- "0x7FFF_FFFF_FFF0 (high address)"
-|                        |  .--------------------------~------------.
-|  +---------------------+  |"; Function prologue (assembly)"       +----.
-|  |Return address       |  |"push rbp        ; Save old base ptr"  :    |
-|  +---------------------+  :"mov rbp, rsp    ; Set new base ptr"   |    |
-|  |rbp                  |  |"sub rsp, 128    ; Allocate locals"    |    |
-|  +---------------------+  '--------------------------~------------'    |
-|  |"x: i32 = 42"        |                                               |
-|  +---------------------+   .-----------------------------------------. |
-|  |"y: i32 = 100"       |   |"static GLOBAL_S: &str = 'Global';"      | |
-|  +---------------------+   |"static mut GLOBAL_N: u32 = 10;"         | |
-|  |"doubled: i32 = ?"   |   |"static mut BUFFER = [0; 10_000];"       | |
-|  +---------------------+   |                                         | |
-|  |  "arr: [i32; 5]"    |   |"fn main() {"                            | |
-|  +---+---+---+---+---+ |   |"    // function prologue" <-------------+-+
-|  |10 |20 |30 |40 |50 | |   |"    let x = 42;"                        |
-|  +---+---+---+---+---+-+   |"    let y = 100;"                       |
-|  |"s: String"          |   |"    let s = String::from('Local');"     |
-|  |  "len:"  5          |   |"    let v = vec![1, 2, 3, 4, 5];"       |
-|  |  "cap:"  5          |   |"    let arr = [10, 20, 30, 40, 50];"    |
-|  |  "ptr:"  *----------+-. :"    let doubled = process_data(x, &s);" |
-|  +---------------------+ | |     ...                                 |
-|  | "v: Vec<i32>"       | | |"}"                                      |
-|  |   "len:"  5         | | '-----------------------------------------'
-|  |   "cap:"  5         | |
-|  |   "ptr:"  *         | |
-+--+-----------|---------+<++- "RSP points here after prologue (allocated for locals)"
-               |           |
-  .------------'           |
-  |                        |
-  |   HEAP                 |
-+-+------------------------|-------------------+
-| |                        v                   |
-| |   +--+--+--+--+--+   +---+---+---+---+---+ |
-| '-->|1 |2 |3 |4 |5 |   | L | o | c | a | l | |
-|     +--+--+--+--+--+   +---+---+---+---+---+ |
-|                                              |
-+----------------------------------------------+
-```
+![Step 2: main() Executes - Local Variables on Stack](images/memory-layout-step2.svg)
 
 **Important observations:**
 
@@ -222,63 +100,7 @@ When we call `process_data(x, &s)`, here's what the CPU actually does (x86-64 ca
    - Allocates space for local variables
    - May spill register arguments to stack (compiler's choice)
 
-```bob
-  CPU REGISTERS "(not in memory!)"
-+------------------------------+
-|  "RBP:  0x7FFF_FFFF_FF00"    |
-|  "RSP:  0x7FFF_FFFF_FE00"    |
-|  "EDI:  42 (param_num)"      |
-|  "RSI:  param_text" *--------+-+
-+------------------------------+ |
-                                 |   .-----------------------------------------.
-  STACK                          |   |"; Function prologue (assembly)"         +---.
-+-----------------------------+  |   |"push rbp         ; Save caller's RBP"   :   |
-| "main()'s frame"            |  |   :"mov rbp, rsp     ; Set our RBP"         |   |
-|  +--------------------------+  |   |"sub rsp, 16      ; Allocate locals"     |   |
-|  | Return address to OS     |  |   '-----------------------------------------'   |
-|  +--------------------------+  |   .------------------------------------------.  |
-|  | Saved main's RBP         |  |   |"fn process_data("                        |  |
-|  +--------------------------+  |   |"    param_num: i32,"                     |  |
-|  | "x: i32 = 42"            |  |   |"    param_text: &String"                 |  |
-|  +--------------------------+  |   |") -> i32 {"                              |  |
-|  | "y: i32 = 100"           |  |   |"    // function prologue" <--------------+--'
-|  +--------------------------+  |   |"    let result = param_num * 2;"         |
-|  | "doubled: i32 = ???"     |  |   |"    println!(...)"                       |
-|  +--------------------------+  |   |"    result  // Returns 84"               |
-|  | "arr:" [i32; 5]          |  |   |"}"                                       |
-|  +---+---+---+---+---+      |  |   '------------------------------------------'
-|  |10 |20 |30 |40 |50 |      |  |
-|  +---+---+---+---+---+------+  |
-|  | "s: String"              |<-+   "&s points here (param_text)"
-|  |   "len:"  5              |
-|  |   "cap:"  5              |
-|  |   "ptr:"  *--------------+-------------------------------------------+
-|  +--------------------------+                                           |
-|  | "v: Vec<i32>"            |                                           |
-|  |   "ptr:"  *--------------+--+                                        |
-|  |   "len:"  5              |  |                                        |
-|  |   "cap:"  5              |  |                                        |
-+--+--------------------------+  |                                        |
-|  "process_data()' s frame"  |  |                                        |
-|  +--------------------------+  |                                        |
-|  | Return address to main   |  |                                        |
-|  +--------------------------+  |                                        |
-|  | "Saved RBP = 0x7F.."     +<-|---"push rbp stored this"               |
-|  +--------------------------+  |                                        |
-|  | "result: i32 = 84"       |  |                                        |
-+--+--------------------------+<-|---"RSP points here (after prologue)"   |
-       +-------------------------+                                        |
-       |                   +----------------------------------------------+
-       |                   |
-  HEAP |                   |
-+------+-------------------+-------------------+
-|      v                   v                   |
-|     +--+--+--+--+--+   +---+---+---+---+---+ |
-|     |1 |2 |3 |4 |5 |   | L | o | c | a | l | |
-|     +--+--+--+--+--+   +---+---+---+---+---+ |
-|                                              |
-+----------------------------------------------+
-```
+![Step 3: Calling process_data() - New Stack Frame and Passing Arguments](images/memory-layout-step3.svg)
 
 Key observations about arguments and returns:\*\*
 
@@ -362,48 +184,7 @@ When `process_data()` returns, two things happen:
 1. **Return value is copied**: The value in `result` (84) is **copied** to `doubled` in main's frame (using CPU register or direct memory copy)
 2. **Stack frame is popped**: process_data's entire frame is destroyed
 
-```bob
-  STACK
-+------------------------+
-|  main's frame          |
-|                        |
-|  +---------------------+
-|  |Return address       |
-|  +---------------------+
-|  |rbp                  |
-|  +---------------------+
-|  |"x: i32 = 42"        |
-|  +---------------------+
-|  |"y: i32 = 100"       |
-|  +---------------------+
-|  |"doubled: i32 = 84"  | <- "Return value COPIED here (4 bytes)"
-|  +---------------------+
-|  |  "arr: [i32; 5]"    |
-|  +---+---+---+---+---+ |
-|  |10 |20 |30 |40 |50 | |
-|  +---+---+---+---+---+-+
-|  |"s: String"          |
-|  |  "len:"  5          |
-|  |  "cap:"  5          |
-|  |  "ptr:"  *----------+-.
-|  +---------------------+ |
-|  | "v: Vec<i32>"       | |
-|  |   "len:"  5         | |
-|  |   "cap:"  5         | |
-|  |   "ptr:"  *         | |
-+--+-----------|---------+ |
-               |           |
-  .------------'           |
-  |                        |
-  |   HEAP                 |
-+-+------------------------|-------------------+
-| |                        v                   |
-| |   +--+--+--+--+--+   +---+---+---+---+---+ |
-| '-->|1 |2 |3 |4 |5 |   | L | o | c | a | l | |
-|     +--+--+--+--+--+   +---+---+---+---+---+ |
-|                                              |
-+----------------------------------------------+
-```
+![Step 4: Function Returns - Stack Frame Popped, Value Copied](images/memory-layout-step4.svg)
 
 **Key observations about returns:**
 
