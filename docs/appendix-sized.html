@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a7572905.js";
+            window.path_to_searchindex_js = "../searchindex-30d7ff49.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-4cc824cc.js"></script>
@@ -180,9 +180,8 @@
                         <h1 id="appendix-sized---understanding-compile-time-size"><a class="header" href="#appendix-sized---understanding-compile-time-size">Appendix: Sized - Understanding Compile-Time Size</a></h1>
 <p>This document covers Rust’s <code>Sized</code> trait and dynamically-sized types (DSTs) - one of Rust’s most invisible yet fundamental features.</p>
 <h2 id="the-invisible-trait-you-use-everywhere"><a class="header" href="#the-invisible-trait-you-use-everywhere">The Invisible Trait You Use Everywhere</a></h2>
-<p>Pop quiz: How many times do you think about whether a type has a known size at compile time?</p>
-<p>If you’re like most Rust programmers: <strong>never</strong>. And that’s by design.</p>
-<p>But here’s the thing - <code>Sized</code> is probably the most commonly used trait in Rust. It’s on almost every generic type parameter you write:</p>
+<p>Have you ever seen a trait called <code>Sized</code>? Probably not - you’ve never written <code>impl Sized</code> or added a <code>Sized</code> bound to anything.</p>
+<p>Yet <code>Sized</code> is the most commonly used trait in Rust. It’s on almost every generic type parameter you write, silently added by the compiler:</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>// What you write:
@@ -194,60 +193,19 @@ fn process&lt;T: Sized&gt;(value: T) { }
 <span class="boring">}</span></code></pre>
 <p>That <code>Sized</code> bound is <strong>automatically added</strong> to every generic type parameter unless you explicitly opt out. It’s so common that Rust makes it implicit to reduce noise.</p>
 <h2 id="what-is-size"><a class="header" href="#what-is-size">What is “Size”?</a></h2>
-<p>When we say a type has a “size,” we mean: <strong>how many bytes of memory does a value of this type occupy?</strong></p>
+<p>When we say a type has a “size,” we mean we can figure out its memory layout just by looking at the type.</p>
+<p>Take these three:</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>// These types have known sizes:
-let x: i32 = 42;               //  4 bytes
-let s: String = String::new(); // 24 bytes (ptr + len + cap)
-let arr: [u8; 10] = [0; 10];   // 10 bytes
+</span>let x: i32 = ???;
+let s: String = ???;
+let arr: [u8; 10] = ???;
+<span class="boring">}</span></code></pre>
+<p>After reading <a href="appendix-memory-layout-3-types.html">the previous chapter</a>, we can draw their layouts just from the types alone — we don’t even need to know the values:</p>
+<div style="width:100%; height:224px;"><style type="text/css">svg { width: 100% !important; }</style><svg xmlns="http://www.w3.org/2000/svg" width="416" height="224" class="svgbob"><style>.svgbob line, .svgbob path, .svgbob circle, .svgbob rect, .svgbob polygon {  stroke: var(--fg);  stroke-width: 2;  stroke-opacity: 1;  fill-opacity: 1;  stroke-linecap: round;  stroke-linejoin: miter;}.svgbob text {  white-space: pre;  fill: var(--fg);  font-family: Iosevka Fixed, monospace;  font-size: 14px;}.svgbob rect.backdrop {  stroke: none;  fill: transparent;}.svgbob .broken {  stroke-dasharray: 8;}.svgbob .filled {  fill: black;}.svgbob .bg_filled {  fill: transparent;  stroke-width: 1;}.svgbob .nofill {  fill: transparent;}.svgbob .end_marked_arrow {  marker-end: url(#arrow);}.svgbob .start_marked_arrow {  marker-start: url(#arrow);}.svgbob .end_marked_diamond {  marker-end: url(#diamond);}.svgbob .start_marked_diamond {  marker-start: url(#diamond);}.svgbob .end_marked_circle {  marker-end: url(#circle);}.svgbob .start_marked_circle {  marker-start: url(#circle);}.svgbob .end_marked_open_circle {  marker-end: url(#open_circle);}.svgbob .start_marked_open_circle {  marker-start: url(#open_circle);}.svgbob .end_marked_big_open_circle {  marker-end: url(#big_open_circle);}.svgbob .start_marked_big_open_circle {  marker-start: url(#big_open_circle);}</style><defs><marker id="arrow" viewbox="-2 -2 8 8" refx="4" refy="2" markerwidth="7" markerheight="7" orient="auto-start-reverse"><polygon points="0,0 0,4 4,2 0,0"></polygon></marker><marker id="diamond" viewbox="-2 -2 8 8" refx="4" refy="2" markerwidth="7" markerheight="7" orient="auto-start-reverse"><polygon points="0,2 2,0 4,2 2,4 0,2"></polygon></marker><marker id="circle" viewbox="0 0 8 8" refx="4" refy="4" markerwidth="7" markerheight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="filled"></circle></marker><marker id="open_circle" viewbox="0 0 8 8" refx="4" refy="4" markerwidth="7" markerheight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="bg_filled"></circle></marker><marker id="big_open_circle" viewbox="0 0 8 8" refx="4" refy="4" markerwidth="7" markerheight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="3" class="bg_filled"></circle></marker></defs><rect class="backdrop" x="0" y="0" width="416" height="224"></rect><rect x="4" y="24" width="32" height="32" class="solid nofill" rx="0"></rect><text x="18" y="44">?</text><text x="2" y="12">x:</text><text x="26" y="12">i32</text><text x="186" y="12">s:</text><text x="210" y="12">String</text><text x="202" y="44">?</text><text x="202" y="76">?</text><text x="202" y="108">?</text><text x="50" y="44">4</text><text x="66" y="44">bytes</text><text x="146" y="44">ptr</text><text x="242" y="44">8</text><text x="258" y="44">bytes</text><text x="146" y="76">len</text><text x="242" y="76">8</text><text x="258" y="76">bytes</text><text x="146" y="108">cap</text><text x="242" y="108">8</text><text x="258" y="108">bytes</text><text x="82" y="156">arr:</text><text x="122" y="156">[u8;</text><text x="162" y="156">10]</text><text x="18" y="188">?</text><text x="50" y="188">?</text><text x="82" y="188">?</text><text x="114" y="188">?</text><text x="146" y="188">?</text><text x="178" y="188">?</text><text x="210" y="188">?</text><text x="242" y="188">?</text><text x="274" y="188">?</text><text x="306" y="188">?</text><text x="346" y="188">10</text><text x="370" y="188">bytes</text><g><line x1="180" y1="24" x2="228" y2="24" class="solid"></line><line x1="180" y1="24" x2="180" y2="120" class="solid"></line><line x1="228" y1="24" x2="228" y2="120" class="solid"></line><line x1="180" y1="56" x2="228" y2="56" class="solid"></line><line x1="180" y1="88" x2="228" y2="88" class="solid"></line><line x1="180" y1="120" x2="228" y2="120" class="solid"></line></g><g><line x1="4" y1="168" x2="324" y2="168" class="solid"></line><line x1="4" y1="168" x2="4" y2="200" class="solid"></line><line x1="36" y1="168" x2="36" y2="200" class="solid"></line><line x1="68" y1="168" x2="68" y2="200" class="solid"></line><line x1="100" y1="168" x2="100" y2="200" class="solid"></line><line x1="132" y1="168" x2="132" y2="200" class="solid"></line><line x1="164" y1="168" x2="164" y2="200" class="solid"></line><line x1="196" y1="168" x2="196" y2="200" class="solid"></line><line x1="228" y1="168" x2="228" y2="200" class="solid"></line><line x1="260" y1="168" x2="260" y2="200" class="solid"></line><line x1="292" y1="168" x2="292" y2="200" class="solid"></line><line x1="324" y1="168" x2="324" y2="200" class="solid"></line><line x1="4" y1="200" x2="324" y2="200" class="solid"></line></g></svg></div>
 
-println!("{}", std::mem::size_of::&lt;i32&gt;());      // 4
-println!("{}", std::mem::size_of::&lt;String&gt;());   // 24
-println!("{}", std::mem::size_of::&lt;[u8; 10]&gt;()); // 10
-<span class="boring">}</span></code></pre>
-<p><strong>Important:</strong> For types like <code>String</code> and <code>Vec</code>, the “size” is the size of the <strong>stack-allocated metadata</strong> (pointer, length, capacity), not the heap data they point to.</p>
-<h2 id="why-does-the-compiler-need-to-know-sizes"><a class="header" href="#why-does-the-compiler-need-to-know-sizes">Why Does the Compiler Need to Know Sizes?</a></h2>
-<p>The compiler needs to know sizes for several reasons:</p>
-<h3 id="1-stack-allocation"><a class="header" href="#1-stack-allocation">1. Stack Allocation</a></h3>
-<p>When you declare a local variable, the compiler needs to reserve space on the stack:</p>
-<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>fn example() {
-    let x: i32;     // Compiler reserves 4 bytes on stack
-    let y: String;  // Compiler reserves 24 bytes on stack
-    let z: [u8; 100]; // Compiler reserves 100 bytes on stack
-}
-<span class="boring">}</span></code></pre>
-<p>The compiler generates assembly code like:</p>
-<pre><code class="language-asm">sub rsp, 128  ; Reserve 128 bytes on stack (4 + 24 + 100)
-</code></pre>
-<p>If the compiler doesn’t know the size, it can’t reserve the right amount of space!</p>
-<h3 id="2-passing-by-value"><a class="header" href="#2-passing-by-value">2. Passing by Value</a></h3>
-<p>When you pass a value to a function, the compiler needs to copy it:</p>
-<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>fn take_value(value: String) {  // Copies 24 bytes
-    // ...
-}
-
-let s = String::from("hello");
-take_value(s);  // memcpy 24 bytes from s into the function's stack frame
-<span class="boring">}</span></code></pre>
-<p>Without knowing the size, the compiler wouldn’t know how many bytes to copy.</p>
-<h3 id="3-struct-layout"><a class="header" href="#3-struct-layout">3. Struct Layout</a></h3>
-<p>When you define a struct, the compiler calculates its size based on its fields:</p>
-<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>struct Point {
-    x: f64,  // 8 bytes
-    y: f64,  // 8 bytes
-}
-// Total: 16 bytes (plus potential padding)
-
-println!("{}", std::mem::size_of::&lt;Point&gt;());  // 16
-<span class="boring">}</span></code></pre>
-<p>If one of the fields had an unknown size, the compiler couldn’t calculate the total size.</p>
+<p>We know <code>i32</code> is always 4 bytes. We know <code>String</code> is always 24 bytes — three <code>usize</code> fields for pointer, length, and capacity. We know <code>[u8; 10]</code> is always 10 bytes — the length is baked into the type. These types are <code>Sized</code>.</p>
+<p>And if <em>we</em> can figure it out, so can the compiler.</p>
 <h2 id="the-sized-trait"><a class="header" href="#the-sized-trait">The Sized Trait</a></h2>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -299,6 +257,16 @@ struct Container&lt;T: Sized&gt; {
 <p>The struct needs to know how big <code>T</code> is to calculate its own size!</p>
 <h2 id="dynamically-sized-types-dsts"><a class="header" href="#dynamically-sized-types-dsts">Dynamically Sized Types (DSTs)</a></h2>
 <p>Now we get to the interesting part: types that DON’T have a known size at compile time.</p>
+<p>Consider this:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let slice: [i32] = ???;
+<span class="boring">}</span></code></pre>
+<p>Looks like an array, right? Try to draw its layout:</p>
+<div style="width:100%; height:96px;"><style type="text/css">svg { width: 100% !important; }</style><svg xmlns="http://www.w3.org/2000/svg" width="328" height="96" class="svgbob"><style>.svgbob line, .svgbob path, .svgbob circle, .svgbob rect, .svgbob polygon {  stroke: var(--fg);  stroke-width: 2;  stroke-opacity: 1;  fill-opacity: 1;  stroke-linecap: round;  stroke-linejoin: miter;}.svgbob text {  white-space: pre;  fill: var(--fg);  font-family: Iosevka Fixed, monospace;  font-size: 14px;}.svgbob rect.backdrop {  stroke: none;  fill: transparent;}.svgbob .broken {  stroke-dasharray: 8;}.svgbob .filled {  fill: black;}.svgbob .bg_filled {  fill: transparent;  stroke-width: 1;}.svgbob .nofill {  fill: transparent;}.svgbob .end_marked_arrow {  marker-end: url(#arrow);}.svgbob .start_marked_arrow {  marker-start: url(#arrow);}.svgbob .end_marked_diamond {  marker-end: url(#diamond);}.svgbob .start_marked_diamond {  marker-start: url(#diamond);}.svgbob .end_marked_circle {  marker-end: url(#circle);}.svgbob .start_marked_circle {  marker-start: url(#circle);}.svgbob .end_marked_open_circle {  marker-end: url(#open_circle);}.svgbob .start_marked_open_circle {  marker-start: url(#open_circle);}.svgbob .end_marked_big_open_circle {  marker-end: url(#big_open_circle);}.svgbob .start_marked_big_open_circle {  marker-start: url(#big_open_circle);}</style><defs><marker id="arrow" viewbox="-2 -2 8 8" refx="4" refy="2" markerwidth="7" markerheight="7" orient="auto-start-reverse"><polygon points="0,0 0,4 4,2 0,0"></polygon></marker><marker id="diamond" viewbox="-2 -2 8 8" refx="4" refy="2" markerwidth="7" markerheight="7" orient="auto-start-reverse"><polygon points="0,2 2,0 4,2 2,4 0,2"></polygon></marker><marker id="circle" viewbox="0 0 8 8" refx="4" refy="4" markerwidth="7" markerheight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="filled"></circle></marker><marker id="open_circle" viewbox="0 0 8 8" refx="4" refy="4" markerwidth="7" markerheight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="2" class="bg_filled"></circle></marker><marker id="big_open_circle" viewbox="0 0 8 8" refx="4" refy="4" markerwidth="7" markerheight="7" orient="auto-start-reverse"><circle cx="4" cy="4" r="3" class="bg_filled"></circle></marker></defs><rect class="backdrop" x="0" y="0" width="328" height="96"></rect><text x="2" y="12">slice:</text><text x="58" y="12">[i32]</text><text x="18" y="44">?</text><text x="50" y="44">?</text><text x="82" y="44">?</text><text x="114" y="44">wait,</text><text x="162" y="44">how</text><text x="194" y="44">many</text><text x="234" y="44">elements?</text><text x="26" y="76">How</text><text x="58" y="76">many</text><text x="98" y="76">bytes</text><text x="146" y="76">total?</text><g><line x1="4" y1="24" x2="316" y2="24" class="solid"></line><line x1="4" y1="24" x2="4" y2="56" class="solid"></line><line x1="36" y1="24" x2="36" y2="56" class="solid"></line><line x1="68" y1="24" x2="68" y2="56" class="solid"></line><line x1="100" y1="24" x2="100" y2="56" class="solid"></line><line x1="316" y1="24" x2="316" y2="56" class="solid"></line><line x1="4" y1="56" x2="316" y2="56" class="solid"></line></g></svg></div>
+
+<p>Unlike <code>[i32; 3]</code>, the type <code>[i32]</code> doesn’t include the length — without it, we can’t pin down the layout or the total size from the type alone.</p>
+<p>If this confuses us, it confuses the compiler too. The code above is a compilation error.</p>
 <p>These are called <strong>Dynamically Sized Types</strong> (DSTs), and there are exactly three kinds in Rust:</p>
 <h3 id="1-slices-t"><a class="header" href="#1-slices-t">1. Slices (<code>[T]</code>)</a></h3>
 <p>A slice is <strong>just the items, without any metadata</strong>:</p>
