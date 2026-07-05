@@ -10,11 +10,7 @@ let y: bool = true;
 let z: f64 = 3.14;
 ```
 
-```bob
-+--------+----------+----------+
-|"42(4B)"|"true(1B)"|"3.14(8B)"|
-+--------+----------+----------+
-```
+![Three stack cells for Copy types: x: i32 = 42 (4 bytes), y: bool = true (1 byte), z: f64 = 3.14 (8 bytes)](images/memory-layout-simple-types.svg)
 
 ### `usize`
 
@@ -22,16 +18,7 @@ let z: f64 = 3.14;
 let n: usize = 42;
 ```
 
-```bob
-n: usize
-+-----------------------+  
-|<- 4 bytes on 32 bit ->|  
-+-----------------------+  
-
-+---------------------------------------------------+
-|<------------- 8 bytes on 64 bit ----------------->|
-+---------------------------------------------------+
-```
+![usize is pointer-sized: a 4-byte bar on 32-bit vs an 8-byte bar (twice as wide) on 64-bit](images/memory-layout-usize.svg)
 
 `usize` is the pointer-sized unsigned integer: 8 bytes on 64-bit, 4 bytes on
 32-bit. It matches the platform's address space — `usize` can hold any memory
@@ -61,12 +48,7 @@ The rest of this chapter assumes 64-bit, where `usize` = 8 bytes.
 let arr: [i32; 5] = [1, 2, 3, 4, 5];
 ```
 
-```bob
-+---+---+---+---+---+
-| 1 | 2 | 3 | 4 | 5 | Each element has 4 bytes
-+---+---+---+---+---+
-
-```
+![The 5 elements of arr live contiguously on the stack: five 4-byte i32 cells, 20 bytes total](images/memory-layout-array.svg)
 
 ### Vec
 
@@ -74,16 +56,7 @@ let arr: [i32; 5] = [1, 2, 3, 4, 5];
 let v = vec![1, 2, 3];
 ```
 
-```bob
-     STACK                   HEAP
-+-------------+
-|"v: Vec<i32>"|      +---+---+---+---+---+
-|   "ptr:" *--+----->| 1 | 2 | 3 |   |   |
-|   "len:" 3  |      +---+---+---+---+---+
-|   "cap:" 5  |          20 bytes
-+-------------+
-    24 bytes
-```
+![A Vec<i32> stores a 24-byte {ptr,len,cap} struct on the stack whose ptr points to a heap buffer of 5 i32 cells (3 used, cap 5)](images/memory-layout-vec.svg)
 
 `ptr`, `len`, and `cap` are each a `usize` — 3 × 8 = **24 bytes** on the stack
 on a 64-bit system (12 bytes on 32-bit).
@@ -96,16 +69,7 @@ Remember, a `String` is basically a `Vec` of `u8`.
 let s = String::from("café");
 ```
 
-```bob
-   STACK                          HEAP
-+-----------+
-|"s: String"|      +----+----+----+----+----+
-|  "ptr:"*--+----->| 63 | 61 | 66 | C3 | A9 |
-|  "len:"5  |      +----+----+----+----+----+
-|  "cap:"5  |        c    a    f   "é (2 bytes)"
-+-----------+
-    24 bytes           "5 bytes, but only 4 chars!"
-```
+![A String stores a 24-byte struct on the stack pointing to heap UTF-8 bytes; 'café' is 5 bytes (é = C3 A9) but only 4 chars](images/memory-layout-string.svg)
 
 `String` stores UTF-8 encoded bytes, not characters. The `é` character needs
 2 bytes (`0xC3 0xA9`), so `s.len() == 5` (bytes) while `s.chars().count() == 4`
@@ -117,15 +81,7 @@ let s = String::from("café");
 let s = "café";
 ```
 
-```bob
-    STACK                     DATA segment
-+------------+
-| "s: &str"  |           +----+----+----+----+----+
-|  "ptr:" *--+---------->| 63 | 61 | 66 | C3 | A9 |
-|  "len:" 5  |           +----+----+----+----+----+
-+------------+             c    a    f   "é (2 bytes)"
-   16 bytes
-```
+![A &str is a 16-byte fat pointer (ptr + len) into UTF-8 bytes living in the DATA segment, no heap allocation](images/memory-layout-str.svg)
 
 A `&str` is a **fat pointer**: just a pointer and a length, no capacity. It's a
 read-only view into bytes that already exist somewhere — in this case, the DATA
@@ -144,15 +100,7 @@ segment baked into the binary at compile time.
 let b = Box::new(42);
 ```
 
-```bob
-    STACK               HEAP
-+---------------+
-| "b: Box<i32>" |       +----+
-|   "ptr:" *----+------>| 42 |
-+---------------+       +----+
-    8 bytes              4 bytes
-
-```
+![A Box<i32> is an 8-byte pointer on the stack to a single 4-byte i32 (value 42) on the heap](images/memory-layout-box.svg)
 
 ### Nested Types
 
@@ -163,20 +111,7 @@ let v: Vec<String> = vec![
 ];
 ```
 
-```bob
-STACK                                    HEAP
-+-------------------+            +-------------+
-| "v: Vec<String>"  |            | "s: String" |      +---+---+---+---+---+
-|   "ptr:" *--------+----------->|   "ptr:" *--+----->| h | e | l | l | o |
-|   "len:" 2        |            |   "len:" 5  |      +---+---+---+---+---+
-|   "cap:" 2        |            |   "cap:" 5  |
-+-------------------+            +-------------+
-                                 | "s: String" |      +---+---+---+---+---+
-                                 |   "ptr:" *--+----->| w | o | r | l | d |
-                                 |   "len:" 5  |      +---+---+---+---+---+
-                                 |   "cap:" 5  |
-                                 +-------------+
-```
+![Vec<String> has three levels of indirection: stack Vec struct -> heap buffer of two String structs -> each String's own heap char data](images/memory-layout-nested.svg)
 
 - Stack: 24 bytes (Vec metadata)
 - Heap: 48 bytes (2 × String metadata: 2 × 24 bytes) + 10 bytes (string data)
@@ -194,19 +129,7 @@ Compare this with an array of string literals:
 let arr: [&str; 2] = ["hello", "world"];
 ```
 
-```bob
-STACK                             DATA segment
-+------------------+
-| "arr: [&str; 2]" |
-+------------------+          +---+---+---+---+---+
-|   "ptr:" *-------+--------->| h | e | l | l | o |
-|   "len:" 5       |          +---+---+---+---+---+
-+------------------+
-|   "ptr:" *-------+-----+    +---+---+---+---+---+
-|   "len:" 5       |     +--->| w | o | r | l | d |
-+------------------+          +---+---+---+---+---+
-    32 bytes
-```
+![An [&str; 2] array holds two 16-byte fat pointers on the stack (32 bytes), both pointing into the DATA segment - zero heap](images/memory-layout-arr-str.svg)
 
 - Stack: 32 bytes (2 × `&str`, each is a fat pointer: 8-byte ptr + 8-byte len)
 - Heap: **0 bytes!** String literals live in the DATA segment, baked into the
