@@ -1,0 +1,24 @@
+{
+ "type": "excalidraw",
+ "version": 2,
+ "source": "hermes-agent",
+ "elements": [
+  { "type": "text", "id": "title", "x": 180, "y": 16, "text": "Simple Copy Types on the Stack", "fontSize": 20, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "Simple Copy Types on the Stack", "autoResize": true },
+
+  { "type": "rectangle", "id": "c0", "x": 90, "y": 90, "width": 150, "height": 70, "backgroundColor": "#a5d8ff", "fillStyle": "hachure", "strokeColor": "#1e1e1e", "strokeWidth": 2, "roughness": 3, "opacity": 100 },
+  { "type": "text", "id": "c0l", "x": 130, "y": 66, "text": "x: i32", "fontSize": 14, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "x: i32", "autoResize": true },
+  { "type": "text", "id": "c0v", "x": 148, "y": 106, "text": "42", "fontSize": 18, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "42", "autoResize": true },
+  { "type": "text", "id": "c0b", "x": 132, "y": 166, "text": "4 bytes", "fontSize": 13, "fontFamily": 1, "strokeColor": "#868e96", "originalText": "4 bytes", "autoResize": true },
+
+  { "type": "rectangle", "id": "c1", "x": 260, "y": 90, "width": 150, "height": 70, "backgroundColor": "#b2f2bb", "fillStyle": "hachure", "strokeColor": "#1e1e1e", "strokeWidth": 2, "roughness": 3, "opacity": 100 },
+  { "type": "text", "id": "c1l", "x": 295, "y": 66, "text": "y: bool", "fontSize": 14, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "y: bool", "autoResize": true },
+  { "type": "text", "id": "c1v", "x": 305, "y": 106, "text": "true", "fontSize": 18, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "true", "autoResize": true },
+  { "type": "text", "id": "c1b", "x": 305, "y": 166, "text": "1 byte", "fontSize": 13, "fontFamily": 1, "strokeColor": "#868e96", "originalText": "1 byte", "autoResize": true },
+
+  { "type": "rectangle", "id": "c2", "x": 430, "y": 90, "width": 150, "height": 70, "backgroundColor": "#d0bfff", "fillStyle": "hachure", "strokeColor": "#1e1e1e", "strokeWidth": 2, "roughness": 3, "opacity": 100 },
+  { "type": "text", "id": "c2l", "x": 470, "y": 66, "text": "z: f64", "fontSize": 14, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "z: f64", "autoResize": true },
+  { "type": "text", "id": "c2v", "x": 475, "y": 106, "text": "3.14", "fontSize": 18, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "3.14", "autoResize": true },
+  { "type": "text", "id": "c2b", "x": 472, "y": 166, "text": "8 bytes", "fontSize": 13, "fontFamily": 1, "strokeColor": "#868e96", "originalText": "8 bytes", "autoResize": true }
+ ],
+ "appState": { "viewBackgroundColor": "#ffffff" }
+}

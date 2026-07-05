@@ -1,0 +1,19 @@
+{
+ "type": "excalidraw",
+ "version": 2,
+ "source": "hermes-agent",
+ "elements": [
+  { "type": "text", "id": "title", "x": 200, "y": 14, "text": "usize is Pointer-Sized", "fontSize": 20, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "usize is Pointer-Sized", "autoResize": true },
+
+  { "type": "text", "id": "n32", "x": 60, "y": 78, "text": "n: usize (32-bit)", "fontSize": 14, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "n: usize (32-bit)", "autoResize": true },
+  { "type": "rectangle", "id": "bar32", "x": 60, "y": 108, "width": 220, "height": 60, "backgroundColor": "#a5d8ff", "fillStyle": "hachure", "strokeColor": "#1e1e1e", "strokeWidth": 2, "roughness": 3, "opacity": 100 },
+  { "type": "text", "id": "lbl32", "x": 112, "y": 128, "text": "4 bytes", "fontSize": 16, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "4 bytes", "autoResize": true },
+
+  { "type": "text", "id": "n64", "x": 60, "y": 226, "text": "n: usize (64-bit)", "fontSize": 14, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "n: usize (64-bit)", "autoResize": true },
+  { "type": "rectangle", "id": "bar64", "x": 60, "y": 256, "width": 440, "height": 60, "backgroundColor": "#b2f2bb", "fillStyle": "hachure", "strokeColor": "#1e1e1e", "strokeWidth": 2, "roughness": 3, "opacity": 100 },
+  { "type": "text", "id": "lbl64", "x": 232, "y": 276, "text": "8 bytes", "fontSize": 16, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "8 bytes", "autoResize": true },
+
+  { "type": "text", "id": "note", "x": 60, "y": 348, "text": "Matches the platform's address width \u2014 big enough to hold any address or byte count.", "fontSize": 13, "fontFamily": 1, "strokeColor": "#868e96", "originalText": "Matches the platform's address width \u2014 big enough to hold any address or byte count.", "autoResize": true }
+ ],
+ "appState": { "viewBackgroundColor": "#ffffff" }
+}

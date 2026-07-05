@@ -1,0 +1,24 @@
+{
+ "type": "excalidraw",
+ "version": 2,
+ "source": "hermes-agent",
+ "elements": [
+  { "type": "text", "id": "title", "x": 210, "y": 16, "text": "References Are Just Pointers", "fontSize": 22, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "References Are Just Pointers", "autoResize": true },
+
+  { "type": "rectangle", "id": "stack_zone", "x": 40, "y": 70, "width": 620, "height": 190, "backgroundColor": "transparent", "fillStyle": "hachure", "strokeColor": "#868e96", "strokeStyle": "dashed", "strokeWidth": 2, "roughness": 2, "opacity": 100 },
+  { "type": "text", "id": "stack_t", "x": 56, "y": 44, "text": "STACK", "fontSize": 18, "fontFamily": 1, "strokeColor": "#1e1e1e", "originalText": "STACK", "autoResize": true },
+
+  { "type": "rectangle", "id": "xbox", "x": 340, "y": 96, "width": 250, "height": 56, "backgroundColor": "#a5d8ff", "fillStyle": "hachure", "strokeColor": "#1e1e1e", "strokeWidth": 2, "roughness": 3, "opacity": 100 },
+  { "type": "text", "id": "xaddr", "x": 66, "y": 114, "text": "0x7FFF_FFFF_FF00", "fontSize": 13, "fontFamily": 3, "strokeColor": "#868e96", "originalText": "0x7FFF_FFFF_FF00", "autoResize": true },
+  { "type": "text", "id": "xlabel", "x": 300, "y": 114, "text": "x", "fontSize": 14, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "x", "autoResize": true },
+  { "type": "text", "id": "xval", "x": 356, "y": 112, "text": "42", "fontSize": 16, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "42", "autoResize": true },
+
+  { "type": "rectangle", "id": "rbox", "x": 340, "y": 184, "width": 250, "height": 56, "backgroundColor": "#ffd8a8", "fillStyle": "hachure", "strokeColor": "#1e1e1e", "strokeWidth": 2, "roughness": 3, "opacity": 100 },
+  { "type": "text", "id": "raddr", "x": 66, "y": 202, "text": "0x7FFF_FFFF_FF04", "fontSize": 13, "fontFamily": 3, "strokeColor": "#868e96", "originalText": "0x7FFF_FFFF_FF04", "autoResize": true },
+  { "type": "text", "id": "rlabel", "x": 280, "y": 202, "text": "x_ref", "fontSize": 14, "fontFamily": 3, "strokeColor": "#1e1e1e", "originalText": "x_ref", "autoResize": true },
+  { "type": "text", "id": "rval", "x": 356, "y": 200, "text": "0x7FFF_FFFF_FF00", "fontSize": 13, "fontFamily": 3, "strokeColor": "#c2255c", "originalText": "0x7FFF_FFFF_FF00", "autoResize": true },
+
+  { "type": "arrow", "id": "ptr", "x": 610, "y": 212, "width": 34, "height": 88, "points": [[0,0],[24,0],[24,-88],[-14,-88]], "endArrowhead": "arrow", "strokeColor": "#c2255c", "strokeWidth": 2, "roughness": 2, "opacity": 100 }
+ ],
+ "appState": { "viewBackgroundColor": "#ffffff" }
+}

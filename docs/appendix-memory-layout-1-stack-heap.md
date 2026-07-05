@@ -80,22 +80,7 @@ v.push(2);                      // adds to heap, len=2, cap=4
 
 **Stack memory layout:**
 
-```bob
-
-      STACK                                    HEAP
-
-+-------------------------+
-| "number:" Number        |
-|  "n: 42 (4 bytes)"      |
-+-------------------------+
-| "v: Vec<i32>"           |              +--+--+--+--+
-|  "ptr: (8 bytes)"  *----+------------->|1 |2 |  |  |
-|  "len: 2 (8 bytes)"     |              +--+--+--+--+
-|  "cap: 4 (8 bytes)"     |        "(8 bytes + capacity for 2 more)"
-+-------------------------+
-"Total: 24 bytes on stack"
-
-```
+![Stack Memory Layout: a Vec's ptr/len/cap live on the stack while its elements live on the heap](images/memory-layout-stack-heap.svg)
 
 We'll explore heap and allocation in more detail in the next section.
 

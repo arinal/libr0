@@ -19,14 +19,7 @@ You can think a reference as a safe pointer guaranteed by the compiler.
 
 **What's in memory :**
 
-```bob
-STACK
-                         +-----------------------+
-"0x7FFF_FFFF_FF00"     x |  42                   |<--+
-                         +-----------------------+   |
-"0x7FFF_FFFF_FF04  x_ref"| "0x7FFF_FFFF_FF00" *--+---+
-                         +-----------------------+
-```
+![Stack layout: x holds 42, x_ref holds the address of x and points back to it](images/memory-layout-reference.svg)
 
 **Key points about references:**
 
@@ -44,13 +37,7 @@ let mut y: i32 = 100;
 let y_mut_ref: &mut i32 = &mut y;
 ```
 
-```bob
-       STACK
-  y               "y_mut_ref"
-+------+       +---------------+
-| 100  |<------|  Address of y |
-+------+       +---------------+
-```
+![Stack: y holds 100, y_mut_ref holds the address of y and points to it](images/memory-layout-mutref-before.svg)
 
 ```rust
 *y_mut_ref = 200;
@@ -58,13 +45,7 @@ let y_mut_ref: &mut i32 = &mut y;
 
 Dereferencing `y_mut_ref` modifies the value of `y` in place — `y_mut_ref` itself still holds the same address, the address of `y`.
 
-```bob
-       STACK
-  y               "y_mut_ref"
-+------+       +---------------+
-| 200  |<------|  Address of y |
-+------+       +---------------+
-```
+![Stack: after *y_mut_ref = 200, y now holds 200 while y_mut_ref still holds the same address](images/memory-layout-mutref-after.svg)
 
 **References vs Raw Pointers:**
 
@@ -235,19 +216,7 @@ Unlike `Vec`, raw pointers don't do bounds checking! `Vec` would panic on `vec[3
 
 After \*ptr.add(2) = 3, the heap looks like this:
 
-```bob
-"Stack (0x7FFF_FFFF_FF00)"              "Heap (0x5555_8000_0000)"
-                                   "(12 bytes total: 3 × 4-byte i32s)"
-    +---------------------+         +-----+
-ptr |  "0x5555_8000_0000" +-------> |  1  |
-    +---------------------+         +-----+
-                                    |  2  | +4
-                                    +-----+
-Last element of our allocation  --> |  3  | +8
-                                    +-----+
-Beyond our allocation  -----------> |  4  | +12
-                                    +-----+
-```
+![Raw pointer into a heap allocation: ptr holds the heap address and points to the first of four i32 cells; cell 3 is the last valid element, cell 4 is beyond the allocation (UB)](images/memory-layout-rawptr.svg)
 
 **Key points:**
 

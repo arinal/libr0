@@ -33,21 +33,7 @@ let arr: [u8; 10] = ???;
 
 After reading [the previous chapter](appendix-memory-layout-3-types.md), we can draw their layouts just from the types alone — we don't even need to know the values:
 
-```bob
-x: i32                 s: String
-+---+                 +-----+
-| ? | 4 bytes     ptr |  ?  | 8 bytes
-+---+                 +-----+
-                  len |  ?  | 8 bytes
-                      +-----+
-                  cap |  ?  | 8 bytes
-                      +-----+
-
-          arr: [u8; 10]
-+---+---+---+---+---+---+---+---+---+---+
-| ? | ? | ? | ? | ? | ? | ? | ? | ? | ? |  10 bytes
-+---+---+---+---+---+---+---+---+---+---+
-```
+![Sized types have layouts known from the type alone: i32 is 4 bytes, String is a 24-byte {ptr,len,cap} struct, [u8;10] is 10 bytes](images/memory-layout-sized-known.svg)
 
 We know `i32` is always 4 bytes. We know `String` is always 24 bytes — three `usize` fields for pointer, length, and capacity. We know `[u8; 10]` is always 10 bytes — the length is baked into the type. These types are `Sized`.
 
@@ -122,13 +108,7 @@ let slice: [i32] = ???;
 
 Looks like an array, right? Try to draw its layout:
 
-```bob
-slice: [i32]
-+---+---+---+--------------------------+
-| ? | ? | ? | wait, how many elements? |
-+---+---+---+--------------------------+
-   How many bytes total?
-```
+![[i32] is unsized: the type says nothing about how many elements there are, so total byte size is unknown at compile time](images/memory-layout-unsized-slice.svg)
 
 Unlike `[i32; 3]`, the type `[i32]` doesn't include the length — without it, we can't pin down the layout or the total size from the type alone.
 
@@ -217,15 +197,7 @@ A reference to a DST is called a **fat pointer** because it contains extra metad
 
 **For slices (`&[T]`) and string slices (`&str`):**
 
-```bob
-+---------------------+---------------------+
-|   Data Pointer      |      Length         |
-|    "(8 bytes)"      |     "(8 bytes)"     |
-+---------------------+---------------------+
-        |
-        v
-  Points to actual data on heap/stack
-```
+![A fat pointer for &[T] and &str: a data pointer (8 bytes) plus a length (8 bytes); the pointer points to the actual data](images/memory-layout-fatptr-slice.svg)
 
 Example:
 
@@ -240,15 +212,7 @@ let slice: &[i32] = &data[1..4];  // [2, 3, 4]
 
 **For trait objects (`&dyn Trait`):**
 
-```bob
-┌─────────────────────┬─────────────────────┐
-│   Data Pointer      │   VTable Pointer    │
-│    (8 bytes)        │     (8 bytes)       │
-└─────────────────────┴─────────────────────┘
-        ↓                     ↓
-  Points to data        Points to vtable
-                        (function pointers)
-```
+![A fat pointer for &dyn Trait: a data pointer (8 bytes) plus a vtable pointer (8 bytes) to the trait's function pointers](images/memory-layout-fatptr-dyn.svg)
 
 Example:
 
@@ -326,13 +290,7 @@ println!("{}", std::mem::size_of::<&[i32]>());  // ✅ OK: 16 bytes (fat pointer
 
 The reference has a known size even though the thing it points to doesn't!
 
-```bob
-[i32]           &[i32]
-(unsized)       (sized - 16 bytes)
-  ???           ┌─────────┬─────────┐
-  ???  <────────│ ptr     │ len     │
-  ???           └─────────┴─────────┘
-```
+![Confusion #1: [i32] is unsized data of unknown length, while &[i32] is a sized fat pointer referencing that data](images/memory-layout-conf-slice.svg)
 
 ### Confusion #2: "String is Sized, but str is Not"
 
@@ -348,16 +306,7 @@ println!("{}", std::mem::size_of::<&str>());    // ✅ 16 bytes
 - `str` is the actual text data - variable length
 - `&str` is a fat pointer to text data - always 16 bytes
 
-```bob
-String (24 bytes)          str (unsized)           &str (16 bytes)
-┌────────────────┐         ??????????              ┌─────────┬─────────┐
-│ ptr ────────┐  │         ?????????               │ ptr     │ len     │
-│ len: 5      │  │         ?????????               └────┬────┴─────────┘
-│ cap: 10     │  │         ?????????                    │
-└─────────────┘  │                                      │
-                 └────────> h e l l o ??? <──────────────┘
-                            (on heap)
-```
+![Confusion #2: String owns a 24-byte heap-backed struct, str is unsized bytes, and &str is a 16-byte fat pointer view into them](images/memory-layout-conf-str.svg)
 
 ### Confusion #3: "Box\<T\> is Sized, but Box\<[T]\> Also Exists"
 
